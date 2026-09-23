@@ -56,6 +56,21 @@ const ROLE_TO_ACCESS: Record<string, AccessLevel> = {
   'AE Access':                'AE_ACCESS',
 };
 
+const ALL_ROLES = [
+  'Admin',
+  'Operations',
+  'Acctg Head',
+  'AR Manager',
+  'AR Supervisor',
+  'AR Staff',
+  'Treasury Manager',
+  'Treasury Staff',
+  'Branch Manager',
+  'Branch AR/Finance Staff',
+  'Branch Staff',
+  'AE',
+];
+
 const ACCESS_LEVEL_ROLES: Record<AccessLevel, string[]> = {
   VIEW_ONLY:   ['Branch Staff', 'Branch AR/Finance Staff'],
   VIEW_EDIT:   ['AR Staff', 'Treasury Staff', 'AE', 'Branch Manager'],
@@ -786,10 +801,14 @@ export function AdminUsersClient({ branches, aeList, subsidiaries, deleteRequest
                   <label className={lbl}>Role</label>
                   <select
                     value={form.role}
-                    onChange={e => setForm(f => ({ ...f, role: e.target.value }))}
+                    onChange={e => {
+                      const newRole = e.target.value;
+                      const access = ROLE_TO_ACCESS[newRole] ?? form.accessLevel;
+                      setForm(f => ({ ...f, role: newRole, accessLevel: access }));
+                    }}
                     className={inp}
                   >
-                    {ACCESS_LEVEL_ROLES[form.accessLevel]?.map(r => (
+                    {ALL_ROLES.map(r => (
                       <option key={r} value={r}>{r}</option>
                     ))}
                   </select>

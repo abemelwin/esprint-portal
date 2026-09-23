@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 
 const DEMO_ROLES = [
@@ -46,6 +46,14 @@ export default function LoginPage() {
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
 
+  // Pre-fill email from last login
+  useEffect(() => {
+    try {
+      const saved = localStorage.getItem("lastLoginEmail") || localStorage.getItem("last_login_email");
+      if (saved) setEmail(saved);
+    } catch { /* ignore */ }
+  }, []);
+
   // ── New-password challenge state (first login with temp password) ──
   const [needNewPassword, setNeedNewPassword] = useState(false);
   const [challengeSession, setChallengeSession] = useState("");
@@ -56,10 +64,11 @@ export default function LoginPage() {
     setError("");
     setLoading(true);
     try {
+      const trimmedEmail = email.trim();
       const res = await fetch("/api/auth/login", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ email, password }),
+        body: JSON.stringify({ email: trimmedEmail, password }),
       });
       const data = await res.json().catch(() => ({}));
 
@@ -76,6 +85,12 @@ export default function LoginPage() {
         setLoading(false);
         return;
       }
+
+      try {
+        localStorage.setItem("lastLoginEmail", trimmedEmail);
+        localStorage.setItem("last_login_email", trimmedEmail);
+      } catch { /* ignore */ }
+
       router.push("/dashboard");
       router.refresh();
     } catch {
@@ -119,6 +134,12 @@ export default function LoginPage() {
         setLoading(false);
         return;
       }
+
+      try {
+        localStorage.setItem("lastLoginEmail", email.trim());
+        localStorage.setItem("last_login_email", email.trim());
+      } catch { /* ignore */ }
+
       router.push("/dashboard");
       router.refresh();
     } catch {

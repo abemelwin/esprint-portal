@@ -71,7 +71,7 @@ export function ReconstructReportClient({ initialData: data, perms, userName }: 
     if (loadedSchedules.current.has(clientCode)) return;
     loadedSchedules.current.add(clientCode);
     try {
-      const res  = await fetch(`/api/checks/reconstruct-schedule?clientCode=${encodeURIComponent(clientCode)}`);
+      const res  = await fetch(`/api/recon-schedule?clientCode=${encodeURIComponent(clientCode)}`);
       const json = await res.json();
       if (json.ok && json.rows && json.rows.length > 0) {
         const rows = json.rows.map((r: any) => ({
@@ -100,7 +100,7 @@ export function ReconstructReportClient({ initialData: data, perms, userName }: 
   const saveSchedule = useCallback(async (clientCode: string, rows: ScheduleRowUI[]) => {
     setScheduleSaving(prev => ({ ...prev, [clientCode]: true }));
     try {
-      await fetch('/api/checks/reconstruct-schedule', {
+      await fetch('/api/recon-schedule', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
