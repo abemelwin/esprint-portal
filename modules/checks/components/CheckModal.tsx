@@ -24,6 +24,7 @@ interface Props {
   onClose:         () => void;
   /** Called after a successful save — caller should router.refresh(). */
   onSaved:         () => void;
+  onCheckCreated?: (check: Check) => void;
 }
 
 const EMPTY = {
@@ -34,7 +35,7 @@ const EMPTY = {
 
 type FormState = typeof EMPTY;
 
-export default function CheckModal({ data, userEmail, editCheck, onClose, onSaved }: Props) {
+export default function CheckModal({ data, userEmail, editCheck, onClose, onSaved, onCheckCreated }: Props) {
   const { showToast } = useToast();
   const isEdit = !!editCheck;
 
@@ -225,6 +226,9 @@ export default function CheckModal({ data, userEmail, editCheck, onClose, onSave
       } else {
         showToast(isEdit ? 'Check updated' : 'Check saved successfully', 'success');
         clearDraft();
+        if (!isEdit && json.check && onCheckCreated) {
+          onCheckCreated(json.check);
+        }
         onSaved();
         onClose();
       }
