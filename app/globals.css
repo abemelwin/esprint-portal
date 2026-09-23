@@ -13,18 +13,27 @@ body {
   padding: 0;
   margin: 0;
   font-family: 'Inter', system-ui, sans-serif;
+  background-color: #f1f5f9;
+  color: #0f172a;
 }
 
 /* Thin scrollbar */
-.thin-scroll::-webkit-scrollbar {
+.thin-scroll::-webkit-scrollbar,
+::-webkit-scrollbar {
   width: 6px;
   height: 6px;
 }
-.thin-scroll::-webkit-scrollbar-thumb {
+.thin-scroll::-webkit-scrollbar-thumb,
+::-webkit-scrollbar-thumb {
   background: #cbd5e1;
   border-radius: 999px;
 }
-.thin-scroll::-webkit-scrollbar-track {
+.thin-scroll::-webkit-scrollbar-thumb:hover,
+::-webkit-scrollbar-thumb:hover {
+  background: #94a3b8;
+}
+.thin-scroll::-webkit-scrollbar-track,
+::-webkit-scrollbar-track {
   background: transparent;
 }
 
@@ -69,7 +78,48 @@ body {
 .stat-card.clickable:hover::before { opacity: 1; }
 .stat-card.clickable:active { transform: translateY(0); }
 
-/* Report table */
-table.report { border-collapse: separate; border-spacing: 0; width: 100%; }
-table.report tbody tr { transition: background-color 0.15s ease; }
-table.report tbody tr:hover { background-color: #f8fafc; }
+/* ── Table Grid Styling (Exact original borders & sticky headers) ── */
+table.report {
+  border-collapse: separate;
+  border-spacing: 0;
+  width: 100%;
+}
+table.report th {
+  position: sticky;
+  top: 0;
+  background: #f8fafc;
+  z-index: 10;
+  white-space: nowrap;
+  font-weight: 600;
+  font-size: 11px;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: #475569;
+  padding: 10px 14px;
+  border-bottom: 1px solid #e2e8f0;
+  border-right: 1px solid #e2e8f0;
+}
+table.report th:last-child {
+  border-right: none;
+}
+table.report td {
+  white-space: nowrap;
+  padding: 10px 14px;
+  font-size: 13px;
+  color: #1e293b;
+  border-bottom: 1px solid #f1f5f9;
+  border-right: 1px solid #f1f5f9;
+  transition: background-color 0.15s ease;
+}
+table.report td:last-child {
+  border-right: none;
+}
+table.report tbody tr {
+  transition: background-color 0.15s ease, transform 0.1s ease;
+}
+table.report tbody tr:hover {
+  background-color: #f8fafc;
+}
+table.report tbody tr:last-child td {
+  border-bottom: none;
+}
