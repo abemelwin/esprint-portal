@@ -150,7 +150,7 @@ export function DepositsReportClient({ initialData: data, perms }: Props) {
 
       {/* Filter panel */}
       <div className="bg-white border border-slate-200 rounded-2xl shadow-sm p-4 print:hidden">
-        <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mb-3">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 mb-3">
           <div>
             <label className="block text-[11px] font-semibold text-gray-500 mb-1">Branch</label>
             <select value={filterBranch} onChange={e => setFilterBranch(e.target.value)} className={sel + ' w-full'}>

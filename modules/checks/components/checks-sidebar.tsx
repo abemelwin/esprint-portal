@@ -108,12 +108,10 @@ interface ChecksSidebarProps {
   userRole: string;
   isAdmin: boolean;
   branchLabel?: string;
-  /** True when role === "AE" (individual account executive). */
   isAE?: boolean;
-  /** True when role === "AE Access" (Team Leader account). */
   isAEAccess?: boolean;
-  /** True when an AE Access account manages more than one AE (a TL). */
   isTL?: boolean;
+  onItemClick?: () => void;
 }
 
 export function ChecksSidebar({
@@ -124,23 +122,28 @@ export function ChecksSidebar({
   isAE = false,
   isAEAccess = false,
   isTL = false,
+  onItemClick,
 }: ChecksSidebarProps) {
   const pathname = usePathname();
   const [collapsed, setCollapsed] = useState(false);
 
-  const ALTERATION_ROLES = ['Super Admin', 'Admin', 'Treasury Manager', 'Treasury Staff', 'Acctg Head', 'AR Manager', 'AR Supervisor', 'Operations'];
+  const ALTERATION_ROLES = [
+    "Super Admin",
+    "Admin",
+    "Treasury Manager",
+    "Treasury Staff",
+    "Acctg Head",
+    "AR Manager",
+    "AR Supervisor",
+    "Operations",
+  ];
 
   const items = NAV.filter((i) => {
     if (i.adminOnly && !isAdmin) return false;
-    // AE Dashboard: Team Leaders only.
     if (i.aeOnly && !isTL) return false;
-    // Alteration: Treasury/Admin roles only (mirrors original).
     if (i.alterationOnly && !ALTERATION_ROLES.includes(userRole)) return false;
-    // Plain AE role: only the Client Report is visible.
     if (isAE && i.href !== "/checks/reports/clients") return false;
-    // AE Access (non-TL): only the Client Report.
     if (isAEAccess && !isTL && i.href !== "/checks/reports/clients") return false;
-    // AE Access (TL): AE Dashboard + Client Report only.
     if (isAEAccess && isTL && !i.aeOnly && i.href !== "/checks/reports/clients") return false;
     return true;
   });
@@ -154,6 +157,7 @@ export function ChecksSidebar({
         background: "#0b1329",
         display: "flex",
         flexDirection: "column",
+        height: "100%",
         overflowY: "auto",
         borderRight: "1px solid rgba(255,255,255,.07)",
         transition: "width 180ms ease, min-width 180ms ease",
@@ -174,6 +178,7 @@ export function ChecksSidebar({
           <button
             onClick={() => setCollapsed(false)}
             title="Expand sidebar"
+            className="hidden lg:flex"
             style={{
               background: "rgba(255,255,255,0.06)",
               border: "1px solid rgba(255,255,255,0.1)",
@@ -181,7 +186,6 @@ export function ChecksSidebar({
               color: "#94a3b8",
               cursor: "pointer",
               padding: "6px 8px",
-              display: "flex",
               alignItems: "center",
               justifyContent: "center",
               fontSize: 12,
@@ -206,9 +210,11 @@ export function ChecksSidebar({
                 Hold &amp; Return Monitoring
               </p>
             </div>
+            {/* Desktop collapse toggle */}
             <button
               onClick={() => setCollapsed(true)}
               title="Collapse sidebar"
+              className="hidden lg:flex"
               style={{
                 background: "rgba(255,255,255,0.05)",
                 border: "1px solid rgba(255,255,255,0.08)",
@@ -217,13 +223,32 @@ export function ChecksSidebar({
                 cursor: "pointer",
                 padding: "3px 6px",
                 fontSize: 10.5,
-                display: "flex",
                 alignItems: "center",
                 justifyContent: "center",
               }}
             >
               ◀
             </button>
+            {/* Mobile close button */}
+            {onItemClick && (
+              <button
+                onClick={onItemClick}
+                title="Close menu"
+                className="lg:hidden flex"
+                style={{
+                  background: "rgba(255,255,255,0.1)",
+                  border: "none",
+                  borderRadius: 6,
+                  color: "#f8fafc",
+                  cursor: "pointer",
+                  padding: "4px 8px",
+                  fontSize: 13,
+                  fontWeight: "bold",
+                }}
+              >
+                ✕
+              </button>
+            )}
           </>
         )}
       </div>
@@ -252,6 +277,7 @@ export function ChecksSidebar({
               )}
               <Link
                 href={item.href}
+                onClick={onItemClick}
                 title={collapsed ? item.label : undefined}
                 style={{
                   display: "flex",
@@ -347,14 +373,25 @@ export function ChecksSidebar({
         {!collapsed && (
           <Link
             href="/checks/account"
+            onClick={onItemClick}
             style={{
-              display: "flex", alignItems: "center", justifyContent: "center",
-              marginTop: 6, fontSize: 10.5, color: "#64748b", textDecoration: "none",
-              fontWeight: 500, gap: 4,
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+              marginTop: 6,
+              fontSize: 10.5,
+              color: "#64748b",
+              textDecoration: "none",
+              fontWeight: 500,
+              gap: 4,
             }}
           >
             <svg width="11" height="11" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-              <path strokeLinecap="round" strokeLinejoin="round" d="M15.75 6a3.75 3.75 0 11-7.5 0 3.75 3.75 0 017.5 0zM4.501 20.118a7.5 7.5 0 0114.998 0A17.933 17.933 0 0112 21.75c-2.676 0-5.216-.584-7.499-1.632z" />
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                d="M15.75 6a3.75 3.75 0 11-7.5 0 3.75 3.75 0 017.5 0zM4.501 20.118a7.5 7.5 0 0114.998 0A17.933 17.933 0 0112 21.75c-2.676 0-5.216-.584-7.499-1.632z"
+              />
             </svg>
             My Account / Change Password
           </Link>

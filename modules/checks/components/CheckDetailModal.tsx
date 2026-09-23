@@ -417,7 +417,7 @@ export default function CheckDetailModal({ checkId, perms, userEmail, userName, 
         {/* Scrollable Content */}
         <div className="flex-1 overflow-y-auto p-6 space-y-6">
           {/* Balance Cards */}
-          <div className="grid grid-cols-3 gap-3">
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
             <div className="p-3.5 bg-slate-50 border border-slate-100 rounded-xl">
               <div className="text-[10px] font-bold text-gray-500 uppercase tracking-wider mb-1">Original amount</div>
               <div className="font-bold text-base text-gray-900">{fmtPHP(check.originalAmount)}</div>

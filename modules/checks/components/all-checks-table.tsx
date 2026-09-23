@@ -826,7 +826,7 @@ export function AllChecksTable({ initialData, perms, userEmail, userName }: Prop
         </div>
         {!filtersCollapsed && (
           <>
-            <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mb-3">
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 mb-3">
               <div>
                 <label className="block text-[11px] font-semibold text-gray-500 mb-1">Subsidiary</label>
                 <select value={filterSub} onChange={e => handleSubChange(e.target.value)} className={sel + ' w-full'}>
@@ -849,7 +849,7 @@ export function AllChecksTable({ initialData, perms, userEmail, userName }: Prop
                 <datalist id="ae-datalist">{aeOptions.map(ae => <option key={ae} value={ae} />)}</datalist>
               </div>
             </div>
-            <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
               <div>
                 <label className="block text-[11px] font-semibold text-gray-500 mb-1">From</label>
                 <input type="date" value={dateFrom} onChange={e => { setDateFrom(e.target.value); setPage(1); }} className={sel + ' w-full'} />
