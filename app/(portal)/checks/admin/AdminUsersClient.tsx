@@ -5,6 +5,7 @@
  * role filters, search, and bulk operations.
  */
 import { useState, useEffect, useCallback, useMemo } from 'react';
+import { createPortal } from 'react-dom';
 import Link from 'next/link';
 import { useToast } from '@/modules/checks/components/Toast';
 import ConfirmDialog from '@/modules/checks/components/ConfirmDialog';
@@ -82,6 +83,7 @@ export function AdminUsersClient({ branches, aeList, subsidiaries, deleteRequest
   const subsidiaryOptions = subsidiaries ?? [];
   const { showToast } = useToast();
 
+  const [mounted, setMounted]     = useState(false);
   const [users, setUsers]         = useState<AdminUser[]>([]);
   const [loading, setLoading]     = useState(true);
   const [saving, setSaving]       = useState(false);
@@ -94,6 +96,10 @@ export function AdminUsersClient({ branches, aeList, subsidiaries, deleteRequest
   const [form, setForm]           = useState({ ...EMPTY_FORM });
   const [confirm, setConfirm]     = useState<{ title: string; message: string; confirmText?: string; danger?: boolean; onConfirm: () => void } | null>(null);
   const [formError, setFormError] = useState<string | null>(null);
+
+  useEffect(() => {
+    setMounted(true);
+  }, []);
 
   const fetchUsers = useCallback(async () => {
     setLoading(true);
@@ -384,7 +390,7 @@ export function AdminUsersClient({ branches, aeList, subsidiaries, deleteRequest
           {selected.size > 0 && (
             <button
               onClick={disableSelected}
-              className="flex items-center gap-1.5 px-4 py-2.5 rounded-xl text-sm font-bold text-white bg-red-600 hover:bg-red-700 transition-colors shadow-sm"
+              className="flex items-center gap-1.5 px-4 py-2.5 rounded-xl text-sm font-bold text-white bg-red-600 hover:bg-red-700 transition-colors shadow-sm cursor-pointer"
             >
               🚫 Disable {selected.size} selected
             </button>
@@ -392,14 +398,14 @@ export function AdminUsersClient({ branches, aeList, subsidiaries, deleteRequest
 
           <button
             onClick={openAdd}
-            className="flex items-center gap-1.5 px-4 py-2.5 rounded-xl text-sm font-bold text-white bg-[#16a34a] hover:bg-[#15803d] transition-colors shadow-sm"
+            className="flex items-center gap-1.5 px-4 py-2.5 rounded-xl text-sm font-bold text-white bg-[#16a34a] hover:bg-[#15803d] transition-colors shadow-sm cursor-pointer"
           >
             + Add User
           </button>
 
           <button
             onClick={openAdd}
-            className="flex items-center gap-1.5 px-4 py-2.5 rounded-xl text-sm font-bold text-white bg-[#1e3a8a] hover:bg-blue-700 transition-colors shadow-sm"
+            className="flex items-center gap-1.5 px-4 py-2.5 rounded-xl text-sm font-bold text-white bg-[#1e3a8a] hover:bg-blue-700 transition-colors shadow-sm cursor-pointer"
           >
             ✉ Invite User
           </button>
@@ -642,14 +648,14 @@ export function AdminUsersClient({ branches, aeList, subsidiaries, deleteRequest
         </div>
       </div>
 
-      {/* Add/Edit Modal */}
-      {showForm && (
+      {/* Add/Edit Modal (rendered via createPortal directly into document.body) */}
+      {mounted && showForm && createPortal(
         <div
-          className="fixed inset-0 z-[9999] flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm"
+          className="fixed inset-0 z-[99999] flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm animate-fade-in"
           onClick={() => setShowForm(false)}
         >
           <div
-            className="bg-white rounded-2xl shadow-xl w-full max-w-lg max-h-[90vh] flex flex-col overflow-hidden"
+            className="bg-white rounded-2xl shadow-2xl w-full max-w-lg max-h-[90vh] flex flex-col overflow-hidden relative z-10"
             onClick={e => e.stopPropagation()}
           >
             <div className="px-6 py-4 border-b border-gray-100 flex items-center justify-between bg-slate-50">
@@ -657,7 +663,7 @@ export function AdminUsersClient({ branches, aeList, subsidiaries, deleteRequest
                 <h2 className="font-bold text-gray-900 text-base">{editUser ? 'Edit User' : 'Add New User'}</h2>
                 <p className="text-xs text-gray-500">Configure Cognito login credentials and module permissions.</p>
               </div>
-              <button onClick={() => setShowForm(false)} className="text-gray-400 hover:text-gray-600 text-xl font-bold p-1">
+              <button onClick={() => setShowForm(false)} className="text-gray-400 hover:text-gray-600 text-xl font-bold p-1 cursor-pointer">
                 ✕
               </button>
             </div>
@@ -840,20 +846,21 @@ export function AdminUsersClient({ branches, aeList, subsidiaries, deleteRequest
             <div className="px-6 py-4 border-t border-gray-100 flex justify-end gap-3 bg-slate-50">
               <button
                 onClick={() => setShowForm(false)}
-                className="px-4 py-2 rounded-xl text-sm font-medium border border-gray-200 text-gray-600 hover:bg-white transition-colors"
+                className="px-4 py-2 rounded-xl text-sm font-medium border border-gray-200 text-gray-600 hover:bg-white transition-colors cursor-pointer"
               >
                 Cancel
               </button>
               <button
                 onClick={saveForm}
                 disabled={saving || !form.email.trim()}
-                className="px-5 py-2 rounded-xl text-sm font-bold bg-[#1e3a8a] text-white hover:bg-blue-700 disabled:opacity-50 transition-colors shadow-sm"
+                className="px-5 py-2 rounded-xl text-sm font-bold bg-[#1e3a8a] text-white hover:bg-blue-700 disabled:opacity-50 transition-colors shadow-sm cursor-pointer"
               >
                 {saving ? 'Saving…' : editUser ? 'Save Changes' : 'Create User'}
               </button>
             </div>
           </div>
-        </div>
+        </div>,
+        document.body
       )}
 
       <ConfirmDialog
