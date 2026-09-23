@@ -155,7 +155,7 @@ export function DepositsReportClient({ initialData: data, perms }: Props) {
             <label className="block text-[11px] font-semibold text-gray-500 mb-1">Branch</label>
             <select value={filterBranch} onChange={e => setFilterBranch(e.target.value)} className={sel + ' w-full'}>
               <option value="">All my branches</option>
-              {(perms.branches.includes('ALL') ? data.BRANCHES : data.BRANCHES.filter(b => perms.branches.includes(b.id)))
+              {(perms.branches.length === 0 || perms.branches.includes('ALL') ? data.BRANCHES : data.BRANCHES.filter(b => perms.branches.includes(b.id)))
                 .map(b => <option key={b.id} value={b.id}>{b.name}</option>)}
             </select>
           </div>
