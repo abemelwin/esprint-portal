@@ -138,3 +138,40 @@ create table if not exists delete_requests (
   target_type       text not null default 'check',
   event_id          uuid
 );
+
+-- ─── PENALTY_RECORDS (standalone editable list — ₱500/move charges) ──
+-- Independent of the checks ledger. Manually-entered rows.
+create table if not exists penalty_records (
+  id              text primary key,
+  client          text not null,
+  move_num        text,                       -- '1ST'..'10TH'
+  check_no        text,
+  check_date      date,
+  amount          numeric(15,2) not null default 0,
+  paid_charge     numeric(15,2) not null default 0,
+  pending_charge  numeric(15,2) not null default 0,
+  payment_details text
+);
+create index if not exists idx_penalty_client on penalty_records(client);
+
+-- ─── BAD_ACCOUNT_LIST (standalone editable monitoring list) ──────────
+create table if not exists bad_account_list (
+  id          uuid primary key default gen_random_uuid(),
+  ae          text,
+  branch_id   text references branches(id) on delete set null,
+  client_name text not null,
+  status      text not null,                  -- BAD ACCOUNT | DEMAND LETTER | WITH OVERDUE BALANCE | WITH RECON | WITH LEGAL CASE | BLACKLIST
+  notes       text,
+  created_by  text,
+  created_at  timestamptz not null default now(),
+  updated_at  timestamptz not null default now()
+);
+create index if not exists idx_bad_account_created_at on bad_account_list(created_at desc);
+
+-- ─── RECON_INTEREST (per-client interest amount for reconstruct) ─────
+create table if not exists recon_interest (
+  client_code     text primary key,
+  interest_amount numeric(15,2) not null default 0,
+  updated_by      text,
+  updated_at      timestamptz not null default now()
+);
