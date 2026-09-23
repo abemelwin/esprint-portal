@@ -53,7 +53,26 @@ async function sbGetAll(table, select='*', orderBy='created_at') {
   return all;
 }
 
-// ── 1. Sync checks ────────────────────────────────────────────────────────────
+// ── 1. Sync clients (must run before checks due to FK) ───────────────────────
+console.log('\n[0/3] Clients…');
+const sbClients = await sbGetAll('clients');
+const { rows: rdsClientCodes } = await rds.query(`SELECT code FROM ${S}.clients`);
+const existingClientCodes = new Set(rdsClientCodes.map(r=>r.code));
+const newClients = sbClients.filter(c => !existingClientCodes.has(c.code));
+console.log(`  Supabase: ${sbClients.length}, RDS: ${existingClientCodes.size}, New: ${newClients.length}`);
+
+if (COMMIT && newClients.length > 0) {
+  for (const c of newClients) {
+    await rds.query(
+      `INSERT INTO ${S}.clients (code, name, branch_id, ae)
+       VALUES ($1,$2,$3,$4) ON CONFLICT (code) DO NOTHING`,
+      [c.code, c.name, c.branch_id ?? null, c.ae ?? null]
+    );
+  }
+  console.log(`  ✅ Inserted ${newClients.length} new clients`);
+}
+
+// ── 2. Sync checks ────────────────────────────────────────────────────────────
 console.log('\n[1/3] Checks…');
 const sbChecks = await sbGetAll('checks');
 const { rows: rdsCheckIds } = await rds.query(`SELECT id FROM ${S}.checks`);
@@ -82,7 +101,7 @@ if (COMMIT && newChecks.length > 0) {
 
 // ── 2. Sync events ────────────────────────────────────────────────────────────
 console.log('\n[2/3] Events…');
-const sbEvents = await sbGetAll('events');
+const sbEvents = await sbGetAll('events', '*', 'recorded_at');
 const { rows: rdsEventIds } = await rds.query(`SELECT id FROM ${S}.events`);
 const existingEventIds = new Set(rdsEventIds.map(r=>r.id));
 const newEvents = sbEvents.filter(e => !existingEventIds.has(e.id));
@@ -106,7 +125,7 @@ if (COMMIT && newEvents.length > 0) {
 
 // ── 3. Sync check_notes ───────────────────────────────────────────────────────
 console.log('\n[3/3] Check notes…');
-const sbNotes = await sbGet('check_notes', 'select=*&order=created_at.asc');
+const sbNotes = await sbGetAll('check_notes', '*', 'created_at');
 const { rows: rdsNoteIds } = await rds.query(`SELECT id FROM ${S}.check_notes`);
 const existingNoteIds = new Set(rdsNoteIds.map(r=>r.id));
 const newNotes = sbNotes.filter(n => !existingNoteIds.has(n.id));
