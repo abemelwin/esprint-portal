@@ -44,8 +44,10 @@ export interface ModuleAccess {
   isModuleAdmin: boolean;
   /** Branch scope (for branch-scoped roles). Empty = all branches. */
   branches?: string[];
-  /** AE codes this user can see (for AE roles). */
+  /** AE codes this user can see / supervise (for AE + TL roles). */
   aes?: string[];
+  /** Subsidiary scope (e.g. "ESPMI/APSI"). Optional, matches original. */
+  subsidiary?: string;
 }
 
 /** The full identity of a logged-in portal user. */

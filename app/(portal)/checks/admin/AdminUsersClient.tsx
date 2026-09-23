@@ -14,6 +14,7 @@ interface ModuleAccess {
   isModuleAdmin: boolean;
   branches: string[];
   aes: string[];
+  subsidiary?: string;
 }
 interface AdminUser {
   username: string;
@@ -37,16 +38,18 @@ const ADMIN_ROLES = ['Admin', 'Operations', 'Acctg Head', 'AR Manager', 'AR Supe
 const EMPTY_FORM = {
   email: '', fullName: '', portalRole: 'user' as 'super_admin' | 'user',
   checkRole: 'AR Staff', branchAll: true, branches: [] as string[],
+  aes: [] as string[], subsidiaries: [] as string[],
 };
 
-interface Props { branches: { id: string; name: string }[]; aeList: string[]; }
+interface Props { branches: { id: string; name: string }[]; aeList: string[]; subsidiaries: string[]; }
 
-export function AdminUsersClient({ branches }: Props) {
+export function AdminUsersClient({ branches, aeList, subsidiaries }: Props) {
   const { showToast } = useToast();
   const [users, setUsers]     = useState<AdminUser[]>([]);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving]   = useState(false);
   const [search, setSearch]   = useState('');
+  const [aeSearch, setAeSearch] = useState('');
   const [showForm, setShowForm] = useState(false);
   const [editUser, setEditUser] = useState<AdminUser | null>(null);
   const [form, setForm]         = useState({ ...EMPTY_FORM });
@@ -67,7 +70,7 @@ export function AdminUsersClient({ branches }: Props) {
 
   const branchMap = new Map(branches.map(b => [b.id, b.name]));
 
-  function openAdd() { setForm({ ...EMPTY_FORM }); setEditUser(null); setShowForm(true); }
+  function openAdd() { setForm({ ...EMPTY_FORM }); setAeSearch(''); setEditUser(null); setShowForm(true); }
   function openEdit(u: AdminUser) {
     const checks = u.access.find(a => a.module === 'checks');
     setForm({
@@ -75,7 +78,10 @@ export function AdminUsersClient({ branches }: Props) {
       checkRole: checks?.role ?? 'AR Staff',
       branchAll: !checks?.branches?.length,
       branches: checks?.branches ?? [],
+      aes: checks?.aes ?? [],
+      subsidiaries: checks?.subsidiary ? checks.subsidiary.split('/').map(s => s.trim()).filter(Boolean) : [],
     });
+    setAeSearch('');
     setEditUser(u);
     setShowForm(true);
   }
@@ -87,9 +93,13 @@ export function AdminUsersClient({ branches }: Props) {
       role: form.checkRole,
       isModuleAdmin: ADMIN_ROLES.includes(form.checkRole),
       branches: form.branchAll ? [] : form.branches,
-      aes: [],
+      aes: form.aes,
+      subsidiary: form.subsidiaries.join('/') || undefined,
     }];
   }
+
+  // AE / AE Access roles are scoped by assigned AEs (TL = AE Access with >1 AE).
+  const isAERole = form.checkRole === 'AE' || form.checkRole === 'AE Access';
 
   async function saveForm() {
     if (!form.email.trim()) { showToast('Email is required', 'error'); return; }
@@ -195,14 +205,16 @@ export function AdminUsersClient({ branches }: Props) {
                 <th className="px-4 py-2.5 font-semibold uppercase tracking-wide text-[10px]">Name</th>
                 <th className="px-4 py-2.5 font-semibold uppercase tracking-wide text-[10px]">Email</th>
                 <th className="px-4 py-2.5 font-semibold uppercase tracking-wide text-[10px]">Check Role</th>
+                <th className="px-4 py-2.5 font-semibold uppercase tracking-wide text-[10px]">Subsidiary</th>
                 <th className="px-4 py-2.5 font-semibold uppercase tracking-wide text-[10px]">Branches</th>
+                <th className="px-4 py-2.5 font-semibold uppercase tracking-wide text-[10px]">Assigned AEs</th>
                 <th className="px-4 py-2.5 font-semibold uppercase tracking-wide text-[10px]">Status</th>
                 <th className="px-4 py-2.5 font-semibold uppercase tracking-wide text-[10px]">Actions</th>
               </tr>
             </thead>
             <tbody>
               {loading ? (
-                <tr><td colSpan={6} className="py-8 text-center text-gray-400 italic">Loading users from Cognito…</td></tr>
+                <tr><td colSpan={8} className="py-8 text-center text-gray-400 italic">Loading users from Cognito…</td></tr>
               ) : filtered.map(u => {
                 const checks = u.access.find(a => a.module === 'checks');
                 return (
@@ -210,7 +222,9 @@ export function AdminUsersClient({ branches }: Props) {
                     <td className="px-4 py-2.5 font-medium text-gray-800">{u.fullName}</td>
                     <td className="px-4 py-2.5 text-gray-600">{u.email}</td>
                     <td className="px-4 py-2.5 text-gray-700">{u.portalRole === 'super_admin' ? '(all)' : checks?.role ?? '—'}</td>
+                    <td className="px-4 py-2.5 text-gray-500">{u.portalRole === 'super_admin' ? 'All' : (checks?.subsidiary || '—')}</td>
                     <td className="px-4 py-2.5 text-gray-500">{u.portalRole === 'super_admin' ? 'All' : (checks?.branches?.length ? checks.branches.map(b => branchMap.get(b) ?? b).join(', ') : 'All')}</td>
+                    <td className="px-4 py-2.5 text-gray-500">{checks?.aes?.length ? checks.aes.join(', ') : '—'}</td>
                     <td className="px-4 py-2.5">
                       {u.enabled
                         ? <span className="text-green-600 font-semibold">Active</span>
@@ -226,7 +240,7 @@ export function AdminUsersClient({ branches }: Props) {
                 );
               })}
               {!loading && filtered.length === 0 && (
-                <tr><td colSpan={6} className="py-8 text-center text-gray-400 italic">No users found</td></tr>
+                <tr><td colSpan={8} className="py-8 text-center text-gray-400 italic">No users found</td></tr>
               )}
             </tbody>
           </table>
@@ -282,6 +296,51 @@ export function AdminUsersClient({ branches }: Props) {
                           </label>
                         ))}
                       </div>
+                    )}
+                  </div>
+
+                  {/* Subsidiary — multi-select */}
+                  {subsidiaries.length > 0 && (
+                    <div>
+                      <label className={lbl}>Subsidiary</label>
+                      <div className="grid grid-cols-2 gap-2 border border-gray-200 rounded-lg p-3">
+                        {subsidiaries.map(s => (
+                          <label key={s} className="flex items-center gap-2 text-xs text-gray-700 cursor-pointer">
+                            <input type="checkbox" checked={form.subsidiaries.includes(s)}
+                              onChange={e => setForm(f => ({ ...f, subsidiaries: e.target.checked ? [...f.subsidiaries, s] : f.subsidiaries.filter(x => x !== s) }))}
+                              className="accent-blue-600" />
+                            {s}
+                          </label>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Assigned AEs — for AE / AE Access (TL) roles */}
+                  <div>
+                    <label className={lbl}>
+                      {form.checkRole === 'AE Access' ? 'Assigned AEs (TL supervises these AEs)' : 'Assigned AEs'}
+                    </label>
+                    <input value={aeSearch} onChange={e => setAeSearch(e.target.value)} placeholder="Search AE…"
+                      className={inp + ' mb-2'} />
+                    <div className="border border-gray-200 rounded-lg p-3 max-h-44 overflow-y-auto">
+                      {aeList.filter(ae => !aeSearch || ae.toLowerCase().includes(aeSearch.toLowerCase())).length === 0 ? (
+                        <p className="text-xs text-gray-400 italic">No AEs found</p>
+                      ) : (
+                        <div className="grid grid-cols-2 gap-1.5">
+                          {aeList.filter(ae => !aeSearch || ae.toLowerCase().includes(aeSearch.toLowerCase())).map(ae => (
+                            <label key={ae} className="flex items-center gap-2 text-xs text-gray-700 cursor-pointer">
+                              <input type="checkbox" checked={form.aes.includes(ae)}
+                                onChange={e => setForm(f => ({ ...f, aes: e.target.checked ? [...f.aes, ae] : f.aes.filter(x => x !== ae) }))}
+                                className="accent-blue-600" />
+                              {ae}
+                            </label>
+                          ))}
+                        </div>
+                      )}
+                    </div>
+                    {isAERole && form.aes.length === 0 && (
+                      <p className="text-[11px] text-amber-600 mt-1">⚠ Select at least one AE for this {form.checkRole === 'AE Access' ? 'TL to supervise' : 'AE'}.</p>
                     )}
                   </div>
                 </>

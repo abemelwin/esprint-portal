@@ -14,6 +14,7 @@ export default async function CheckAdminPage() {
     <AdminUsersClient
       branches={data.BRANCHES.map((b) => ({ id: b.id, name: b.name }))}
       aeList={data.AE_LIST}
+      subsidiaries={data.SUBSIDIARIES}
     />
   );
 }
