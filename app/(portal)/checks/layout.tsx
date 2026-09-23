@@ -46,9 +46,9 @@ export default async function ChecksLayout({
           isAEAccess={isAEAccess}
           isTL={isTL}
         />
-        <div style={{ flex: 1, overflowY: "auto", background: "#eef4fb" }}>
+        <main style={{ flex: 1, overflowY: "auto", overflowX: "auto", padding: "24px 28px", minHeight: 0, background: "#eef4fb" }}>
           {children}
-        </div>
+        </main>
       </div>
     </ToastProvider>
   );

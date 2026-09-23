@@ -215,7 +215,7 @@ export function ReferenceTablesClient({
 
   return (
     <>
-      <div className="animate-fade-in space-y-5 max-w-3xl p-6">
+      <div className="animate-fade-in space-y-5 max-w-3xl">
         <div>
           <h1 className="text-xl font-bold text-gray-900">Reference Data</h1>
           <p className="text-sm text-gray-500">Manage lookup lists used across the system.</p>

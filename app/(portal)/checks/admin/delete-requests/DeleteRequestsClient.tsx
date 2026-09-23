@@ -39,7 +39,7 @@ export function DeleteRequestsClient({ initialRows }: { initialRows: DeleteReque
   const resolved = rows.filter(r => r.status !== 'pending');
 
   return (
-    <div className="p-6 space-y-6 animate-fade-in">
+    <div className="space-y-6 animate-fade-in">
       <div>
         <h1 className="text-xl font-bold text-gray-900">Delete Requests</h1>
         <p className="text-xs text-gray-400 mt-0.5">

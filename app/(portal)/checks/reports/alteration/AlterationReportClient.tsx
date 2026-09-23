@@ -108,7 +108,7 @@ export function AlterationReportClient({ initialRows, userEmail, userName, perms
   const sel = 'border border-gray-200 rounded-lg px-3 py-2 text-sm bg-white focus:outline-none focus:border-blue-600';
 
   return (
-    <div className="animate-fade-in space-y-4 p-4">
+    <div className="animate-fade-in space-y-4">
       {/* Header */}
       <div className="flex items-center justify-between flex-wrap gap-3">
         <div>

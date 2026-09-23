@@ -106,6 +106,7 @@ export async function createCognitoUser(opts: {
   portalRole: "super_admin" | "user";
   access: ModuleAccess[];
   tempPassword: string;
+  permanent?: boolean;
 }): Promise<void> {
   await getAdminClient().send(
     new AdminCreateUserCommand({
@@ -126,7 +127,7 @@ export async function createCognitoUser(opts: {
       UserPoolId: POOL_ID,
       Username: opts.email,
       Password: opts.tempPassword,
-      Permanent: false,
+      Permanent: opts.permanent ?? false,
     })
   );
 }
@@ -152,11 +153,11 @@ export async function updateCognitoUser(opts: {
   );
 }
 
-/** Reset a user's password to a temporary one (they must change on next login). */
-export async function resetCognitoPassword(username: string, tempPassword: string): Promise<void> {
+/** Reset a user's password. Pass permanent=true to set it without forced change. */
+export async function resetCognitoPassword(username: string, tempPassword: string, permanent = false): Promise<void> {
   await getAdminClient().send(
     new AdminSetUserPasswordCommand({
-      UserPoolId: POOL_ID, Username: username, Password: tempPassword, Permanent: false,
+      UserPoolId: POOL_ID, Username: username, Password: tempPassword, Permanent: permanent,
     })
   );
 }

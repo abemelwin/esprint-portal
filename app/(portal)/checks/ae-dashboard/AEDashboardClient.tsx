@@ -25,7 +25,7 @@ export function AEDashboardClient({ summaries }: { summaries: AESummary[] }) {
   const totalOverdue = summaries.reduce((s, a) => s + a.overdueCount, 0);
 
   return (
-    <div className="animate-fade-in space-y-6 p-6">
+    <div className="animate-fade-in space-y-6">
       {/* Header */}
       <div className="flex items-center justify-between flex-wrap gap-3">
         <div>

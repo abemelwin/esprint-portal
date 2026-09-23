@@ -5,7 +5,7 @@
  */
 export default function ChecksLoading() {
   return (
-    <div className="p-6 space-y-6 animate-fade-in">
+    <div className="space-y-6 animate-fade-in">
       {/* Header + spinner */}
       <div className="flex items-center gap-3">
         <div className="w-5 h-5 border-2 border-blue-500 border-t-transparent rounded-full animate-spin" />

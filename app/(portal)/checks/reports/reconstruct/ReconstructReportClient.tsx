@@ -222,7 +222,7 @@ export function ReconstructReportClient({ initialData: data, perms, userName }: 
   const totalPages = selectedClient === null ? Math.max(1, Math.ceil(clientGroups.length / CLIENTS_PER_PAGE)) : 1;
 
   return (
-    <div className="animate-fade-in space-y-4 p-6">
+    <div className="animate-fade-in space-y-4">
       {/* Header */}
       <div className="flex items-center justify-between flex-wrap gap-3">
         <div>

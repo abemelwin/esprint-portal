@@ -393,7 +393,7 @@ export function AdminUsersClient({ branches, aeList, subsidiaries, deleteRequest
   const isEdit = !!editUser;
 
   return (
-    <div className="p-6 space-y-5 animate-fade-in max-w-full">
+    <div className="space-y-5 animate-fade-in max-w-full">
       {/* Header */}
       <div className="flex items-center justify-between flex-wrap gap-3">
         <div>

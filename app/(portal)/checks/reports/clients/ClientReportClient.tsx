@@ -403,7 +403,7 @@ export function ClientReportClient({ initialData: data, perms }: Props) {
   const sel = 'border border-gray-200 rounded-lg px-3 py-2 text-sm bg-white focus:outline-none focus:border-blue-600 focus:ring-2 focus:ring-blue-600/10';
 
   return (
-    <div className="animate-fade-in space-y-4 p-6">
+    <div className="animate-fade-in space-y-4">
       {/* Header */}
       <div className="flex items-center justify-between flex-wrap gap-3">
         <div>

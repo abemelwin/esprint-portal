@@ -129,7 +129,7 @@ export function PenaltyClient() {
   const lbl = 'block text-xs font-semibold text-gray-500 uppercase tracking-wide mb-1';
 
   return (
-    <div className="animate-fade-in space-y-4 p-4">
+    <div className="animate-fade-in space-y-4">
       <div className="flex items-center justify-between flex-wrap gap-3">
         <div>
           <h1 className="text-xl font-bold text-gray-900">Penalty Monitoring</h1>

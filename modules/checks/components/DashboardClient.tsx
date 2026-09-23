@@ -64,7 +64,7 @@ export function DashboardClient({ summary }: { summary: DashboardSummary }) {
   }[drillKey] : null;
 
   return (
-    <div className="animate-fade-in space-y-6 p-6">
+    <div className="animate-fade-in space-y-6">
       {/* Header */}
       <div>
         <h1 className="text-xl font-bold text-gray-900">Dashboard</h1>
