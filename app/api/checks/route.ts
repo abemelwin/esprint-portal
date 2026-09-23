@@ -1,9 +1,7 @@
 /**
  * /api/checks
+ *   GET  — list checks, optionally filtered by ?replacementOf=<id>
  *   POST — create a new check.
- *
- * Body: a Check DTO (see modules/checks/lib/database.types.ts).
- * Requires a role in CREATE_ROLES.
  */
 
 import { NextRequest, NextResponse } from "next/server";
@@ -11,7 +9,33 @@ import { randomUUID } from "crypto";
 import { requireCheckAccess } from "@/modules/checks/lib/api-guard";
 import { canCreate, canSeeCheck } from "@/modules/checks/lib/permissions";
 import { insertCheck, invalidateCache } from "@/modules/checks/lib/data";
+import { query } from "@/lib/db";
 import type { Check } from "@/modules/checks/lib/database.types";
+
+const SCHEMA = "check_monitoring";
+
+export async function GET(req: NextRequest) {
+  const guard = await requireCheckAccess();
+  if (!guard.ok) return guard.response;
+
+  const replacementOf = req.nextUrl.searchParams.get("replacementOf");
+  if (replacementOf) {
+    const rows = await query<{
+      id: string; bank: string | null; check_no: string; final_status: string | null;
+    }>(
+      `SELECT id, bank, check_no, final_status FROM ${SCHEMA}.checks WHERE replacement_of = $1`,
+      [replacementOf]
+    );
+    const checks = rows.map(r => ({
+      id: r.id, bank: r.bank, checkNo: r.check_no, finalStatus: r.final_status,
+    }));
+    return NextResponse.json({ ok: true, checks });
+  }
+
+  return NextResponse.json({ ok: true, checks: [] });
+}
+
+
 
 export async function POST(req: NextRequest) {
   const guard = await requireCheckAccess();

@@ -89,6 +89,9 @@ export default function CheckDetailModal({ checkId, perms, userEmail, userName, 
   const [deleteEventReason, setDeleteEventReason] = useState('');
   const [showDeleteEventModal, setShowDeleteEventModal] = useState(false);
 
+  // Reconstruct link state — shows RECON REPLACED ↔ RECON REPLACEMENT banner
+  const [linkedChecks, setLinkedChecks] = useState<{ id: string; bank: string | null; checkNo: string; finalStatus: string | null }[]>([]);
+
   // Move Partial Payment state
   const [movingEvent,      setMovingEvent]      = useState<CheckEvent | null>(null);
   const [moveSearch,       setMoveSearch]       = useState('');
@@ -126,6 +129,30 @@ export default function CheckDetailModal({ checkId, perms, userEmail, userName, 
         checkNo:            check.checkNo            ?? '',
         checkDate:          check.checkDate          ?? '',
       });
+
+      // ── Fetch linked reconstruct checks ──────────────────────────────────
+      // RECON REPLACED → find RECON REPLACEMENT checks with replacementOf = this id
+      // RECON REPLACEMENT → show which check it replaced (replacementOf field)
+      if (check.finalStatus === 'RECON REPLACED') {
+        try {
+          const linkedRes = await fetch(`/api/checks?replacementOf=${check.id}`);
+          const linkedJson = await linkedRes.json();
+          setLinkedChecks((linkedJson.checks ?? []).map((c: Check) => ({
+            id: c.id, bank: c.bank ?? null, checkNo: c.checkNo, finalStatus: c.finalStatus ?? null,
+          })));
+        } catch { setLinkedChecks([]); }
+      } else if (check.finalStatus === 'RECON REPLACEMENT' && check.replacementOf) {
+        try {
+          const linkedRes = await fetch(`/api/checks/${check.replacementOf}`);
+          const linkedJson = await linkedRes.json();
+          if (linkedJson.ok && linkedJson.check) {
+            const c = linkedJson.check;
+            setLinkedChecks([{ id: c.id, bank: c.bank ?? null, checkNo: c.checkNo, finalStatus: c.finalStatus ?? null }]);
+          } else { setLinkedChecks([]); }
+        } catch { setLinkedChecks([]); }
+      } else {
+        setLinkedChecks([]);
+      }
     } catch (err: unknown) {
       setError((err as Error).message ?? 'Failed to load');
     } finally {
@@ -414,6 +441,29 @@ export default function CheckDetailModal({ checkId, perms, userEmail, userName, 
               {check.notes && (
                 <p className="text-xs italic text-gray-600 flex items-start gap-1"><span className="shrink-0">📝</span> {check.notes}</p>
               )}
+            </div>
+          )}
+
+          {/* Reconstruct link banner */}
+          {linkedChecks.length > 0 && (
+            <div className={`p-3.5 border rounded-xl text-xs ${check.finalStatus === 'RECON REPLACED' ? 'bg-purple-50 border-purple-200' : 'bg-violet-50 border-violet-200'}`}>
+              <div className={`font-bold mb-1.5 ${check.finalStatus === 'RECON REPLACED' ? 'text-purple-700' : 'text-violet-700'}`}>
+                {check.finalStatus === 'RECON REPLACED'
+                  ? `🔄 Replaced by ${linkedChecks.length} new check${linkedChecks.length > 1 ? 's' : ''}:`
+                  : '🔄 This check replaced:'}
+              </div>
+              <div className="flex flex-wrap gap-2">
+                {linkedChecks.map(lc => (
+                  <span key={lc.id}
+                    className="inline-flex items-center gap-1 bg-white border border-violet-200 rounded-lg px-2.5 py-1 font-mono font-semibold text-violet-800"
+                    title={`${lc.bank} ${lc.checkNo} — ${lc.finalStatus ?? 'RECON'}`}>
+                    {lc.bank} {lc.checkNo}
+                    <span className={`text-[10px] rounded px-1 ${lc.finalStatus === 'RECON REPLACEMENT' ? 'bg-purple-100 text-purple-700' : 'bg-violet-100 text-violet-700'}`}>
+                      {lc.finalStatus ?? 'RECON'}
+                    </span>
+                  </span>
+                ))}
+              </div>
             </div>
           )}
 

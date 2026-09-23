@@ -10,7 +10,8 @@ interface NavItem {
   icon: string;
   section?: string;
   adminOnly?: boolean;
-  aeOnly?: boolean; // Team Leader only (AE Dashboard)
+  aeOnly?: boolean;       // Team Leader only (AE Dashboard)
+  alterationOnly?: boolean; // Treasury/Admin roles only
 }
 
 const NAV: NavItem[] = [
@@ -46,6 +47,7 @@ const NAV: NavItem[] = [
     href: "/checks/reports/alteration",
     label: "Alteration",
     icon: "M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z",
+    alterationOnly: true, // Treasury/Admin roles only (mirrors original)
   },
   {
     href: "/checks/reports/clients",
@@ -126,10 +128,14 @@ export function ChecksSidebar({
   const pathname = usePathname();
   const [collapsed, setCollapsed] = useState(false);
 
+  const ALTERATION_ROLES = ['Super Admin', 'Admin', 'Treasury Manager', 'Treasury Staff', 'Acctg Head', 'AR Manager', 'AR Supervisor', 'Operations'];
+
   const items = NAV.filter((i) => {
     if (i.adminOnly && !isAdmin) return false;
     // AE Dashboard: Team Leaders only.
     if (i.aeOnly && !isTL) return false;
+    // Alteration: Treasury/Admin roles only (mirrors original).
+    if (i.alterationOnly && !ALTERATION_ROLES.includes(userRole)) return false;
     // Plain AE role: only the Client Report is visible.
     if (isAE && i.href !== "/checks/reports/clients") return false;
     // AE Access (non-TL): only the Client Report.
@@ -337,6 +343,22 @@ export function ChecksSidebar({
             </div>
           )}
         </div>
+        {/* My Account link */}
+        {!collapsed && (
+          <Link
+            href="/checks/account"
+            style={{
+              display: "flex", alignItems: "center", justifyContent: "center",
+              marginTop: 6, fontSize: 10.5, color: "#64748b", textDecoration: "none",
+              fontWeight: 500, gap: 4,
+            }}
+          >
+            <svg width="11" height="11" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+              <path strokeLinecap="round" strokeLinejoin="round" d="M15.75 6a3.75 3.75 0 11-7.5 0 3.75 3.75 0 017.5 0zM4.501 20.118a7.5 7.5 0 0114.998 0A17.933 17.933 0 0112 21.75c-2.676 0-5.216-.584-7.499-1.632z" />
+            </svg>
+            My Account / Change Password
+          </Link>
+        )}
       </div>
     </div>
   );

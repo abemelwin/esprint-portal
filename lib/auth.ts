@@ -22,6 +22,7 @@ import {
   CognitoIdentityProviderClient,
   InitiateAuthCommand,
   RespondToAuthChallengeCommand,
+  ChangePasswordCommand,
 } from "@aws-sdk/client-cognito-identity-provider";
 import type { PortalUser, ModuleAccess } from "./rbac";
 
@@ -141,6 +142,25 @@ export async function cognitoSetNewPassword(
     refreshToken: r.RefreshToken,
     expiresIn: r.ExpiresIn ?? 3600,
   };
+}
+
+/**
+ * Change a user's own password. Requires the user's current AccessToken
+ * (returned by cognitoLogin) plus their old and new passwords.
+ * Uses the Cognito ChangePassword API (user-initiated, not admin).
+ */
+export async function cognitoChangePassword(
+  accessToken: string,
+  previousPassword: string,
+  proposedPassword: string
+): Promise<void> {
+  await getCognito().send(
+    new ChangePasswordCommand({
+      AccessToken:      accessToken,
+      PreviousPassword: previousPassword,
+      ProposedPassword: proposedPassword,
+    })
+  );
 }
 
 /** Cached JWKS client for verifying Cognito token signatures. */
