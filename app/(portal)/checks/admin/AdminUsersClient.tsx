@@ -1,7 +1,8 @@
 'use client';
 /**
- * AdminUsersClient — manage Cognito users for Check Monitoring.
- * Exact match of esprint-check-monitoring main app design, columns, and modal actions.
+ * AdminUsersClient — manage users for Check Monitoring.
+ * 100% exact replica of esprint-check-monitoring main app UI, Access Level cards,
+ * branch selectors, and Edit User modal without portalRole.
  */
 import { useState, useEffect, useCallback, useMemo } from 'react';
 import { createPortal } from 'react-dom';
@@ -31,6 +32,13 @@ interface AdminUser {
 
 type AccessLevel = 'VIEW_ONLY' | 'VIEW_EDIT' | 'FULL_ACCESS' | 'AE_ACCESS';
 
+const ACCESS_TO_ROLE: Record<AccessLevel, string> = {
+  VIEW_ONLY:   'Branch AR/Finance Staff',
+  VIEW_EDIT:   'AR Staff',
+  FULL_ACCESS: 'Admin',
+  AE_ACCESS:   'AE Access',
+};
+
 const ROLE_TO_ACCESS: Record<string, AccessLevel> = {
   'Super Admin':              'FULL_ACCESS',
   'Admin':                    'FULL_ACCESS',
@@ -48,6 +56,13 @@ const ROLE_TO_ACCESS: Record<string, AccessLevel> = {
   'AE Access':                'AE_ACCESS',
 };
 
+const ACCESS_LEVEL_ROLES: Record<AccessLevel, string[]> = {
+  VIEW_ONLY:   ['Branch Staff', 'Branch AR/Finance Staff'],
+  VIEW_EDIT:   ['AR Staff', 'Treasury Staff', 'AE', 'Branch Manager'],
+  FULL_ACCESS: ['Admin', 'Operations', 'Acctg Head', 'AR Manager', 'AR Supervisor', 'Treasury Manager'],
+  AE_ACCESS:   ['AE Access'],
+};
+
 const ACCESS_BADGE: Record<AccessLevel, { label: string; cls: string }> = {
   FULL_ACCESS: { label: 'FULL ACCESS', cls: 'bg-[#1e3a8a] text-white' },
   VIEW_EDIT:   { label: 'VIEW & EDIT', cls: 'bg-[#0d9488] text-white' },
@@ -55,18 +70,20 @@ const ACCESS_BADGE: Record<AccessLevel, { label: string; cls: string }> = {
   AE_ACCESS:   { label: 'AE ACCESS',   cls: 'bg-amber-600 text-white' },
 };
 
-const CHECK_ROLES = [
-  'Admin', 'Operations', 'Acctg Head', 'AR Manager', 'AR Supervisor', 'AR Staff',
-  'Treasury Manager', 'Treasury Staff', 'Branch Manager', 'Branch AR/Finance Staff',
-  'Branch Staff', 'AE', 'AE Access',
-];
-
 const ADMIN_ROLES = ['Admin', 'Operations', 'Acctg Head', 'AR Manager', 'AR Supervisor', 'Treasury Manager'];
 
 const EMPTY_FORM = {
-  email: '', fullName: '', portalRole: 'user' as 'super_admin' | 'user',
-  checkRole: 'AR Staff', branchAll: true, branches: [] as string[],
-  aes: [] as string[], subsidiaries: [] as string[],
+  email: '',
+  full_name: '',
+  password: '',
+  confirmPassword: '',
+  accessLevel: 'VIEW_EDIT' as AccessLevel,
+  role: 'AR Staff',
+  branchAll: true,
+  branches: [] as string[],
+  aes: [] as string[],
+  subsidiaries: [] as string[],
+  ae_code: '',
 };
 
 interface Props {
@@ -77,24 +94,24 @@ interface Props {
 }
 
 export function AdminUsersClient({ branches, aeList, subsidiaries, deleteRequestCount = 0 }: Props) {
-  const branchList = branches ?? [];
-  const aeOptions = aeList ?? [];
-  const subsidiaryOptions = subsidiaries ?? [];
+  const branchList = useMemo(() => [...(branches ?? [])].sort((a, b) => a.name.localeCompare(b.name)), [branches]);
+  const aeOptions = useMemo(() => aeList ?? [], [aeList]);
+  const subsidiaryOptions = useMemo(() => subsidiaries?.length ? subsidiaries : ['ESPMI', 'APSI', 'ESPII', 'ESCGI'], [subsidiaries]);
   const { showToast } = useToast();
 
-  const [mounted, setMounted]     = useState(false);
-  const [users, setUsers]         = useState<AdminUser[]>([]);
-  const [loading, setLoading]     = useState(true);
-  const [saving, setSaving]       = useState(false);
-  const [selected, setSelected]   = useState<Set<string>>(new Set());
-  const [search, setSearch]       = useState('');
-  const [roleFilter, setRoleFilter] = useState('ALL');
-  const [aeSearch, setAeSearch]   = useState('');
-  const [showForm, setShowForm]   = useState(false);
-  const [editUser, setEditUser]   = useState<AdminUser | null>(null);
-  const [form, setForm]           = useState({ ...EMPTY_FORM });
-  const [confirm, setConfirm]     = useState<{ title: string; message: string; confirmText?: string; danger?: boolean; onConfirm: () => void } | null>(null);
-  const [formError, setFormError] = useState<string | null>(null);
+  const [mounted, setMounted]         = useState(false);
+  const [users, setUsers]             = useState<AdminUser[]>([]);
+  const [loading, setLoading]         = useState(true);
+  const [saving, setSaving]           = useState(false);
+  const [selected, setSelected]       = useState<Set<string>>(new Set());
+  const [search, setSearch]           = useState('');
+  const [roleFilter, setRoleFilter]   = useState('ALL');
+  const [aeSearch, setAeSearch]       = useState('');
+  const [showModal, setShowModal]     = useState(false);
+  const [editUser, setEditUser]       = useState<AdminUser | null>(null);
+  const [form, setForm]               = useState({ ...EMPTY_FORM });
+  const [confirm, setConfirm]         = useState<{ title: string; message: string; confirmText?: string; danger?: boolean; onConfirm: () => void } | null>(null);
+  const [formError, setFormError]     = useState<string | null>(null);
 
   useEffect(() => {
     setMounted(true);
@@ -116,19 +133,17 @@ export function AdminUsersClient({ branches, aeList, subsidiaries, deleteRequest
   const branchMap = useMemo(() => new Map(branchList.map(b => [b.id, b.name])), [branchList]);
 
   function getAccessLevel(u: AdminUser): AccessLevel {
-    if (u.portalRole === 'super_admin') return 'FULL_ACCESS';
     const checks = u.access.find(a => a.module === 'checks');
-    const role = checks?.role ?? '';
+    const role = checks?.role ?? (u.portalRole === 'super_admin' ? 'Admin' : '');
     return ROLE_TO_ACCESS[role] ?? 'VIEW_ONLY';
   }
 
   function getUserRoleDisplay(u: AdminUser): string {
-    if (u.portalRole === 'super_admin') return 'Super Admin';
     const checks = u.access.find(a => a.module === 'checks');
-    return checks?.role ?? 'User';
+    return checks?.role ?? (u.portalRole === 'super_admin' ? 'Admin' : 'User');
   }
 
-  // Sorted users matching main app sorting
+  // Sorted users
   const sortedUsers = useMemo(() => {
     const accessRanks: Record<AccessLevel, number> = {
       FULL_ACCESS: 1,
@@ -146,11 +161,11 @@ export function AdminUsersClient({ branches, aeList, subsidiaries, deleteRequest
       const roleB = getUserRoleDisplay(b);
       const roleCmp = roleA.localeCompare(roleB);
       if (roleCmp !== 0) return roleCmp;
-      return a.fullName.localeCompare(b.fullName);
+      return (a.fullName || a.email).localeCompare(b.fullName || b.email);
     });
   }, [users]);
 
-  // Available roles for filter dropdown
+  // Role filter counts
   const availableRoles = useMemo(() => {
     const counts: Record<string, number> = {};
     sortedUsers.forEach(u => {
@@ -168,7 +183,7 @@ export function AdminUsersClient({ branches, aeList, subsidiaries, deleteRequest
       if (search.trim()) {
         const q = search.toLowerCase();
         const checks = u.access.find(a => a.module === 'checks');
-        const matchName = u.fullName.toLowerCase().includes(q);
+        const matchName = (u.fullName || '').toLowerCase().includes(q);
         const matchEmail = u.email.toLowerCase().includes(q);
         const matchRole = role.toLowerCase().includes(q);
         const matchBranch = (checks?.branches ?? []).some(b => {
@@ -199,63 +214,95 @@ export function AdminUsersClient({ branches, aeList, subsidiaries, deleteRequest
   }
 
   function openAdd() {
-    setForm({ ...EMPTY_FORM });
+    setForm({ ...EMPTY_FORM, accessLevel: 'VIEW_EDIT', role: 'AR Staff' });
     setAeSearch('');
     setFormError(null);
     setEditUser(null);
-    setShowForm(true);
+    setShowModal(true);
   }
 
   function openEdit(u: AdminUser) {
     const checks = u.access.find(a => a.module === 'checks');
+    const role = checks?.role ?? (u.portalRole === 'super_admin' ? 'Admin' : 'AR Staff');
+    const accessLevel = ROLE_TO_ACCESS[role] ?? 'VIEW_EDIT';
     const isAll = !checks?.branches?.length || checks.branches.includes('ALL');
     setForm({
       email: u.email,
-      fullName: u.fullName,
-      portalRole: u.portalRole,
-      checkRole: checks?.role ?? 'AR Staff',
+      full_name: u.fullName,
+      password: '',
+      confirmPassword: '',
+      accessLevel,
+      role,
       branchAll: isAll,
       branches: isAll ? [] : checks?.branches ?? [],
       aes: checks?.aes ?? [],
       subsidiaries: typeof checks?.subsidiary === 'string' && checks.subsidiary
         ? checks.subsidiary.split('/').map(s => s.trim()).filter(Boolean)
         : [],
+      ae_code: '',
     });
     setAeSearch('');
     setFormError(null);
     setEditUser(u);
-    setShowForm(true);
+    setShowModal(true);
   }
 
-  function buildAccess(): ModuleAccess[] {
-    if (form.portalRole === 'super_admin') return [];
-    return [{
+  function closeModal() {
+    setShowModal(false);
+    setEditUser(null);
+    setForm({ ...EMPTY_FORM });
+    setAeSearch('');
+    setFormError(null);
+  }
+
+  function setAccessLevel(level: AccessLevel) {
+    const defaultRole = ACCESS_TO_ROLE[level];
+    setForm(f => ({ ...f, accessLevel: level, role: defaultRole }));
+  }
+
+  async function handleSave(e: React.FormEvent) {
+    e.preventDefault();
+    if (!form.email.trim()) { showToast('Email is required', 'error'); return; }
+    if (!form.full_name.trim()) { showToast('Full name is required', 'error'); return; }
+    if (!editUser && !form.password) { showToast('Password is required', 'error'); return; }
+    if (form.password && form.password !== form.confirmPassword) {
+      showToast('Passwords do not match', 'error');
+      return;
+    }
+
+    setSaving(true);
+    setFormError(null);
+
+    const checkRole = form.accessLevel === 'AE_ACCESS' ? 'AE Access' : form.role;
+    const access: ModuleAccess[] = [{
       module: 'checks',
-      role: form.checkRole,
-      isModuleAdmin: ADMIN_ROLES.includes(form.checkRole),
+      role: checkRole,
+      isModuleAdmin: ADMIN_ROLES.includes(checkRole),
       branches: form.branchAll ? [] : form.branches,
       aes: form.aes,
       subsidiary: form.subsidiaries.join('/') || undefined,
     }];
-  }
 
-  const isAERole = form.checkRole === 'AE' || form.checkRole === 'AE Access';
-
-  async function saveForm() {
-    if (!form.email.trim()) { showToast('Email is required', 'error'); return; }
-    setSaving(true);
-    setFormError(null);
     try {
-      const access = buildAccess();
       if (editUser) {
+        const body: Record<string, unknown> = {
+          username: editUser.username,
+          fullName: form.full_name.trim(),
+          access,
+        };
+        if (form.password) {
+          body.resetPassword = true;
+          body.tempPassword = form.password;
+        }
         const res = await fetch('/api/admin/users', {
-          method: 'PATCH', headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ username: editUser.username, fullName: form.fullName, portalRole: form.portalRole, access }),
+          method: 'PATCH',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(body),
         });
         const json = await res.json();
         if (json.ok) {
           showToast('User updated successfully', 'success');
-          setShowForm(false);
+          closeModal();
           fetchUsers();
         } else {
           setFormError(json.error ?? 'Update failed');
@@ -263,19 +310,20 @@ export function AdminUsersClient({ branches, aeList, subsidiaries, deleteRequest
         }
       } else {
         const res = await fetch('/api/admin/users', {
-          method: 'POST', headers: { 'Content-Type': 'application/json' },
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
             email: form.email.trim(),
-            fullName: form.fullName.trim() || form.email.trim(),
-            portalRole: form.portalRole,
+            fullName: form.full_name.trim(),
+            portalRole: 'user',
             access,
-            tempPassword: 'Esprint2026!',
+            tempPassword: form.password || 'Esprint2026!',
           }),
         });
         const json = await res.json();
         if (json.ok) {
-          showToast('User created — temp password: Esprint2026!', 'success');
-          setShowForm(false);
+          showToast('User created successfully', 'success');
+          closeModal();
           fetchUsers();
         } else {
           setFormError(json.error ?? 'Create failed');
@@ -287,20 +335,6 @@ export function AdminUsersClient({ branches, aeList, subsidiaries, deleteRequest
       showToast('Network error', 'error');
     } finally {
       setSaving(false);
-    }
-  }
-
-  async function toggleEnabled(u: AdminUser) {
-    const res = await fetch('/api/admin/users', {
-      method: 'PATCH', headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ username: u.username, enabled: !u.enabled }),
-    });
-    const json = await res.json();
-    if (json.ok) {
-      showToast(u.enabled ? 'User disabled' : 'User enabled', 'success');
-      fetchUsers();
-    } else {
-      showToast(json.error ?? 'Failed', 'error');
     }
   }
 
@@ -333,51 +367,9 @@ export function AdminUsersClient({ branches, aeList, subsidiaries, deleteRequest
     });
   }
 
-  function resetPassword(u: AdminUser) {
-    setConfirm({
-      title: 'Reset Password',
-      message: `Reset ${u.fullName}'s password to the default (Esprint2026!)? They will be asked to set a new password on next login.`,
-      confirmText: 'Reset Password',
-      danger: false,
-      onConfirm: async () => {
-        setConfirm(null);
-        const res = await fetch('/api/admin/users', {
-          method: 'PATCH', headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ username: u.username, resetPassword: true, tempPassword: 'Esprint2026!' }),
-        });
-        const json = await res.json();
-        if (json.ok) showToast('Password reset to Esprint2026!', 'success');
-        else showToast(json.error ?? 'Reset failed', 'error');
-      },
-    });
-  }
-
-  function deleteUser(u: AdminUser) {
-    setConfirm({
-      title: 'Delete User',
-      message: `Permanently delete ${u.fullName} (${u.email})? This action cannot be undone.`,
-      confirmText: 'Delete Permanently',
-      danger: true,
-      onConfirm: async () => {
-        setConfirm(null);
-        const res = await fetch('/api/admin/users', {
-          method: 'DELETE', headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ username: u.username }),
-        });
-        const json = await res.json();
-        if (json.ok) {
-          showToast('User permanently deleted', 'success');
-          setShowForm(false);
-          fetchUsers();
-        } else {
-          showToast(json.error ?? 'Delete failed', 'error');
-        }
-      },
-    });
-  }
-
   const inp = 'w-full border border-gray-300 rounded-lg px-3 py-2 text-sm bg-white focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500/30 transition-all placeholder:text-gray-400';
   const lbl = 'block text-xs font-semibold text-gray-700 mb-1';
+  const isEdit = !!editUser;
 
   return (
     <div className="p-6 space-y-5 animate-fade-in max-w-full">
@@ -441,7 +433,6 @@ export function AdminUsersClient({ branches, aeList, subsidiaries, deleteRequest
           </div>
 
           <div className="flex items-center gap-2.5 flex-wrap">
-            {/* Role Filter Dropdown */}
             <select
               value={roleFilter}
               onChange={e => setRoleFilter(e.target.value)}
@@ -465,7 +456,7 @@ export function AdminUsersClient({ branches, aeList, subsidiaries, deleteRequest
           </div>
         </div>
 
-        {/* Table content matching exact main app */}
+        {/* Table content */}
         <div className="overflow-x-auto">
           <table className="report w-full text-sm border-collapse">
             <thead>
@@ -512,9 +503,8 @@ export function AdminUsersClient({ branches, aeList, subsidiaries, deleteRequest
                   const subsidiary = checks?.subsidiary ?? '';
                   const roleName = getUserRoleDisplay(u);
                   const isAEUser = roleName === 'AE' || roleName === 'AE Access';
-                  const isAllBranches = u.portalRole === 'super_admin' || !branchesList.length || branchesList.includes('ALL');
+                  const isAllBranches = !branchesList.length || branchesList.includes('ALL');
 
-                  // Format date
                   const dateStr = u.createdAt ? new Date(u.createdAt).toLocaleDateString('en-US', {
                     month: 'numeric', day: 'numeric', year: 'numeric'
                   }) : '';
@@ -622,246 +612,314 @@ export function AdminUsersClient({ branches, aeList, subsidiaries, deleteRequest
         </div>
       </div>
 
-      {/* Add/Edit Modal (Directly in document.body) */}
-      {mounted && showForm && createPortal(
+      {/* ── Add / Edit Modal (Exact replicate of original check-monitoring) ── */}
+      {mounted && showModal && createPortal(
         <div
-          className="fixed inset-0 z-[99999] flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm animate-fade-in"
-          onClick={() => setShowForm(false)}
+          style={{
+            position: 'fixed',
+            inset: 0,
+            zIndex: 99999,
+            overflowY: 'auto',
+            display: 'flex',
+            alignItems: 'flex-start',
+            justifyContent: 'center',
+            padding: '48px 16px 32px',
+            background: 'rgba(15,23,42,0.6)',
+            backdropFilter: 'blur(3px)',
+          }}
+          onClick={closeModal}
         >
           <div
-            className="bg-white rounded-2xl shadow-2xl w-full max-w-lg max-h-[90vh] flex flex-col overflow-hidden relative z-10"
+            style={{
+              background: '#fff',
+              borderRadius: 16,
+              boxShadow: '0 12px 48px rgba(0,0,0,0.22)',
+              border: '1px solid rgba(0,0,0,0.06)',
+              width: '100%',
+              maxWidth: 580,
+              marginBottom: 32,
+            }}
             onClick={e => e.stopPropagation()}
           >
-            <div className="px-6 py-4 border-b border-gray-100 flex items-center justify-between bg-slate-50">
+            {/* Modal Header */}
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '16px 24px', borderBottom: '1px solid #f1f5f9' }}>
               <div>
-                <h2 className="font-bold text-gray-900 text-base">{editUser ? 'Edit User' : 'Add New User'}</h2>
-                <p className="text-xs text-gray-500">Configure Cognito login credentials and module permissions.</p>
+                <h2 style={{ fontSize: 16, fontWeight: 700, color: '#111827', margin: 0 }}>
+                  {isEdit ? 'Edit User' : 'Add New User'}
+                </h2>
+                {isEdit && (
+                  <p style={{ fontSize: 12, color: '#9ca3af', marginTop: 2, marginBottom: 0 }}>
+                    {editUser?.email}
+                  </p>
+                )}
               </div>
-              <button onClick={() => setShowForm(false)} className="text-gray-400 hover:text-gray-600 text-xl font-bold p-1 cursor-pointer">
-                ✕
+              <button
+                type="button"
+                onClick={closeModal}
+                style={{
+                  width: 28,
+                  height: 28,
+                  borderRadius: '50%',
+                  background: '#f1f5f9',
+                  border: 'none',
+                  cursor: 'pointer',
+                  fontSize: 18,
+                  color: '#6b7280',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                }}
+              >
+                ×
               </button>
             </div>
 
-            <div className="px-6 py-5 space-y-4 overflow-y-auto flex-1">
+            <form onSubmit={handleSave} noValidate className="p-6 space-y-5">
               {formError && (
                 <div className="rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-xs text-red-700 break-words">
                   {formError}
                 </div>
               )}
 
-              <div>
-                <label className={lbl}>Email Address <span className="text-red-500">*</span></label>
-                <input
-                  type="email"
-                  value={form.email}
-                  onChange={e => setForm(f => ({ ...f, email: e.target.value }))}
-                  disabled={!!editUser}
-                  className={inp + (editUser ? ' bg-gray-100 text-gray-500 cursor-not-allowed' : '')}
-                  placeholder="user@esprintmedia.com"
-                />
-              </div>
-
-              <div>
-                <label className={lbl}>Full Name</label>
-                <input
-                  value={form.fullName}
-                  onChange={e => setForm(f => ({ ...f, fullName: e.target.value }))}
-                  className={inp}
-                  placeholder="Juan Dela Cruz"
-                />
-              </div>
-
-              <div>
-                <label className={lbl}>Portal Role</label>
-                <select
-                  value={form.portalRole}
-                  onChange={e => setForm(f => ({ ...f, portalRole: e.target.value as 'super_admin' | 'user' }))}
-                  className={inp}
-                >
-                  <option value="user">User (Standard module access)</option>
-                  <option value="super_admin">Super Admin (Full system access)</option>
-                </select>
-              </div>
-
-              {form.portalRole === 'user' && (
-                <>
-                  <div>
-                    <label className={lbl}>Check Monitoring Role</label>
-                    <select
-                      value={form.checkRole}
-                      onChange={e => setForm(f => ({ ...f, checkRole: e.target.value }))}
-                      className={inp}
-                    >
-                      {CHECK_ROLES.map(r => (
-                        <option key={r} value={r}>{r}</option>
-                      ))}
-                    </select>
-                  </div>
-
-                  <div>
-                    <div className="flex items-center justify-between mb-1.5">
-                      <label className="text-xs font-semibold text-gray-700">Branch Access</label>
-                      <label className="flex items-center gap-1.5 text-xs text-blue-600 font-semibold cursor-pointer">
-                        <input
-                          type="checkbox"
-                          checked={form.branchAll}
-                          onChange={e => setForm(f => ({ ...f, branchAll: e.target.checked }))}
-                          className="accent-blue-600"
-                        />
-                        All branches
-                      </label>
-                    </div>
-
-                    {!form.branchAll && (
-                      <div className="border border-gray-200 rounded-lg p-2.5 max-h-40 overflow-y-auto space-y-1 bg-slate-50">
-                        {branchList.map(b => (
-                          <label
-                            key={b.id}
-                            className="flex items-center gap-2 text-xs text-gray-700 cursor-pointer px-1.5 py-1 hover:bg-white rounded transition-colors"
-                          >
-                            <input
-                              type="checkbox"
-                              checked={form.branches.includes(b.id)}
-                              onChange={() =>
-                                setForm(f => ({
-                                  ...f,
-                                  branches: f.branches.includes(b.id)
-                                    ? f.branches.filter(x => x !== b.id)
-                                    : [...f.branches, b.id],
-                                }))
-                              }
-                              className="accent-blue-600"
-                            />
-                            {b.name}
-                          </label>
-                        ))}
-                      </div>
-                    )}
-                  </div>
-
-                  {/* Subsidiary — multi-select */}
-                  {subsidiaryOptions.length > 0 && (
-                    <div>
-                      <label className={lbl}>Subsidiary</label>
-                      <div className="grid grid-cols-2 gap-2 border border-gray-200 rounded-lg p-3 bg-slate-50">
-                        {subsidiaryOptions.map(s => (
-                          <label key={s} className="flex items-center gap-2 text-xs text-gray-700 cursor-pointer">
-                            <input
-                              type="checkbox"
-                              checked={form.subsidiaries.includes(s)}
-                              onChange={e =>
-                                setForm(f => ({
-                                  ...f,
-                                  subsidiaries: e.target.checked
-                                    ? [...f.subsidiaries, s]
-                                    : f.subsidiaries.filter(x => x !== s),
-                                }))
-                              }
-                              className="accent-blue-600"
-                            />
-                            {s}
-                          </label>
-                        ))}
-                      </div>
-                    </div>
+              {/* Full name + Email */}
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div>
+                  <label className={lbl}>Full name <span className="text-red-500">*</span></label>
+                  <input
+                    value={form.full_name}
+                    onChange={e => setForm(f => ({ ...f, full_name: e.target.value }))}
+                    className={inp}
+                    placeholder="Full name"
+                    required
+                  />
+                </div>
+                <div>
+                  <label className={lbl}>Email <span className="text-red-500">*</span></label>
+                  <input
+                    type="email"
+                    value={form.email}
+                    onChange={e => setForm(f => ({ ...f, email: e.target.value }))}
+                    className={inp}
+                    placeholder="user@esprintgroup.com"
+                    required
+                  />
+                  {isEdit && (
+                    <p className="text-[11px] text-gray-400 mt-1">Changing email will update the login address.</p>
                   )}
+                </div>
+              </div>
 
-                  {/* Assigned AEs */}
-                  <div>
-                    <label className={lbl}>
-                      {form.checkRole === 'AE Access' ? 'Assigned AEs (TL supervises these AEs)' : 'Assigned AEs'}
-                    </label>
-                    <input
-                      value={aeSearch}
-                      onChange={e => setAeSearch(e.target.value)}
-                      placeholder="Search AE name or code…"
-                      className={inp + ' mb-2'}
-                    />
-                    <div className="border border-gray-200 rounded-lg p-3 max-h-40 overflow-y-auto bg-slate-50">
-                      {aeOptions.filter(ae => !aeSearch || ae.toLowerCase().includes(aeSearch.toLowerCase())).length === 0 ? (
-                        <p className="text-xs text-gray-400 italic">No AEs found</p>
-                      ) : (
-                        <div className="grid grid-cols-2 gap-1.5">
-                          {aeOptions
-                            .filter(ae => !aeSearch || ae.toLowerCase().includes(aeSearch.toLowerCase()))
-                            .map(ae => (
-                              <label key={ae} className="flex items-center gap-2 text-xs text-gray-700 cursor-pointer">
-                                <input
-                                  type="checkbox"
-                                  checked={form.aes.includes(ae)}
-                                  onChange={e =>
-                                    setForm(f => ({
-                                      ...f,
-                                      aes: e.target.checked ? [...f.aes, ae] : f.aes.filter(x => x !== ae),
-                                    }))
-                                  }
-                                  className="accent-blue-600"
-                                />
-                                {ae}
-                              </label>
-                            ))}
+              {/* Password + Confirm Password */}
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div>
+                  <label className={lbl}>Password {!isEdit && <span className="text-red-500">*</span>}</label>
+                  <input
+                    type="password"
+                    value={form.password}
+                    onChange={e => setForm(f => ({ ...f, password: e.target.value }))}
+                    className={inp}
+                    placeholder={isEdit ? 'Leave blank to keep current' : 'Set a password...'}
+                    required={!isEdit}
+                  />
+                </div>
+                <div>
+                  <label className={lbl}>Confirm Password {!isEdit && <span className="text-red-500">*</span>}</label>
+                  <input
+                    type="password"
+                    value={form.confirmPassword}
+                    onChange={e => setForm(f => ({ ...f, confirmPassword: e.target.value }))}
+                    className={inp}
+                    placeholder={isEdit ? 'Leave blank to keep current' : 'Re-enter password'}
+                    required={!isEdit}
+                  />
+                </div>
+              </div>
+
+              {/* Access Level radio cards */}
+              <div>
+                <label className={lbl}>Access Level</label>
+                <div className="grid grid-cols-4 gap-2.5">
+                  {(['AE_ACCESS', 'VIEW_ONLY', 'VIEW_EDIT', 'FULL_ACCESS'] as AccessLevel[]).map(level => {
+                    const descriptions: Record<AccessLevel, string> = {
+                      AE_ACCESS:   'Can only view Client Reports.',
+                      VIEW_ONLY:   'Can view checks in assigned branches. Cannot edit or create.',
+                      VIEW_EDIT:   'Can view, create, and edit checks across all subsidiaries.',
+                      FULL_ACCESS: 'Full access to checks plus admin panel (manage users, clients, branches).',
+                    };
+                    const labels: Record<AccessLevel, string> = {
+                      AE_ACCESS:   'AE ACCESS',
+                      VIEW_ONLY:   'VIEW ONLY',
+                      VIEW_EDIT:   'VIEW & EDIT',
+                      FULL_ACCESS: 'FULL ACCESS',
+                    };
+                    const active = form.accessLevel === level;
+                    return (
+                      <label
+                        key={level}
+                        className={`cursor-pointer border-2 rounded-xl p-2.5 text-center transition-all ${
+                          active ? 'border-blue-600 bg-blue-50/50 shadow-xs' : 'border-gray-200 hover:border-gray-300'
+                        }`}
+                      >
+                        <input
+                          type="radio"
+                          name="accessLevel"
+                          value={level}
+                          checked={active}
+                          onChange={() => setAccessLevel(level)}
+                          className="sr-only"
+                        />
+                        <div className={`text-xs font-bold mb-1 ${active ? 'text-blue-700' : 'text-gray-700'}`}>
+                          {labels[level]}
                         </div>
-                      )}
-                    </div>
-                    {isAERole && form.aes.length === 0 && (
-                      <p className="text-[11px] text-amber-600 mt-1">⚠ Select at least one AE for this {form.checkRole === 'AE Access' ? 'TL to supervise' : 'AE'}.</p>
-                    )}
-                  </div>
-                </>
-              )}
+                        <div className="text-[10px] text-gray-500 leading-tight">
+                          {descriptions[level]}
+                        </div>
+                      </label>
+                    );
+                  })}
+                </div>
+              </div>
 
-              {/* In Edit mode: Account management actions */}
-              {editUser && (
-                <div className="pt-3 border-t border-gray-200">
-                  <p className="text-xs font-bold text-gray-700 uppercase tracking-wider mb-2">Account Actions</p>
-                  <div className="flex items-center gap-2 flex-wrap">
-                    <button
-                      type="button"
-                      onClick={() => resetPassword(editUser)}
-                      className="px-3 py-1.5 rounded-lg text-xs font-semibold bg-amber-50 text-amber-700 border border-amber-200 hover:bg-amber-100 transition-colors cursor-pointer"
-                    >
-                      🔑 Reset Password
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => { toggleEnabled(editUser); setShowForm(false); }}
-                      className="px-3 py-1.5 rounded-lg text-xs font-semibold bg-gray-100 text-gray-700 border border-gray-300 hover:bg-gray-200 transition-colors cursor-pointer"
-                    >
-                      {editUser.enabled ? '🚫 Disable Account' : '✅ Enable Account'}
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => deleteUser(editUser)}
-                      className="px-3 py-1.5 rounded-lg text-xs font-semibold bg-red-50 text-red-700 border border-red-200 hover:bg-red-100 transition-colors cursor-pointer ml-auto"
-                    >
-                      🗑 Delete Account
-                    </button>
-                  </div>
+              {/* Role dropdown — hidden for AE Access */}
+              {form.accessLevel !== 'AE_ACCESS' && (
+                <div>
+                  <label className={lbl}>Role</label>
+                  <select
+                    value={form.role}
+                    onChange={e => setForm(f => ({ ...f, role: e.target.value }))}
+                    className={inp}
+                  >
+                    {ACCESS_LEVEL_ROLES[form.accessLevel]?.map(r => (
+                      <option key={r} value={r}>{r}</option>
+                    ))}
+                  </select>
                 </div>
               )}
 
-              {!editUser && (
-                <div className="p-3 bg-blue-50 border border-blue-100 rounded-xl text-xs text-blue-700">
-                  Temporary password will be <strong>Esprint2026!</strong> — the user will be asked to set their own on first sign in.
+              {/* Subsidiary multi-select */}
+              <div>
+                <label className={lbl}>Subsidiary</label>
+                <div className="grid grid-cols-4 gap-2 border border-gray-200 rounded-xl p-3 bg-slate-50/50">
+                  {subsidiaryOptions.map(s => (
+                    <label key={s} className="flex items-center gap-2 text-xs text-gray-700 cursor-pointer">
+                      <input
+                        type="checkbox"
+                        checked={form.subsidiaries.includes(s)}
+                        onChange={e => setForm(f => ({
+                          ...f,
+                          subsidiaries: e.target.checked
+                            ? [...f.subsidiaries, s]
+                            : f.subsidiaries.filter(x => x !== s)
+                        }))}
+                        className="rounded accent-blue-600"
+                      />
+                      {s}
+                    </label>
+                  ))}
                 </div>
-              )}
-            </div>
+              </div>
 
-            <div className="px-6 py-4 border-t border-gray-100 flex justify-end gap-3 bg-slate-50">
-              <button
-                onClick={() => setShowForm(false)}
-                className="px-4 py-2 rounded-xl text-sm font-medium border border-gray-200 text-gray-600 hover:bg-white transition-colors cursor-pointer"
-              >
-                Cancel
-              </button>
-              <button
-                onClick={saveForm}
-                disabled={saving || !form.email.trim()}
-                className="px-5 py-2 rounded-xl text-sm font-bold bg-[#1e3a8a] text-white hover:bg-blue-700 disabled:opacity-50 transition-colors shadow-sm cursor-pointer"
-              >
-                {saving ? 'Saving…' : editUser ? 'Save Changes' : 'Create User'}
-              </button>
-            </div>
+              {/* Assigned Branches */}
+              <div>
+                <label className={lbl}>Assigned Branches</label>
+                <div className="border border-gray-200 rounded-xl p-4 space-y-3 bg-slate-50/50">
+                  <label className="flex items-center gap-2 text-sm font-semibold text-gray-800 cursor-pointer">
+                    <input
+                      type="checkbox"
+                      checked={form.branchAll}
+                      onChange={e => setForm(f => ({ ...f, branchAll: e.target.checked, branches: [] }))}
+                      className="rounded accent-blue-600"
+                    />
+                    All branches
+                  </label>
+                  <div
+                    style={{ display: 'grid', gridTemplateColumns: 'repeat(3, minmax(0, 1fr))', gap: '8px 16px' }}
+                    className="pt-1 max-h-48 overflow-y-auto"
+                  >
+                    {branchList.map(b => {
+                      const isChecked = form.branchAll || form.branches.includes(b.id);
+                      return (
+                        <label
+                          key={b.id}
+                          className="flex items-center gap-2 text-xs text-gray-700 cursor-pointer"
+                          style={{ opacity: form.branchAll ? 0.6 : 1 }}
+                        >
+                          <input
+                            type="checkbox"
+                            checked={isChecked}
+                            disabled={form.branchAll}
+                            onChange={e => {
+                              const next = e.target.checked
+                                ? [...form.branches, b.id]
+                                : form.branches.filter(x => x !== b.id);
+                              setForm(f => ({ ...f, branches: next }));
+                            }}
+                            className="rounded accent-blue-600"
+                          />
+                          {b.name}
+                        </label>
+                      );
+                    })}
+                  </div>
+                </div>
+              </div>
+
+              {/* Assigned AEs */}
+              <div>
+                <label className={lbl}>
+                  {form.accessLevel === 'AE_ACCESS' ? 'Assigned AEs (TL supervises these AEs)' : 'Assigned AEs'}
+                </label>
+                <div className="border border-gray-200 rounded-xl p-4 bg-slate-50/50">
+                  <input
+                    value={aeSearch}
+                    onChange={e => setAeSearch(e.target.value)}
+                    placeholder="Search AE..."
+                    className="w-full border border-gray-200 rounded-lg px-3 py-1.5 text-xs mb-3 focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500/20 placeholder:text-gray-400 bg-white"
+                  />
+                  <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, minmax(0, 1fr))', gap: '8px 16px', maxHeight: 180, overflowY: 'auto' }}>
+                    {aeOptions
+                      .filter(ae => !aeSearch || ae.toLowerCase().includes(aeSearch.toLowerCase()))
+                      .map(ae => (
+                        <label key={ae} className="flex items-center gap-2 text-xs text-gray-700 cursor-pointer">
+                          <input
+                            type="checkbox"
+                            checked={form.aes.includes(ae)}
+                            onChange={e => {
+                              const next = e.target.checked
+                                ? [...form.aes, ae]
+                                : form.aes.filter(x => x !== ae);
+                              setForm(f => ({ ...f, aes: next }));
+                            }}
+                            className="rounded accent-blue-600"
+                          />
+                          {ae}
+                        </label>
+                      ))}
+                  </div>
+                </div>
+                {form.accessLevel === 'AE_ACCESS' && form.aes.length === 0 && (
+                  <p className="text-[11px] text-amber-600 mt-1">⚠ Select at least one AE for this TL to supervise.</p>
+                )}
+              </div>
+
+              {/* Form buttons */}
+              <div className="flex justify-end gap-3 pt-4 border-t border-gray-100">
+                <button
+                  type="button"
+                  onClick={closeModal}
+                  className="px-4 py-2.5 rounded-xl text-sm font-semibold border border-gray-200 bg-white hover:bg-gray-50 text-gray-700 transition-colors cursor-pointer"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  disabled={saving}
+                  className="px-5 py-2.5 rounded-xl text-sm font-bold text-white bg-[#1e3a8a] hover:bg-blue-800 disabled:opacity-60 transition-colors shadow-sm cursor-pointer"
+                >
+                  {saving ? 'Saving…' : isEdit ? 'Save Changes' : 'Create'}
+                </button>
+              </div>
+            </form>
           </div>
         </div>,
         document.body
