@@ -175,3 +175,18 @@ create table if not exists recon_interest (
   updated_by      text,
   updated_at      timestamptz not null default now()
 );
+
+-- ─── RECON_SCHEDULE (per-client payment schedule for reconstruct) ────
+create table if not exists recon_schedule (
+  id                   uuid primary key default gen_random_uuid(),
+  client_code          text not null,
+  schedule_date        date,
+  monthly_amortization numeric(15,2),
+  amount               numeric(15,2),
+  payment_details      text,
+  sort_order           integer not null default 0,
+  event_id             uuid,
+  check_id             uuid,
+  created_at           timestamptz not null default now()
+);
+create index if not exists idx_recon_schedule_client on recon_schedule(client_code);
