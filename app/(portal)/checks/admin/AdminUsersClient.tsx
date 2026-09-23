@@ -202,30 +202,23 @@ export function AdminUsersClient({ branches, aeList, subsidiaries, deleteRequest
   }
 
   function openEdit(u: AdminUser) {
-    try {
-      const access = Array.isArray(u.access) ? u.access : [];
-      const checks = access.find(a => a.module === 'checks');
-      const branchesArr = Array.isArray(checks?.branches) ? checks!.branches : [];
-      const aesArr = Array.isArray(checks?.aes) ? checks!.aes : [];
-      setForm({
-        email: u.email ?? '',
-        fullName: u.fullName ?? '',
-        portalRole: u.portalRole === 'super_admin' ? 'super_admin' : 'user',
-        checkRole: checks?.role ?? 'AR Staff',
-        branchAll: branchesArr.length === 0,
-        branches: branchesArr,
-        aes: aesArr,
-        subsidiaries: typeof checks?.subsidiary === 'string' && checks.subsidiary
-          ? checks.subsidiary.split('/').map(s => s.trim()).filter(Boolean)
-          : [],
-      });
-      setAeSearch('');
-      setFormError(null);
-      setEditUser(u);
-      setShowForm(true);
-    } catch (err) {
-      showToast(`Cannot open editor: ${(err as Error)?.message ?? 'unknown error'}`, 'error');
-    }
+    const checks = u.access.find(a => a.module === 'checks');
+    setForm({
+      email: u.email,
+      fullName: u.fullName,
+      portalRole: u.portalRole,
+      checkRole: checks?.role ?? 'AR Staff',
+      branchAll: !checks?.branches?.length,
+      branches: checks?.branches ?? [],
+      aes: checks?.aes ?? [],
+      subsidiaries: typeof checks?.subsidiary === 'string' && checks.subsidiary
+        ? checks.subsidiary.split('/').map(s => s.trim()).filter(Boolean)
+        : [],
+    });
+    setAeSearch('');
+    setFormError(null);
+    setEditUser(u);
+    setShowForm(true);
   }
 
   function buildAccess(): ModuleAccess[] {
@@ -425,9 +418,9 @@ export function AdminUsersClient({ branches, aeList, subsidiaries, deleteRequest
       {/* Users table card */}
       <div className="bg-white border border-slate-200 rounded-2xl shadow-sm overflow-hidden">
         {/* Card Toolbar */}
-        <div className="px-5 py-3 border-b border-slate-100 flex items-center justify-between gap-3 flex-wrap bg-white">
+        <div className="px-5 py-3.5 border-b border-slate-100 flex items-center justify-between gap-3 flex-wrap bg-white">
           <div className="flex items-center gap-2">
-            <h2 className="text-sm font-semibold text-gray-800">
+            <h2 className="text-sm font-bold text-gray-900">
               Users ({visibleUsers.length}{roleFilter !== 'ALL' || search ? ` of ${sortedUsers.length}` : ''})
             </h2>
             {(roleFilter !== 'ALL' || search) && (
@@ -440,12 +433,12 @@ export function AdminUsersClient({ branches, aeList, subsidiaries, deleteRequest
             )}
           </div>
 
-          <div className="flex items-center gap-2 flex-wrap">
+          <div className="flex items-center gap-2.5 flex-wrap">
             {/* Role Filter Dropdown */}
             <select
               value={roleFilter}
               onChange={e => setRoleFilter(e.target.value)}
-              className="border border-gray-200 rounded-lg px-2.5 py-1.5 text-xs bg-white text-gray-700 font-medium focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500/20 cursor-pointer shadow-xs"
+              className="border border-gray-200 rounded-lg px-3 py-1.5 text-xs bg-white text-gray-700 font-medium focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500/20 cursor-pointer shadow-xs"
               aria-label="Filter by role"
             >
               <option value="ALL">All Roles ({sortedUsers.length})</option>
@@ -469,8 +462,8 @@ export function AdminUsersClient({ branches, aeList, subsidiaries, deleteRequest
         <div className="overflow-x-auto">
           <table className="report w-full text-sm border-collapse">
             <thead>
-              <tr className="bg-gray-50 border-b border-gray-200 text-left">
-                <th className="w-10 px-3 py-3 text-center">
+              <tr className="bg-slate-50 border-b border-slate-200 text-left">
+                <th className="w-10 px-4 py-3.5 text-center">
                   <input
                     type="checkbox"
                     checked={allSelected}
@@ -478,16 +471,16 @@ export function AdminUsersClient({ branches, aeList, subsidiaries, deleteRequest
                     className="rounded accent-blue-600 cursor-pointer"
                   />
                 </th>
-                <th className="px-3 py-3 text-left text-xs font-semibold text-gray-600">NAME</th>
-                <th className="px-3 py-3 text-left text-xs font-semibold text-gray-600">EMAIL</th>
-                <th className="px-3 py-3 text-left text-xs font-semibold text-gray-600">ACCESS / ROLE</th>
-                <th className="px-3 py-3 text-left text-xs font-semibold text-gray-600">SUBSIDIARY / BRANCHES</th>
-                <th className="px-3 py-3 text-left text-xs font-semibold text-gray-600">ASSIGNED AES</th>
-                <th className="px-3 py-3 text-left text-xs font-semibold text-gray-600 whitespace-nowrap">STATUS / LOGIN</th>
-                <th className="px-3 py-3 text-right text-xs font-semibold text-gray-600 w-24 pr-4">ACTIONS</th>
+                <th className="px-4 py-3.5 text-left text-[11px] font-bold tracking-wider text-gray-600 uppercase whitespace-nowrap">NAME</th>
+                <th className="px-4 py-3.5 text-left text-[11px] font-bold tracking-wider text-gray-600 uppercase whitespace-nowrap">EMAIL</th>
+                <th className="px-4 py-3.5 text-left text-[11px] font-bold tracking-wider text-gray-600 uppercase whitespace-nowrap">ACCESS / ROLE</th>
+                <th className="px-4 py-3.5 text-left text-[11px] font-bold tracking-wider text-gray-600 uppercase whitespace-nowrap">SUBSIDIARY / BRANCHES</th>
+                <th className="px-4 py-3.5 text-left text-[11px] font-bold tracking-wider text-gray-600 uppercase whitespace-nowrap">ASSIGNED AES</th>
+                <th className="px-4 py-3.5 text-left text-[11px] font-bold tracking-wider text-gray-600 uppercase whitespace-nowrap">STATUS / LOGIN</th>
+                <th className="px-4 py-3.5 text-right text-[11px] font-bold tracking-wider text-gray-600 uppercase whitespace-nowrap pr-5">ACTIONS</th>
               </tr>
             </thead>
-            <tbody>
+            <tbody className="divide-y divide-slate-100">
               {loading ? (
                 <tr>
                   <td colSpan={8} className="py-12 text-center text-gray-400 italic">
@@ -521,9 +514,9 @@ export function AdminUsersClient({ branches, aeList, subsidiaries, deleteRequest
                   return (
                     <tr
                       key={u.username}
-                      className={`border-b border-gray-50 transition-colors ${isChk ? 'bg-blue-50/70' : 'hover:bg-slate-50'} ${!u.enabled ? 'opacity-60' : ''}`}
+                      className={`transition-colors ${isChk ? 'bg-blue-50/70' : 'hover:bg-slate-50/80'} ${!u.enabled ? 'opacity-60' : ''}`}
                     >
-                      <td className="px-3 py-2.5 text-center">
+                      <td className="px-4 py-3.5 text-center align-middle">
                         <input
                           type="checkbox"
                           checked={isChk}
@@ -531,37 +524,37 @@ export function AdminUsersClient({ branches, aeList, subsidiaries, deleteRequest
                           className="rounded accent-blue-600 cursor-pointer"
                         />
                       </td>
-                      <td className="px-3 py-2.5 font-medium text-gray-800 whitespace-nowrap">
+                      <td className="px-4 py-3.5 font-semibold text-gray-900 whitespace-nowrap align-middle">
                         {u.fullName || '—'}
                       </td>
-                      <td className="px-3 py-2.5 text-gray-500 text-xs">{u.email}</td>
-                      <td className="px-3 py-2.5">
-                        <div className="flex items-center gap-1.5 flex-wrap">
-                          <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-[11px] font-bold tracking-wide ${badge.cls}`}>
+                      <td className="px-4 py-3.5 text-gray-600 text-xs whitespace-nowrap align-middle">{u.email}</td>
+                      <td className="px-4 py-3.5 align-middle">
+                        <div className="flex items-center gap-2 flex-nowrap whitespace-nowrap">
+                          <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-[10.5px] font-bold tracking-wide uppercase whitespace-nowrap shrink-0 ${badge.cls}`}>
                             {badge.label}
                           </span>
-                          <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-semibold bg-gray-100 text-gray-800 border border-gray-200">
+                          <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-semibold bg-gray-100 text-gray-800 border border-gray-200 whitespace-nowrap shrink-0">
                             {roleName}
                           </span>
                         </div>
                       </td>
-                      <td className="px-3 py-2.5 text-xs">
+                      <td className="px-4 py-3.5 text-xs align-middle">
                         <div className="flex flex-col gap-1">
                           {subsidiary && (
                             <div className="flex flex-wrap gap-1">
                               {subsidiary.split('/').map(s => s.trim()).filter(Boolean).map(s => (
-                                <span key={s} className="inline-flex items-center px-2 py-0.5 rounded-full text-[11px] font-semibold bg-indigo-100 text-indigo-700">
+                                <span key={s} className="inline-flex items-center px-2 py-0.5 rounded-full text-[11px] font-semibold bg-indigo-100 text-indigo-700 whitespace-nowrap">
                                   {s}
                                 </span>
                               ))}
                             </div>
                           )}
                           {u.portalRole === 'super_admin' ? (
-                            <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-semibold bg-[#1e3a8a] text-white w-fit">
+                            <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-semibold bg-[#1e3a8a] text-white whitespace-nowrap w-fit">
                               All branches
                             </span>
                           ) : !branchesList.length ? (
-                            <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-semibold bg-[#1e3a8a] text-white w-fit">
+                            <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-semibold bg-[#1e3a8a] text-white whitespace-nowrap w-fit">
                               All branches
                             </span>
                           ) : (
@@ -569,7 +562,7 @@ export function AdminUsersClient({ branches, aeList, subsidiaries, deleteRequest
                               {branchesList.map(b => {
                                 const bName = branchMap.get(b) ?? b;
                                 return (
-                                  <span key={b} className="inline-flex items-center px-2 py-0.5 rounded-full text-[11px] font-semibold bg-blue-100 text-blue-800">
+                                  <span key={b} className="inline-flex items-center px-2 py-0.5 rounded-full text-[11px] font-medium bg-blue-100 text-blue-800 whitespace-nowrap">
                                     {bName}
                                   </span>
                                 );
@@ -579,62 +572,62 @@ export function AdminUsersClient({ branches, aeList, subsidiaries, deleteRequest
                           {isAEUser && !subsidiary && !branchesList.length && null}
                         </div>
                       </td>
-                      <td className="px-3 py-2.5 text-xs">
+                      <td className="px-4 py-3.5 text-xs align-middle">
                         {aesList.length ? (
                           <div className="flex flex-wrap gap-1">
                             {aesList.map(ae => (
-                              <span key={ae} className="inline-flex items-center px-2 py-0.5 rounded-full text-[11px] font-semibold bg-purple-100 text-purple-800">
+                              <span key={ae} className="inline-flex items-center px-2 py-0.5 rounded-full text-[11px] font-semibold bg-purple-100 text-purple-800 whitespace-nowrap">
                                 {ae}
                               </span>
                             ))}
                           </div>
                         ) : (
-                          <span className="text-gray-400 text-xs">— none —</span>
+                          <span className="text-gray-400 text-xs italic">— none —</span>
                         )}
                       </td>
-                      <td className="px-3 py-2.5 text-xs text-gray-500 whitespace-nowrap">
+                      <td className="px-4 py-3.5 text-xs text-gray-600 whitespace-nowrap align-middle">
                         <div className="flex items-center gap-1.5">
                           <span
-                            className={`w-2 h-2 rounded-full inline-block ${
+                            className={`w-2 h-2 rounded-full inline-block shrink-0 ${
                               !u.enabled
                                 ? 'bg-red-500'
                                 : u.status === 'CONFIRMED'
                                 ? 'bg-green-500'
-                                : 'bg-yellow-400'
+                                : 'bg-amber-400'
                             }`}
                           />
-                          <span>
+                          <span className="font-medium">
                             {dateStr || (u.enabled ? 'Active' : 'Disabled')}
                           </span>
                         </div>
                       </td>
-                      <td className="px-3 py-2.5 text-right pr-4 whitespace-nowrap">
-                        <div className="flex items-center justify-end gap-2">
+                      <td className="px-4 py-3.5 text-right pr-5 whitespace-nowrap align-middle">
+                        <div className="flex items-center justify-end gap-2 text-xs font-semibold">
                           <button
                             onClick={() => openEdit(u)}
-                            className="text-xs font-semibold text-blue-600 hover:text-blue-800 hover:underline"
+                            className="text-blue-600 hover:text-blue-800 hover:underline cursor-pointer"
                           >
                             Edit
                           </button>
-                          <span className="text-gray-300">|</span>
+                          <span className="text-gray-300 font-normal">|</span>
                           <button
                             onClick={() => resetPassword(u)}
-                            className="text-xs text-amber-600 hover:text-amber-800 hover:underline"
+                            className="text-amber-600 hover:text-amber-800 hover:underline cursor-pointer"
                             title="Reset password"
                           >
                             Reset
                           </button>
-                          <span className="text-gray-300">|</span>
+                          <span className="text-gray-300 font-normal">|</span>
                           <button
                             onClick={() => toggleEnabled(u)}
-                            className="text-xs text-gray-500 hover:text-gray-700 hover:underline"
+                            className="text-gray-500 hover:text-gray-700 hover:underline cursor-pointer"
                           >
                             {u.enabled ? 'Disable' : 'Enable'}
                           </button>
-                          <span className="text-gray-300">|</span>
+                          <span className="text-gray-300 font-normal">|</span>
                           <button
                             onClick={() => deleteUser(u)}
-                            className="text-xs text-red-500 hover:text-red-700 hover:underline"
+                            className="text-red-500 hover:text-red-700 hover:underline cursor-pointer"
                           >
                             Delete
                           </button>
