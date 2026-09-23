@@ -1,0 +1,22 @@
+version: 1
+frontend:
+  phases:
+    preBuild:
+      commands:
+        - npm ci
+    build:
+      commands:
+        # Write server-side env vars into .env.production so Next.js can read
+        # them at runtime in the Amplify Lambda (SSR) environment. Amplify
+        # exposes build-time env vars but does NOT automatically pass them to
+        # the server runtime — this bridges that gap.
+        - env | grep -e COGNITO_ -e DATABASE_URL -e DB_SSL -e AUTH_DEV_MODE -e NEXT_PUBLIC_ >> .env.production || true
+        - npm run build
+  artifacts:
+    baseDirectory: .next
+    files:
+      - '**/*'
+  cache:
+    paths:
+      - node_modules/**/*
+      - .next/cache/**/*
