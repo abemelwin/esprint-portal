@@ -202,23 +202,30 @@ export function AdminUsersClient({ branches, aeList, subsidiaries, deleteRequest
   }
 
   function openEdit(u: AdminUser) {
-    const checks = u.access.find(a => a.module === 'checks');
-    setForm({
-      email: u.email,
-      fullName: u.fullName,
-      portalRole: u.portalRole,
-      checkRole: checks?.role ?? 'AR Staff',
-      branchAll: !checks?.branches?.length,
-      branches: checks?.branches ?? [],
-      aes: checks?.aes ?? [],
-      subsidiaries: typeof checks?.subsidiary === 'string' && checks.subsidiary
-        ? checks.subsidiary.split('/').map(s => s.trim()).filter(Boolean)
-        : [],
-    });
-    setAeSearch('');
-    setFormError(null);
-    setEditUser(u);
-    setShowForm(true);
+    try {
+      const access = Array.isArray(u.access) ? u.access : [];
+      const checks = access.find(a => a.module === 'checks');
+      const branchesArr = Array.isArray(checks?.branches) ? checks!.branches : [];
+      const aesArr = Array.isArray(checks?.aes) ? checks!.aes : [];
+      setForm({
+        email: u.email ?? '',
+        fullName: u.fullName ?? '',
+        portalRole: u.portalRole === 'super_admin' ? 'super_admin' : 'user',
+        checkRole: checks?.role ?? 'AR Staff',
+        branchAll: branchesArr.length === 0,
+        branches: branchesArr,
+        aes: aesArr,
+        subsidiaries: typeof checks?.subsidiary === 'string' && checks.subsidiary
+          ? checks.subsidiary.split('/').map(s => s.trim()).filter(Boolean)
+          : [],
+      });
+      setAeSearch('');
+      setFormError(null);
+      setEditUser(u);
+      setShowForm(true);
+    } catch (err) {
+      showToast(`Cannot open editor: ${(err as Error)?.message ?? 'unknown error'}`, 'error');
+    }
   }
 
   function buildAccess(): ModuleAccess[] {
