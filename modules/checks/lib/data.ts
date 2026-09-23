@@ -35,6 +35,9 @@ import type {
   CheckStatus,
 } from "./database.types";
 
+export type ServerData = AppData;
+export type { AppData };
+
 const SCHEMA = "check_monitoring";
 
 // ─── Individual table reads ───────────────────────────────────────

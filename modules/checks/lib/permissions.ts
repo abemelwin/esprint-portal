@@ -54,6 +54,8 @@ export interface CheckPerms {
   aes: string[]; // AE codes this user is restricted to
 }
 
+export type UserPerms = CheckPerms;
+
 export function canCreate(perms: CheckPerms): boolean {
   return CREATE_ROLES.includes(perms.role);
 }
