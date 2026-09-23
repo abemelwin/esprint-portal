@@ -21,6 +21,14 @@ export default async function ChecksLayout({
     redirect("/dashboard");
   }
 
+  // AE role gating (mirrors the original AppShell):
+  //   - "AE"        = individual account executive (Client Report only)
+  //   - "AE Access" = Team Leader account; a real TL manages >1 AE and also
+  //                   gets the AE Dashboard.
+  const isAE = ctx.role === "AE";
+  const isAEAccess = ctx.role === "AE Access";
+  const isTL = isAEAccess && ctx.aes.length > 1;
+
   return (
     <ToastProvider>
       <PortalNav
@@ -34,6 +42,9 @@ export default async function ChecksLayout({
           userName={ctx.user.fullName}
           userRole={ctx.role}
           isAdmin={ctx.isAdmin}
+          isAE={isAE}
+          isAEAccess={isAEAccess}
+          isTL={isTL}
         />
         <div style={{ flex: 1, overflowY: "auto", background: "#eef4fb" }}>
           {children}

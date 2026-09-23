@@ -8,9 +8,11 @@ interface NavItem {
   label: string;
   section?: string;
   adminOnly?: boolean;
+  aeOnly?: boolean; // Team Leader only (AE Dashboard)
 }
 
 const NAV: NavItem[] = [
+  { href: "/checks/ae-dashboard", label: "AE Dashboard", aeOnly: true },
   { href: "/checks", label: "Dashboard", section: "OVERVIEW" },
   { href: "/checks/all", label: "All Checks" },
   { href: "/checks/reports/hold", label: "Hold Checks", section: "REPORTS" },
@@ -33,11 +35,36 @@ interface ChecksSidebarProps {
   userRole: string;
   isAdmin: boolean;
   branchLabel?: string;
+  /** True when role === "AE" (individual account executive). */
+  isAE?: boolean;
+  /** True when role === "AE Access" (Team Leader account). */
+  isAEAccess?: boolean;
+  /** True when an AE Access account manages more than one AE (a TL). */
+  isTL?: boolean;
 }
 
-export function ChecksSidebar({ userName, userRole, isAdmin, branchLabel = "All branches" }: ChecksSidebarProps) {
+export function ChecksSidebar({
+  userName,
+  userRole,
+  isAdmin,
+  branchLabel = "All branches",
+  isAE = false,
+  isAEAccess = false,
+  isTL = false,
+}: ChecksSidebarProps) {
   const pathname = usePathname();
-  const items = NAV.filter((i) => !i.adminOnly || isAdmin);
+  const items = NAV.filter((i) => {
+    if (i.adminOnly && !isAdmin) return false;
+    // AE Dashboard: Team Leaders only.
+    if (i.aeOnly && !isTL) return false;
+    // Plain AE role: only the Client Report is visible.
+    if (isAE && i.href !== "/checks/reports/clients") return false;
+    // AE Access (non-TL): only the Client Report.
+    if (isAEAccess && !isTL && i.href !== "/checks/reports/clients") return false;
+    // AE Access (TL): AE Dashboard + Client Report only.
+    if (isAEAccess && isTL && !i.aeOnly && i.href !== "/checks/reports/clients") return false;
+    return true;
+  });
 
   return (
     <div style={{ width: 200, flexShrink: 0, background: "#0f172a", display: "flex", flexDirection: "column", overflowY: "auto", borderRight: "1px solid rgba(255,255,255,.07)" }}>
