@@ -1,5 +1,6 @@
 "use client";
 
+import { useState } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 
@@ -123,6 +124,8 @@ export function ChecksSidebar({
   isTL = false,
 }: ChecksSidebarProps) {
   const pathname = usePathname();
+  const [collapsed, setCollapsed] = useState(false);
+
   const items = NAV.filter((i) => {
     if (i.adminOnly && !isAdmin) return false;
     // AE Dashboard: Team Leaders only.
@@ -139,46 +142,92 @@ export function ChecksSidebar({
   return (
     <div
       style={{
-        width: 215,
+        width: collapsed ? 64 : 220,
+        minWidth: collapsed ? 64 : 220,
         flexShrink: 0,
         background: "#0b1329",
         display: "flex",
         flexDirection: "column",
         overflowY: "auto",
         borderRight: "1px solid rgba(255,255,255,.07)",
+        transition: "width 180ms ease, min-width 180ms ease",
       }}
     >
-      <div style={{ padding: "14px 16px", borderBottom: "1px solid rgba(255,255,255,.08)" }}>
-        <div style={{ display: "flex", alignItems: "center", gap: 9 }}>
-          <div
+      {/* Header — Title: Hold & Return Monitoring */}
+      <div
+        style={{
+          padding: collapsed ? "14px 8px" : "14px 16px",
+          borderBottom: "1px solid rgba(255,255,255,.08)",
+          display: "flex",
+          alignItems: "center",
+          justifyContent: collapsed ? "center" : "space-between",
+          gap: 6,
+        }}
+      >
+        {collapsed ? (
+          <button
+            onClick={() => setCollapsed(false)}
+            title="Expand sidebar"
             style={{
-              width: 32,
-              height: 32,
-              borderRadius: "50%",
-              background: "#fff",
+              background: "rgba(255,255,255,0.06)",
+              border: "1px solid rgba(255,255,255,0.1)",
+              borderRadius: 8,
+              color: "#94a3b8",
+              cursor: "pointer",
+              padding: "6px 8px",
               display: "flex",
               alignItems: "center",
               justifyContent: "center",
-              flexShrink: 0,
-              padding: 2,
-              boxShadow: "0 2px 8px rgba(0,0,0,.3)",
+              fontSize: 12,
             }}
           >
-            <img src="/logo.jpg" alt="ES" style={{ width: "100%", height: "100%", borderRadius: "50%", objectFit: "cover" }} />
-          </div>
-          <div>
-            <p style={{ fontSize: 12, fontWeight: 700, color: "#f8fafc", lineHeight: 1.2 }}>ES Print Media Inc.</p>
-            <p style={{ fontSize: 9.5, color: "#64748b" }}>Hold &amp; Return Monitoring</p>
-          </div>
-        </div>
+            ▶
+          </button>
+        ) : (
+          <>
+            <div style={{ minWidth: 0, flex: 1 }}>
+              <p
+                style={{
+                  fontSize: 12.5,
+                  fontWeight: 800,
+                  color: "#f8fafc",
+                  letterSpacing: "-0.01em",
+                  whiteSpace: "nowrap",
+                  overflow: "hidden",
+                  textOverflow: "ellipsis",
+                }}
+              >
+                Hold &amp; Return Monitoring
+              </p>
+            </div>
+            <button
+              onClick={() => setCollapsed(true)}
+              title="Collapse sidebar"
+              style={{
+                background: "rgba(255,255,255,0.05)",
+                border: "1px solid rgba(255,255,255,0.08)",
+                borderRadius: 6,
+                color: "#94a3b8",
+                cursor: "pointer",
+                padding: "3px 6px",
+                fontSize: 10.5,
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
+              }}
+            >
+              ◀
+            </button>
+          </>
+        )}
       </div>
 
-      <nav style={{ flex: 1, padding: "8px 10px" }}>
+      <nav style={{ flex: 1, padding: collapsed ? "8px 6px" : "8px 10px" }}>
         {items.map((item) => {
           const active = pathname === item.href;
           return (
             <div key={item.href}>
-              {item.section && (
+              {item.section && !collapsed && (
                 <p
                   style={{
                     padding: "12px 10px 4px",
@@ -192,13 +241,18 @@ export function ChecksSidebar({
                   {item.section}
                 </p>
               )}
+              {item.section && collapsed && (
+                <div style={{ margin: "6px 4px", borderTop: "1px solid rgba(255,255,255,0.07)" }} />
+              )}
               <Link
                 href={item.href}
+                title={collapsed ? item.label : undefined}
                 style={{
                   display: "flex",
                   alignItems: "center",
-                  gap: 10,
-                  padding: "7.5px 11px",
+                  gap: collapsed ? 0 : 10,
+                  justifyContent: collapsed ? "center" : "flex-start",
+                  padding: collapsed ? "9px 0" : "7.5px 11px",
                   borderRadius: 9,
                   fontSize: 12,
                   color: active ? "#ffffff" : "#94a3b8",
@@ -211,8 +265,8 @@ export function ChecksSidebar({
                 }}
               >
                 <svg
-                  width="15"
-                  height="15"
+                  width="16"
+                  height="16"
                   fill="none"
                   stroke={active ? "#60a5fa" : "#64748b"}
                   strokeWidth="1.8"
@@ -221,25 +275,30 @@ export function ChecksSidebar({
                 >
                   <path strokeLinecap="round" strokeLinejoin="round" d={item.icon} />
                 </svg>
-                <span style={{ whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>
-                  {item.label}
-                </span>
+                {!collapsed && (
+                  <span style={{ whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>
+                    {item.label}
+                  </span>
+                )}
               </Link>
             </div>
           );
         })}
       </nav>
 
-      <div style={{ padding: 10, borderTop: "1px solid rgba(255,255,255,.07)" }}>
+      {/* User profile footer */}
+      <div style={{ padding: collapsed ? "8px 6px" : 10, borderTop: "1px solid rgba(255,255,255,.07)" }}>
         <div
+          title={collapsed ? `${userName} (${userRole})` : undefined}
           style={{
             display: "flex",
             alignItems: "center",
-            gap: 9,
+            gap: collapsed ? 0 : 9,
+            justifyContent: collapsed ? "center" : "flex-start",
             background: "rgba(255,255,255,.05)",
             border: "1px solid rgba(255,255,255,.07)",
             borderRadius: 10,
-            padding: "8px 10px",
+            padding: collapsed ? "6px 0" : "8px 10px",
           }}
         >
           <div
@@ -259,22 +318,24 @@ export function ChecksSidebar({
           >
             {userName.charAt(0).toUpperCase()}
           </div>
-          <div style={{ minWidth: 0, flex: 1 }}>
-            <p
-              style={{
-                fontSize: 11.5,
-                fontWeight: 700,
-                color: "#f1f5f9",
-                whiteSpace: "nowrap",
-                overflow: "hidden",
-                textOverflow: "ellipsis",
-                lineHeight: 1.2,
-              }}
-            >
-              {userName}
-            </p>
-            <p style={{ fontSize: 9.5, color: "#94a3b8" }}>{userRole}</p>
-          </div>
+          {!collapsed && (
+            <div style={{ minWidth: 0, flex: 1 }}>
+              <p
+                style={{
+                  fontSize: 11.5,
+                  fontWeight: 700,
+                  color: "#f1f5f9",
+                  whiteSpace: "nowrap",
+                  overflow: "hidden",
+                  textOverflow: "ellipsis",
+                  lineHeight: 1.2,
+                }}
+              >
+                {userName}
+              </p>
+              <p style={{ fontSize: 9.5, color: "#94a3b8" }}>{userRole}</p>
+            </div>
+          )}
         </div>
       </div>
     </div>

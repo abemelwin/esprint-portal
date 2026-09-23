@@ -1,8 +1,7 @@
 'use client';
 /**
  * AdminUsersClient — manage Cognito users for Check Monitoring.
- * Modern UI matching esprint-check-monitoring with role badges, status dots,
- * role filters, search, and bulk operations.
+ * Exact match of esprint-check-monitoring main app design, columns, and modal actions.
  */
 import { useState, useEffect, useCallback, useMemo } from 'react';
 import { createPortal } from 'react-dom';
@@ -129,7 +128,7 @@ export function AdminUsersClient({ branches, aeList, subsidiaries, deleteRequest
     return checks?.role ?? 'User';
   }
 
-  // Sorted users
+  // Sorted users matching main app sorting
   const sortedUsers = useMemo(() => {
     const accessRanks: Record<AccessLevel, number> = {
       FULL_ACCESS: 1,
@@ -151,7 +150,7 @@ export function AdminUsersClient({ branches, aeList, subsidiaries, deleteRequest
     });
   }, [users]);
 
-  // Role filter options
+  // Available roles for filter dropdown
   const availableRoles = useMemo(() => {
     const counts: Record<string, number> = {};
     sortedUsers.forEach(u => {
@@ -161,7 +160,7 @@ export function AdminUsersClient({ branches, aeList, subsidiaries, deleteRequest
     return Object.entries(counts).sort((a, b) => a[0].localeCompare(b[0]));
   }, [sortedUsers]);
 
-  // Visible / Filtered users
+  // Visible users
   const visibleUsers = useMemo(() => {
     return sortedUsers.filter(u => {
       const role = getUserRoleDisplay(u);
@@ -209,13 +208,14 @@ export function AdminUsersClient({ branches, aeList, subsidiaries, deleteRequest
 
   function openEdit(u: AdminUser) {
     const checks = u.access.find(a => a.module === 'checks');
+    const isAll = !checks?.branches?.length || checks.branches.includes('ALL');
     setForm({
       email: u.email,
       fullName: u.fullName,
       portalRole: u.portalRole,
       checkRole: checks?.role ?? 'AR Staff',
-      branchAll: !checks?.branches?.length,
-      branches: checks?.branches ?? [],
+      branchAll: isAll,
+      branches: isAll ? [] : checks?.branches ?? [],
       aes: checks?.aes ?? [],
       subsidiaries: typeof checks?.subsidiary === 'string' && checks.subsidiary
         ? checks.subsidiary.split('/').map(s => s.trim()).filter(Boolean)
@@ -367,6 +367,7 @@ export function AdminUsersClient({ branches, aeList, subsidiaries, deleteRequest
         const json = await res.json();
         if (json.ok) {
           showToast('User permanently deleted', 'success');
+          setShowForm(false);
           fetchUsers();
         } else {
           showToast(json.error ?? 'Delete failed', 'error');
@@ -375,16 +376,16 @@ export function AdminUsersClient({ branches, aeList, subsidiaries, deleteRequest
     });
   }
 
-  const inp = 'w-full border border-gray-300 rounded-lg px-3 py-2.5 text-sm bg-white focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500/30 transition-all placeholder:text-gray-400';
-  const lbl = 'block text-sm font-medium text-gray-700 mb-1';
+  const inp = 'w-full border border-gray-300 rounded-lg px-3 py-2 text-sm bg-white focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500/30 transition-all placeholder:text-gray-400';
+  const lbl = 'block text-xs font-semibold text-gray-700 mb-1';
 
   return (
-    <div className="p-6 space-y-5 animate-fade-in max-w-7xl mx-auto">
+    <div className="p-6 space-y-5 animate-fade-in max-w-full">
       {/* Header */}
       <div className="flex items-center justify-between flex-wrap gap-3">
         <div>
           <h1 className="text-xl font-bold text-gray-900">Admin</h1>
-          <p className="text-sm text-gray-500">Manage users, clients, and branches. A user can be assigned to multiple branches.</p>
+          <p className="text-xs text-gray-500 mt-0.5">Manage users, clients, and branches. A user can be assigned to multiple branches.</p>
         </div>
         <div className="flex items-center gap-2 flex-wrap">
           {selected.size > 0 && (
@@ -424,7 +425,7 @@ export function AdminUsersClient({ branches, aeList, subsidiaries, deleteRequest
       {/* Users table card */}
       <div className="bg-white border border-slate-200 rounded-2xl shadow-sm overflow-hidden">
         {/* Card Toolbar */}
-        <div className="px-5 py-3.5 border-b border-slate-100 flex items-center justify-between gap-3 flex-wrap bg-white">
+        <div className="px-5 py-3 border-b border-slate-100 flex items-center justify-between gap-3 flex-wrap bg-white">
           <div className="flex items-center gap-2">
             <h2 className="text-sm font-bold text-gray-900">
               Users ({visibleUsers.length}{roleFilter !== 'ALL' || search ? ` of ${sortedUsers.length}` : ''})
@@ -444,7 +445,7 @@ export function AdminUsersClient({ branches, aeList, subsidiaries, deleteRequest
             <select
               value={roleFilter}
               onChange={e => setRoleFilter(e.target.value)}
-              className="border border-gray-200 rounded-lg px-3 py-1.5 text-xs bg-white text-gray-700 font-medium focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500/20 cursor-pointer shadow-xs"
+              className="border border-gray-200 rounded-lg px-2.5 py-1.5 text-xs bg-white text-gray-700 font-medium focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500/20 cursor-pointer shadow-xs"
               aria-label="Filter by role"
             >
               <option value="ALL">All Roles ({sortedUsers.length})</option>
@@ -464,12 +465,12 @@ export function AdminUsersClient({ branches, aeList, subsidiaries, deleteRequest
           </div>
         </div>
 
-        {/* Table content */}
+        {/* Table content matching exact main app */}
         <div className="overflow-x-auto">
           <table className="report w-full text-sm border-collapse">
             <thead>
-              <tr className="bg-slate-50 border-b border-slate-200 text-left">
-                <th className="w-10 px-4 py-3.5 text-center">
+              <tr className="bg-gray-50 border-b border-gray-200 text-left">
+                <th className="w-10 px-3 py-3 text-center">
                   <input
                     type="checkbox"
                     checked={allSelected}
@@ -477,16 +478,16 @@ export function AdminUsersClient({ branches, aeList, subsidiaries, deleteRequest
                     className="rounded accent-blue-600 cursor-pointer"
                   />
                 </th>
-                <th className="px-4 py-3.5 text-left text-[11px] font-bold tracking-wider text-gray-600 uppercase whitespace-nowrap">NAME</th>
-                <th className="px-4 py-3.5 text-left text-[11px] font-bold tracking-wider text-gray-600 uppercase whitespace-nowrap">EMAIL</th>
-                <th className="px-4 py-3.5 text-left text-[11px] font-bold tracking-wider text-gray-600 uppercase whitespace-nowrap">ACCESS / ROLE</th>
-                <th className="px-4 py-3.5 text-left text-[11px] font-bold tracking-wider text-gray-600 uppercase whitespace-nowrap">SUBSIDIARY / BRANCHES</th>
-                <th className="px-4 py-3.5 text-left text-[11px] font-bold tracking-wider text-gray-600 uppercase whitespace-nowrap">ASSIGNED AES</th>
-                <th className="px-4 py-3.5 text-left text-[11px] font-bold tracking-wider text-gray-600 uppercase whitespace-nowrap">STATUS / LOGIN</th>
-                <th className="px-4 py-3.5 text-right text-[11px] font-bold tracking-wider text-gray-600 uppercase whitespace-nowrap pr-5">ACTIONS</th>
+                <th className="px-3 py-3 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">NAME</th>
+                <th className="px-3 py-3 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">EMAIL</th>
+                <th className="px-3 py-3 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">ACCESS / ROLE</th>
+                <th className="px-3 py-3 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">SUBSIDIARY / BRANCHES</th>
+                <th className="px-3 py-3 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">ASSIGNED AES</th>
+                <th className="px-3 py-3 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider whitespace-nowrap">LAST LOGIN</th>
+                <th className="px-3 py-3 text-right text-xs font-semibold text-gray-600 w-16 pr-4"></th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-slate-100">
+            <tbody>
               {loading ? (
                 <tr>
                   <td colSpan={8} className="py-12 text-center text-gray-400 italic">
@@ -511,8 +512,9 @@ export function AdminUsersClient({ branches, aeList, subsidiaries, deleteRequest
                   const subsidiary = checks?.subsidiary ?? '';
                   const roleName = getUserRoleDisplay(u);
                   const isAEUser = roleName === 'AE' || roleName === 'AE Access';
+                  const isAllBranches = u.portalRole === 'super_admin' || !branchesList.length || branchesList.includes('ALL');
 
-                  // Format created/login date
+                  // Format date
                   const dateStr = u.createdAt ? new Date(u.createdAt).toLocaleDateString('en-US', {
                     month: 'numeric', day: 'numeric', year: 'numeric'
                   }) : '';
@@ -520,9 +522,9 @@ export function AdminUsersClient({ branches, aeList, subsidiaries, deleteRequest
                   return (
                     <tr
                       key={u.username}
-                      className={`transition-colors ${isChk ? 'bg-blue-50/70' : 'hover:bg-slate-50/80'} ${!u.enabled ? 'opacity-60' : ''}`}
+                      className={`border-b border-gray-50 transition-colors ${isChk ? 'bg-blue-50' : 'hover:bg-slate-50'} ${!u.enabled ? 'opacity-60' : ''}`}
                     >
-                      <td className="px-4 py-3.5 text-center align-middle">
+                      <td className="px-3 py-2.5 text-center">
                         <input
                           type="checkbox"
                           checked={isChk}
@@ -530,21 +532,21 @@ export function AdminUsersClient({ branches, aeList, subsidiaries, deleteRequest
                           className="rounded accent-blue-600 cursor-pointer"
                         />
                       </td>
-                      <td className="px-4 py-3.5 font-semibold text-gray-900 whitespace-nowrap align-middle">
+                      <td className="px-3 py-2.5 font-medium text-gray-800 whitespace-nowrap">
                         {u.fullName || '—'}
                       </td>
-                      <td className="px-4 py-3.5 text-gray-600 text-xs whitespace-nowrap align-middle">{u.email}</td>
-                      <td className="px-4 py-3.5 align-middle">
-                        <div className="flex items-center gap-2 flex-nowrap whitespace-nowrap">
-                          <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-[10.5px] font-bold tracking-wide uppercase whitespace-nowrap shrink-0 ${badge.cls}`}>
+                      <td className="px-3 py-2.5 text-gray-500 text-xs whitespace-nowrap">{u.email}</td>
+                      <td className="px-3 py-2.5">
+                        <div className="flex items-center gap-1.5 flex-wrap">
+                          <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-[11px] font-bold tracking-wide whitespace-nowrap ${badge.cls}`}>
                             {badge.label}
                           </span>
-                          <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-semibold bg-gray-100 text-gray-800 border border-gray-200 whitespace-nowrap shrink-0">
+                          <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-semibold bg-gray-100 text-gray-800 border border-gray-200 whitespace-nowrap">
                             {roleName}
                           </span>
                         </div>
                       </td>
-                      <td className="px-4 py-3.5 text-xs align-middle">
+                      <td className="px-3 py-2.5 text-xs">
                         <div className="flex flex-col gap-1">
                           {subsidiary && (
                             <div className="flex flex-wrap gap-1">
@@ -555,11 +557,7 @@ export function AdminUsersClient({ branches, aeList, subsidiaries, deleteRequest
                               ))}
                             </div>
                           )}
-                          {u.portalRole === 'super_admin' ? (
-                            <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-semibold bg-[#1e3a8a] text-white whitespace-nowrap w-fit">
-                              All branches
-                            </span>
-                          ) : !branchesList.length ? (
+                          {isAllBranches ? (
                             <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-semibold bg-[#1e3a8a] text-white whitespace-nowrap w-fit">
                               All branches
                             </span>
@@ -568,7 +566,7 @@ export function AdminUsersClient({ branches, aeList, subsidiaries, deleteRequest
                               {branchesList.map(b => {
                                 const bName = branchMap.get(b) ?? b;
                                 return (
-                                  <span key={b} className="inline-flex items-center px-2 py-0.5 rounded-full text-[11px] font-medium bg-blue-100 text-blue-800 whitespace-nowrap">
+                                  <span key={b} className="inline-flex items-center px-2 py-0.5 rounded-full text-[11px] font-semibold bg-blue-100 text-blue-800 whitespace-nowrap">
                                     {bName}
                                   </span>
                                 );
@@ -578,7 +576,7 @@ export function AdminUsersClient({ branches, aeList, subsidiaries, deleteRequest
                           {isAEUser && !subsidiary && !branchesList.length && null}
                         </div>
                       </td>
-                      <td className="px-4 py-3.5 text-xs align-middle">
+                      <td className="px-3 py-2.5 text-xs">
                         {aesList.length ? (
                           <div className="flex flex-wrap gap-1">
                             {aesList.map(ae => (
@@ -588,10 +586,10 @@ export function AdminUsersClient({ branches, aeList, subsidiaries, deleteRequest
                             ))}
                           </div>
                         ) : (
-                          <span className="text-gray-400 text-xs italic">— none —</span>
+                          <span className="text-gray-400 text-xs">— none —</span>
                         )}
                       </td>
-                      <td className="px-4 py-3.5 text-xs text-gray-600 whitespace-nowrap align-middle">
+                      <td className="px-3 py-2.5 text-xs text-gray-500 whitespace-nowrap">
                         <div className="flex items-center gap-1.5">
                           <span
                             className={`w-2 h-2 rounded-full inline-block shrink-0 ${
@@ -599,45 +597,21 @@ export function AdminUsersClient({ branches, aeList, subsidiaries, deleteRequest
                                 ? 'bg-red-500'
                                 : u.status === 'CONFIRMED'
                                 ? 'bg-green-500'
-                                : 'bg-amber-400'
+                                : 'bg-yellow-400'
                             }`}
                           />
-                          <span className="font-medium">
+                          <span>
                             {dateStr || (u.enabled ? 'Active' : 'Disabled')}
                           </span>
                         </div>
                       </td>
-                      <td className="px-4 py-3.5 text-right pr-5 whitespace-nowrap align-middle">
-                        <div className="flex items-center justify-end gap-2 text-xs font-semibold">
-                          <button
-                            onClick={() => openEdit(u)}
-                            className="text-blue-600 hover:text-blue-800 hover:underline cursor-pointer"
-                          >
-                            Edit
-                          </button>
-                          <span className="text-gray-300 font-normal">|</span>
-                          <button
-                            onClick={() => resetPassword(u)}
-                            className="text-amber-600 hover:text-amber-800 hover:underline cursor-pointer"
-                            title="Reset password"
-                          >
-                            Reset
-                          </button>
-                          <span className="text-gray-300 font-normal">|</span>
-                          <button
-                            onClick={() => toggleEnabled(u)}
-                            className="text-gray-500 hover:text-gray-700 hover:underline cursor-pointer"
-                          >
-                            {u.enabled ? 'Disable' : 'Enable'}
-                          </button>
-                          <span className="text-gray-300 font-normal">|</span>
-                          <button
-                            onClick={() => deleteUser(u)}
-                            className="text-red-500 hover:text-red-700 hover:underline cursor-pointer"
-                          >
-                            Delete
-                          </button>
-                        </div>
+                      <td className="px-3 py-2.5 text-right pr-4 whitespace-nowrap">
+                        <button
+                          onClick={() => openEdit(u)}
+                          className="text-xs font-semibold text-blue-600 hover:text-blue-800 hover:underline cursor-pointer"
+                        >
+                          Edit
+                        </button>
                       </td>
                     </tr>
                   );
@@ -648,7 +622,7 @@ export function AdminUsersClient({ branches, aeList, subsidiaries, deleteRequest
         </div>
       </div>
 
-      {/* Add/Edit Modal (rendered via createPortal directly into document.body) */}
+      {/* Add/Edit Modal (Directly in document.body) */}
       {mounted && showForm && createPortal(
         <div
           className="fixed inset-0 z-[99999] flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm animate-fade-in"
@@ -726,7 +700,7 @@ export function AdminUsersClient({ branches, aeList, subsidiaries, deleteRequest
 
                   <div>
                     <div className="flex items-center justify-between mb-1.5">
-                      <label className="text-sm font-medium text-gray-700">Branch Access</label>
+                      <label className="text-xs font-semibold text-gray-700">Branch Access</label>
                       <label className="flex items-center gap-1.5 text-xs text-blue-600 font-semibold cursor-pointer">
                         <input
                           type="checkbox"
@@ -834,6 +808,36 @@ export function AdminUsersClient({ branches, aeList, subsidiaries, deleteRequest
                     )}
                   </div>
                 </>
+              )}
+
+              {/* In Edit mode: Account management actions */}
+              {editUser && (
+                <div className="pt-3 border-t border-gray-200">
+                  <p className="text-xs font-bold text-gray-700 uppercase tracking-wider mb-2">Account Actions</p>
+                  <div className="flex items-center gap-2 flex-wrap">
+                    <button
+                      type="button"
+                      onClick={() => resetPassword(editUser)}
+                      className="px-3 py-1.5 rounded-lg text-xs font-semibold bg-amber-50 text-amber-700 border border-amber-200 hover:bg-amber-100 transition-colors cursor-pointer"
+                    >
+                      🔑 Reset Password
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => { toggleEnabled(editUser); setShowForm(false); }}
+                      className="px-3 py-1.5 rounded-lg text-xs font-semibold bg-gray-100 text-gray-700 border border-gray-300 hover:bg-gray-200 transition-colors cursor-pointer"
+                    >
+                      {editUser.enabled ? '🚫 Disable Account' : '✅ Enable Account'}
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => deleteUser(editUser)}
+                      className="px-3 py-1.5 rounded-lg text-xs font-semibold bg-red-50 text-red-700 border border-red-200 hover:bg-red-100 transition-colors cursor-pointer ml-auto"
+                    >
+                      🗑 Delete Account
+                    </button>
+                  </div>
+                </div>
               )}
 
               {!editUser && (
