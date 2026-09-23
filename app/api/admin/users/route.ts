@@ -33,23 +33,7 @@ export async function GET() {
     return NextResponse.json({ ok: true, users });
   } catch (err) {
     console.error("GET /api/admin/users failed:", err);
-    const name = (err as { name?: string })?.name ?? "UnknownError";
-    const message = (err as Error)?.message ?? String(err);
-    return NextResponse.json({
-      ok: false,
-      error: "Failed to load users. Check IAM permissions.",
-      debug: {
-        name,
-        message,
-        region: process.env.COGNITO_REGION ?? "(missing)",
-        poolId: process.env.COGNITO_USER_POOL_ID ? "(set)" : "(missing)",
-        hasAccessKey: !!process.env.AWS_ACCESS_KEY_ID,
-        hasSecretKey: !!process.env.AWS_SECRET_ACCESS_KEY,
-        hasSessionToken: !!process.env.AWS_SESSION_TOKEN,
-        accessKeyPrefix: (process.env.AWS_ACCESS_KEY_ID ?? "").slice(0, 4),
-        useStaticFlag: process.env.AWS_USE_STATIC_KEYS ?? "(unset)",
-      },
-    }, { status: 500 });
+    return NextResponse.json({ ok: false, error: "Failed to load users. Check IAM permissions." }, { status: 500 });
   }
 }
 

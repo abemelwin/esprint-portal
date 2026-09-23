@@ -194,7 +194,6 @@ export function AdminUsersClient({ branches }: Props) {
               <tr className="bg-gray-50 text-left text-gray-500">
                 <th className="px-4 py-2.5 font-semibold uppercase tracking-wide text-[10px]">Name</th>
                 <th className="px-4 py-2.5 font-semibold uppercase tracking-wide text-[10px]">Email</th>
-                <th className="px-4 py-2.5 font-semibold uppercase tracking-wide text-[10px]">Portal Role</th>
                 <th className="px-4 py-2.5 font-semibold uppercase tracking-wide text-[10px]">Check Role</th>
                 <th className="px-4 py-2.5 font-semibold uppercase tracking-wide text-[10px]">Branches</th>
                 <th className="px-4 py-2.5 font-semibold uppercase tracking-wide text-[10px]">Status</th>
@@ -203,18 +202,13 @@ export function AdminUsersClient({ branches }: Props) {
             </thead>
             <tbody>
               {loading ? (
-                <tr><td colSpan={7} className="py-8 text-center text-gray-400 italic">Loading users from Cognito…</td></tr>
+                <tr><td colSpan={6} className="py-8 text-center text-gray-400 italic">Loading users from Cognito…</td></tr>
               ) : filtered.map(u => {
                 const checks = u.access.find(a => a.module === 'checks');
                 return (
                   <tr key={u.username} className={`border-t border-gray-50 hover:bg-gray-50 ${!u.enabled ? 'opacity-50' : ''}`}>
                     <td className="px-4 py-2.5 font-medium text-gray-800">{u.fullName}</td>
                     <td className="px-4 py-2.5 text-gray-600">{u.email}</td>
-                    <td className="px-4 py-2.5">
-                      <span className={`px-2 py-0.5 rounded-full text-[11px] font-semibold ${u.portalRole === 'super_admin' ? 'bg-purple-100 text-purple-700' : 'bg-gray-100 text-gray-600'}`}>
-                        {u.portalRole === 'super_admin' ? 'Super Admin' : 'User'}
-                      </span>
-                    </td>
                     <td className="px-4 py-2.5 text-gray-700">{u.portalRole === 'super_admin' ? '(all)' : checks?.role ?? '—'}</td>
                     <td className="px-4 py-2.5 text-gray-500">{u.portalRole === 'super_admin' ? 'All' : (checks?.branches?.length ? checks.branches.map(b => branchMap.get(b) ?? b).join(', ') : 'All')}</td>
                     <td className="px-4 py-2.5">
@@ -232,7 +226,7 @@ export function AdminUsersClient({ branches }: Props) {
                 );
               })}
               {!loading && filtered.length === 0 && (
-                <tr><td colSpan={7} className="py-8 text-center text-gray-400 italic">No users found</td></tr>
+                <tr><td colSpan={6} className="py-8 text-center text-gray-400 italic">No users found</td></tr>
               )}
             </tbody>
           </table>
