@@ -54,6 +54,7 @@ export function AdminUsersClient({ branches, aeList, subsidiaries }: Props) {
   const [editUser, setEditUser] = useState<AdminUser | null>(null);
   const [form, setForm]         = useState({ ...EMPTY_FORM });
   const [confirm, setConfirm]   = useState<{ title: string; message: string; onConfirm: () => void } | null>(null);
+  const [formError, setFormError] = useState<string | null>(null);
 
   const fetchUsers = useCallback(async () => {
     setLoading(true);
@@ -70,7 +71,7 @@ export function AdminUsersClient({ branches, aeList, subsidiaries }: Props) {
 
   const branchMap = new Map(branches.map(b => [b.id, b.name]));
 
-  function openAdd() { setForm({ ...EMPTY_FORM }); setAeSearch(''); setEditUser(null); setShowForm(true); }
+  function openAdd() { setForm({ ...EMPTY_FORM }); setAeSearch(''); setFormError(null); setEditUser(null); setShowForm(true); }
   function openEdit(u: AdminUser) {
     const checks = u.access.find(a => a.module === 'checks');
     setForm({
@@ -82,6 +83,7 @@ export function AdminUsersClient({ branches, aeList, subsidiaries }: Props) {
       subsidiaries: checks?.subsidiary ? checks.subsidiary.split('/').map(s => s.trim()).filter(Boolean) : [],
     });
     setAeSearch('');
+    setFormError(null);
     setEditUser(u);
     setShowForm(true);
   }
@@ -104,6 +106,7 @@ export function AdminUsersClient({ branches, aeList, subsidiaries }: Props) {
   async function saveForm() {
     if (!form.email.trim()) { showToast('Email is required', 'error'); return; }
     setSaving(true);
+    setFormError(null);
     try {
       const access = buildAccess();
       if (editUser) {
@@ -113,7 +116,7 @@ export function AdminUsersClient({ branches, aeList, subsidiaries }: Props) {
         });
         const json = await res.json();
         if (json.ok) { showToast('User updated', 'success'); setShowForm(false); fetchUsers(); }
-        else showToast(json.error ?? 'Update failed', 'error');
+        else { setFormError(json.error ?? 'Update failed'); showToast(json.error ?? 'Update failed', 'error'); }
       } else {
         const res = await fetch('/api/admin/users', {
           method: 'POST', headers: { 'Content-Type': 'application/json' },
@@ -121,9 +124,9 @@ export function AdminUsersClient({ branches, aeList, subsidiaries }: Props) {
         });
         const json = await res.json();
         if (json.ok) { showToast('User created — temp password: Esprint2026!', 'success'); setShowForm(false); fetchUsers(); }
-        else showToast(json.error ?? 'Create failed', 'error');
+        else { setFormError(json.error ?? 'Create failed'); showToast(json.error ?? 'Create failed', 'error'); }
       }
-    } catch { showToast('Network error', 'error'); }
+    } catch (err) { setFormError((err as Error)?.message ?? 'Network error'); showToast('Network error', 'error'); }
     finally { setSaving(false); }
   }
 
@@ -256,6 +259,11 @@ export function AdminUsersClient({ branches, aeList, subsidiaries }: Props) {
               <button onClick={() => setShowForm(false)} className="text-gray-400 hover:text-gray-600 text-xl font-bold">×</button>
             </div>
             <div className="px-6 py-5 space-y-4 overflow-y-auto flex-1">
+              {formError && (
+                <div className="rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-xs text-red-700 break-words">
+                  {formError}
+                </div>
+              )}
               <div>
                 <label className={lbl}>Email <span className="text-red-500">*</span></label>
                 <input value={form.email} onChange={e => setForm(f => ({ ...f, email: e.target.value }))} disabled={!!editUser}
