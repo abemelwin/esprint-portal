@@ -44,6 +44,10 @@ const EMPTY_FORM = {
 interface Props { branches: { id: string; name: string }[]; aeList: string[]; subsidiaries: string[]; }
 
 export function AdminUsersClient({ branches, aeList, subsidiaries }: Props) {
+  // Defensive: never let undefined props crash the modal render.
+  const branchList = branches ?? [];
+  const aeOptions = aeList ?? [];
+  const subsidiaryOptions = subsidiaries ?? [];
   const { showToast } = useToast();
   const [users, setUsers]     = useState<AdminUser[]>([]);
   const [loading, setLoading] = useState(true);
@@ -69,7 +73,7 @@ export function AdminUsersClient({ branches, aeList, subsidiaries }: Props) {
 
   useEffect(() => { fetchUsers(); }, [fetchUsers]);
 
-  const branchMap = new Map(branches.map(b => [b.id, b.name]));
+  const branchMap = new Map(branchList.map(b => [b.id, b.name]));
 
   function openAdd() { setForm({ ...EMPTY_FORM }); setAeSearch(''); setFormError(null); setEditUser(null); setShowForm(true); }
   function openEdit(u: AdminUser) {
@@ -80,7 +84,9 @@ export function AdminUsersClient({ branches, aeList, subsidiaries }: Props) {
       branchAll: !checks?.branches?.length,
       branches: checks?.branches ?? [],
       aes: checks?.aes ?? [],
-      subsidiaries: checks?.subsidiary ? checks.subsidiary.split('/').map(s => s.trim()).filter(Boolean) : [],
+      subsidiaries: typeof checks?.subsidiary === 'string' && checks.subsidiary
+        ? checks.subsidiary.split('/').map(s => s.trim()).filter(Boolean)
+        : [],
     });
     setAeSearch('');
     setFormError(null);
@@ -295,7 +301,7 @@ export function AdminUsersClient({ branches, aeList, subsidiaries }: Props) {
                     </label>
                     {!form.branchAll && (
                       <div className="border border-gray-200 rounded-lg p-2 max-h-40 overflow-y-auto space-y-1">
-                        {branches.map(b => (
+                        {branchList.map(b => (
                           <label key={b.id} className="flex items-center gap-2 text-xs text-gray-700 cursor-pointer px-1 py-0.5 hover:bg-gray-50 rounded">
                             <input type="checkbox" checked={form.branches.includes(b.id)}
                               onChange={() => setForm(f => ({ ...f, branches: f.branches.includes(b.id) ? f.branches.filter(x => x !== b.id) : [...f.branches, b.id] }))}
@@ -308,11 +314,11 @@ export function AdminUsersClient({ branches, aeList, subsidiaries }: Props) {
                   </div>
 
                   {/* Subsidiary — multi-select */}
-                  {subsidiaries.length > 0 && (
+                  {subsidiaryOptions.length > 0 && (
                     <div>
                       <label className={lbl}>Subsidiary</label>
                       <div className="grid grid-cols-2 gap-2 border border-gray-200 rounded-lg p-3">
-                        {subsidiaries.map(s => (
+                        {subsidiaryOptions.map(s => (
                           <label key={s} className="flex items-center gap-2 text-xs text-gray-700 cursor-pointer">
                             <input type="checkbox" checked={form.subsidiaries.includes(s)}
                               onChange={e => setForm(f => ({ ...f, subsidiaries: e.target.checked ? [...f.subsidiaries, s] : f.subsidiaries.filter(x => x !== s) }))}
@@ -332,11 +338,11 @@ export function AdminUsersClient({ branches, aeList, subsidiaries }: Props) {
                     <input value={aeSearch} onChange={e => setAeSearch(e.target.value)} placeholder="Search AE…"
                       className={inp + ' mb-2'} />
                     <div className="border border-gray-200 rounded-lg p-3 max-h-44 overflow-y-auto">
-                      {aeList.filter(ae => !aeSearch || ae.toLowerCase().includes(aeSearch.toLowerCase())).length === 0 ? (
+                      {aeOptions.filter(ae => !aeSearch || ae.toLowerCase().includes(aeSearch.toLowerCase())).length === 0 ? (
                         <p className="text-xs text-gray-400 italic">No AEs found</p>
                       ) : (
                         <div className="grid grid-cols-2 gap-1.5">
-                          {aeList.filter(ae => !aeSearch || ae.toLowerCase().includes(aeSearch.toLowerCase())).map(ae => (
+                          {aeOptions.filter(ae => !aeSearch || ae.toLowerCase().includes(aeSearch.toLowerCase())).map(ae => (
                             <label key={ae} className="flex items-center gap-2 text-xs text-gray-700 cursor-pointer">
                               <input type="checkbox" checked={form.aes.includes(ae)}
                                 onChange={e => setForm(f => ({ ...f, aes: e.target.checked ? [...f.aes, ae] : f.aes.filter(x => x !== ae) }))}
