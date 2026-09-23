@@ -37,6 +37,7 @@ export interface StatusSlice {
 
 export interface RecentEvent {
   id: string;
+  checkId: string;
   type: string;
   clientName: string;
   branchName: string;
@@ -46,12 +47,45 @@ export interface RecentEvent {
   amount: number | undefined;
 }
 
+export interface DrillChecks {
+  held:     EnrichedDrillCheck[];
+  returned: EnrichedDrillCheck[];
+  partial:  EnrichedDrillCheck[];
+  dueToday: EnrichedDrillCheck[];
+  overdue:  EnrichedDrillCheck[];
+  stale:    EnrichedDrillCheck[];
+  all:      EnrichedDrillCheck[];
+}
+
+export interface EnrichedDrillCheck {
+  id:          string;
+  subsidiary:  string | null;
+  branchName:  string;
+  clientName:  string;
+  ae:          string | null;
+  bank:        string | null;
+  checkNo:     string;
+  checkDate:   string | null;
+  originalAmount: number;
+  balance:     number;
+  status:      string;
+  nextDeposit: string | null;
+  aging:       number | null;
+  reason:      string | null;
+  paymentFor:  string | null;
+  paymentDescription: string;
+  notes:       string;
+  createdBy:   string | null;
+  stale:       boolean;
+}
+
 export interface DashboardSummary {
   kpi: KpiTotals;
   branchRows: BranchRow[];
   statusChart: StatusSlice[];
   recentEvents: RecentEvent[];
   totalChecks: number;
+  drillChecks: DrillChecks;
 }
 
 function todayISO(): string {
@@ -186,20 +220,74 @@ export function buildDashboardSummary(data: AppData): DashboardSummary {
   // Recent events (last 10) — for the events feed
   const clientNameMap = new Map(data.CLIENTS.map((c) => [c.code, c.name]));
   const checkMap = new Map(data.CHECKS.map((c) => [c.id, c]));
+
+  // Build enriched drill checks for each KPI bucket
+  const today2 = todayISO();
+  const enrichedDrill: EnrichedDrillCheck[] = data.CHECKS.map((c) => {
+    const m = meta[c.id];
+    const status = m?.status ?? (c.finalStatus as string) ?? "OPEN";
+    const balance = m?.balance ?? c.originalAmount ?? 0;
+    const nextDeposit = m?.nextDeposit ?? null;
+    const reason = m?.reason ?? null;
+    const checkDateStr = c.checkDate ?? null;
+    const daysSince = checkDateStr
+      ? Math.floor((Date.now() - new Date(checkDateStr + "T00:00:00").getTime()) / 86400000)
+      : 0;
+    const staleFlag =
+      daysSince > STALE_DAYS &&
+      !["CLEARED", "REPLACED", "SETTLED (PAID)", "CANCELLED"].includes(status);
+    const aging = checkDateStr
+      ? Math.floor((new Date(today2).getTime() - new Date(checkDateStr + "T00:00:00").getTime()) / 86400000)
+      : null;
+
+    return {
+      id:           c.id,
+      subsidiary:   c.subsidiary ?? null,
+      branchName:   branchName.get(c.branch) ?? c.branch,
+      clientName:   clientNameMap.get(c.client) ?? "",
+      ae:           c.ae ?? null,
+      bank:         c.bank ?? null,
+      checkNo:      c.checkNo,
+      checkDate:    c.checkDate ?? null,
+      originalAmount: c.originalAmount ?? 0,
+      balance,
+      status,
+      nextDeposit,
+      aging,
+      reason,
+      paymentFor:   c.paymentFor ?? null,
+      paymentDescription: c.paymentDescription ?? "",
+      notes:        c.notes ?? "",
+      createdBy:    c.createdBy ?? null,
+      stale:        staleFlag,
+    };
+  });
+
+  const drillChecks: DrillChecks = {
+    held:     enrichedDrill.filter((c) => c.status === "HELD"),
+    returned: enrichedDrill.filter((c) => c.status === "RETURNED"),
+    partial:  enrichedDrill.filter((c) => c.status === "PARTIAL"),
+    dueToday: enrichedDrill.filter((c) => c.status === "HELD" && c.nextDeposit === today2),
+    overdue:  enrichedDrill.filter((c) => c.status === "HELD" && c.nextDeposit != null && c.nextDeposit < today2),
+    stale:    enrichedDrill.filter((c) => c.stale),
+    all:      enrichedDrill,
+  };
+
   const recentEvents: RecentEvent[] = [...data.EVENTS]
     .sort((a, b) => (b.recordedAt ?? "").localeCompare(a.recordedAt ?? ""))
     .slice(0, 10)
     .map((ev) => {
       const ck = checkMap.get(ev.checkId);
       return {
-        id: ev.id,
-        type: ev.type,
+        id:         ev.id,
+        checkId:    ev.checkId,
+        type:       ev.type,
         clientName: ck ? clientNameMap.get(ck.client) ?? "" : "",
         branchName: ck ? branchName.get(ck.branch) ?? ck.branch : "",
-        bank: ck?.bank ?? "",
-        checkNo: ck?.checkNo ?? "",
-        eventDate: ev.eventDate,
-        amount: ev.amount,
+        bank:       ck?.bank ?? "",
+        checkNo:    ck?.checkNo ?? "",
+        eventDate:  ev.eventDate,
+        amount:     ev.amount,
       };
     });
 
@@ -209,5 +297,6 @@ export function buildDashboardSummary(data: AppData): DashboardSummary {
     statusChart,
     recentEvents,
     totalChecks: data.CHECKS.length,
+    drillChecks,
   };
 }
