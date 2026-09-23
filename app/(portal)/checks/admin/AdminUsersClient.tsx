@@ -106,9 +106,10 @@ interface Props {
   aeList: string[];
   subsidiaries: string[];
   deleteRequestCount?: number;
+  isSuperAdmin?: boolean;
 }
 
-export function AdminUsersClient({ branches, aeList, subsidiaries, deleteRequestCount = 0 }: Props) {
+export function AdminUsersClient({ branches, aeList, subsidiaries, deleteRequestCount = 0, isSuperAdmin = false }: Props) {
   const branchList = useMemo(() => [...(branches ?? [])].sort((a, b) => a.name.localeCompare(b.name)), [branches]);
   const aeOptions = useMemo(() => aeList ?? [], [aeList]);
   const subsidiaryOptions = useMemo(() => subsidiaries?.length ? subsidiaries : ['ESPMI', 'APSI', 'ESPII', 'ESCGI'], [subsidiaries]);
@@ -149,13 +150,13 @@ export function AdminUsersClient({ branches, aeList, subsidiaries, deleteRequest
 
   function getAccessLevel(u: AdminUser): AccessLevel {
     const checks = u.access.find(a => a.module === 'checks');
-    const role = checks?.role ?? (u.portalRole === 'super_admin' ? 'Admin' : '');
+    const role = checks?.role ?? (u.portalRole === 'super_admin' ? 'Super Admin' : '');
     return ROLE_TO_ACCESS[role] ?? 'VIEW_ONLY';
   }
 
   function getUserRoleDisplay(u: AdminUser): string {
     const checks = u.access.find(a => a.module === 'checks');
-    return checks?.role ?? (u.portalRole === 'super_admin' ? 'Admin' : 'User');
+    return checks?.role ?? (u.portalRole === 'super_admin' ? 'Super Admin' : 'User');
   }
 
   // Sorted users
@@ -166,19 +167,22 @@ export function AdminUsersClient({ branches, aeList, subsidiaries, deleteRequest
       VIEW_ONLY:   3,
       AE_ACCESS:   4,
     };
-    return [...users].sort((a, b) => {
-      const levelA = getAccessLevel(a);
-      const levelB = getAccessLevel(b);
-      const rankA = accessRanks[levelA];
-      const rankB = accessRanks[levelB];
-      if (rankA !== rankB) return rankA - rankB;
-      const roleA = getUserRoleDisplay(a);
-      const roleB = getUserRoleDisplay(b);
-      const roleCmp = roleA.localeCompare(roleB);
-      if (roleCmp !== 0) return roleCmp;
-      return (a.fullName || a.email).localeCompare(b.fullName || b.email);
-    });
-  }, [users]);
+    return [...users]
+      // Hide super_admin accounts from non-super-admins (mirrors original behaviour)
+      .filter(u => isSuperAdmin || u.portalRole !== 'super_admin')
+      .sort((a, b) => {
+        const levelA = getAccessLevel(a);
+        const levelB = getAccessLevel(b);
+        const rankA = accessRanks[levelA];
+        const rankB = accessRanks[levelB];
+        if (rankA !== rankB) return rankA - rankB;
+        const roleA = getUserRoleDisplay(a);
+        const roleB = getUserRoleDisplay(b);
+        const roleCmp = roleA.localeCompare(roleB);
+        if (roleCmp !== 0) return roleCmp;
+        return (a.fullName || a.email).localeCompare(b.fullName || b.email);
+      });
+  }, [users, isSuperAdmin]);
 
   // Role filter counts
   const availableRoles = useMemo(() => {

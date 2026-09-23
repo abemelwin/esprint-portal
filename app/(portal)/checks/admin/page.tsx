@@ -19,12 +19,15 @@ export default async function CheckAdminPage() {
 
   const deleteRequestCount = parseInt(drCountRows[0]?.count ?? "0", 10) || 0;
 
+  const isSuperAdmin = ctx.role === "Super Admin";
+
   return (
     <AdminUsersClient
       branches={data.BRANCHES.map((b) => ({ id: b.id, name: b.name }))}
       aeList={data.AE_LIST}
       subsidiaries={data.SUBSIDIARIES}
       deleteRequestCount={deleteRequestCount}
+      isSuperAdmin={isSuperAdmin}
     />
   );
 }

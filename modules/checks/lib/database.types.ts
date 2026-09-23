@@ -172,6 +172,8 @@ export interface Client {
   ae: string | null;
 }
 
+export type Branch = BranchRow;
+
 // ─── Full DB load payload (returned by /api/load and serverLoad) ───────────────
 
 export interface AppData {
