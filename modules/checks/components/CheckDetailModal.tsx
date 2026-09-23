@@ -19,7 +19,7 @@ import ConfirmDialog from './ConfirmDialog';
 import SelectField from './SelectField';
 import { computeCheckStatus, compareEvents } from '../lib/computeStatus';
 import {
-  fmtPHP, fmtDate, fmtDateTime, EVENT_LABELS, PAYMENT_FOR_OPTIONS,
+  fmtPHP, fmtDate, fmtDateTime, displayUser, EVENT_LABELS, PAYMENT_FOR_OPTIONS,
 } from '../lib/format';
 import { canEdit, canDeleteCheck, type CheckPerms } from '../lib/permissions';
 import type { Check, CheckEvent, BranchRow, Client, EventType, BankRow } from '../lib/database.types';
@@ -380,7 +380,7 @@ export default function CheckDetailModal({ checkId, perms, userEmail, userName, 
               }d
             </p>
             <p className="text-[10px] text-gray-400 mt-1">
-              Encoded by: <strong>{check.createdBy ?? '—'}</strong>
+              Encoded by: <strong>{displayUser(check.createdBy)}</strong>
               {check.createdAt ? ` · ${fmtDateTime(check.createdAt)}` : ''}
             </p>
           </div>
@@ -543,7 +543,7 @@ export default function CheckDetailModal({ checkId, perms, userEmail, userName, 
                           </>
                         )}
                         <div className="text-[10px] text-gray-400 mt-1">
-                          Recorded by: <strong>{ev.recordedBy ?? '—'}</strong>
+                          Recorded by: <strong>{displayUser(ev.recordedBy)}</strong>
                           {ev.recordedAt ? ` · ${fmtDateTime(ev.recordedAt)}` : ''}
                         </div>
                         {/* Move button — only for PARTIAL_PAYMENT with positive amount */}

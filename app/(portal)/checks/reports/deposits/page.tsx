@@ -1,18 +1,20 @@
-import { loadReportData } from "@/modules/checks/lib/report-data";
-import { ReportView } from "@/modules/checks/components/report-view";
+import { serverLoad } from "@/modules/checks/lib/data";
+import { getCheckContext } from "../../lib/access";
+import { redirect } from "next/navigation";
+import { DepositsReportClient } from "./DepositsReportClient";
 
 export const dynamic = "force-dynamic";
 
 export default async function DepositsReportPage() {
-  const { checks, branches, aeList } = await loadReportData();
+  const ctx = await getCheckContext();
+  if (!ctx) redirect("/dashboard");
+
+  const data = await serverLoad();
+
   return (
-    <ReportView
-      title="Deposits"
-      description="Checks that have been deposited or cleared."
-      statuses={["DEPOSITED", "CLEARED"]}
-      checks={checks}
-      branches={branches}
-      aeList={aeList}
+    <DepositsReportClient
+      initialData={data}
+      perms={{ role: ctx.role, branches: ctx.branches, aes: ctx.aes }}
     />
   );
 }

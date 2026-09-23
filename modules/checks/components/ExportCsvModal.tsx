@@ -5,6 +5,7 @@
  */
 import { useState } from 'react';
 import { createPortal } from 'react-dom';
+import { displayUser } from '../lib/format';
 
 interface ColumnOption { key: string; label: string; }
 
@@ -82,7 +83,7 @@ export default function ExportCsvModal({ isOpen, onClose, rows, filename }: Prop
         returns:      c.returnCount ?? c.returns ?? '',
         nextDeposit:  c.nextDeposit ?? c.nextDep ?? '',
         aging:        c.aging ?? '',
-        encodedBy:    c.createdBy ?? c.encodedBy ?? '',
+        encodedBy:    displayUser(c.createdBy ?? c.encodedBy ?? ''),
       };
       return activeCols.map(col => all[col.key]);
     });

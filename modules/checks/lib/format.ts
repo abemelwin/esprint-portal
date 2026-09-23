@@ -27,6 +27,20 @@ export function fmtDateTime(ts: string | null | undefined): string {
   }).replace(',', '').replace('T', ' ').slice(0, 16);
 }
 
+/** Regex matching a UUID (v4-style), used to detect unresolved user IDs. */
+const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+
+/**
+ * Display a "recorded/encoded by" value. Older migrated rows may still carry a
+ * raw Supabase user UUID (when the original user was deleted and could not be
+ * resolved to a name). Show "Deleted user" instead of a meaningless ID.
+ */
+export function displayUser(value: string | null | undefined): string {
+  const v = (value ?? '').trim();
+  if (!v || UUID_RE.test(v)) return 'Deleted user';
+  return v;
+}
+
 export function todayISO(): string {
   const d = new Date();
   const y = d.getFullYear();

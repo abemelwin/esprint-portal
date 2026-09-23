@@ -6,6 +6,7 @@
 import { useState, useEffect } from 'react';
 import { createPortal } from 'react-dom';
 import { useToast } from './Toast';
+import { displayUser } from '../lib/format';
 
 interface Note {
   id:            string;
@@ -80,7 +81,7 @@ export default function CheckNotesModal({ checkId, checkLabel, onClose, onCountC
           {notes.map(n=>(
             <div key={n.id} style={{ padding:'10px 14px',background:'#f8fafc',borderRadius:10,marginBottom:8,border:'1px solid #f1f5f9' }}>
               <p style={{ margin:0,fontSize:13,color:'#1f2937',lineHeight:1.6 }}>{n.content}</p>
-              <p style={{ margin:'5px 0 0',fontSize:11,color:'#9ca3af' }}>{n.createdByName} · {fmtDt(n.createdAt)}</p>
+              <p style={{ margin:'5px 0 0',fontSize:11,color:'#9ca3af' }}>{displayUser(n.createdByName)} · {fmtDt(n.createdAt)}</p>
             </div>
           ))}
         </div>

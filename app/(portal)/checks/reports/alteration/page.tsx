@@ -3,6 +3,7 @@ import { getCheckContext } from "../../lib/access";
 import { serverLoad } from "@/modules/checks/lib/data";
 import { computeCheckStatus, compareEvents, groupSortedEvents } from "@/modules/checks/lib/computeStatus";
 import { canSeeCheck } from "@/modules/checks/lib/permissions";
+import { displayUser } from "@/modules/checks/lib/format";
 import { AlterationReportClient } from "./AlterationReportClient";
 import { permsFromContext } from "@/modules/checks/lib/permissions";
 
@@ -61,7 +62,7 @@ export default async function AlterationReportPage() {
         balance,
         aging,
         reason:     altEv.reason ?? "",
-        recordedBy: altEv.recordedBy ?? "—",
+        recordedBy: displayUser(altEv.recordedBy),
         recordedAt: altEv.recordedAt ?? "",
       });
     }
