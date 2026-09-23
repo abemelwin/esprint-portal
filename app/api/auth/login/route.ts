@@ -93,8 +93,13 @@ export async function POST(req: NextRequest) {
     }
 
     console.error("Cognito login error:", err);
+    // TEMPORARY: surface the real error to diagnose the Amplify 500.
+    // Remove the `detail` field once login is confirmed working.
     return NextResponse.json(
-      { error: "Login failed. Please try again." },
+      {
+        error: "Login failed. Please try again.",
+        detail: `${(err as { name?: string })?.name ?? "Error"}: ${(err as Error)?.message ?? String(err)}`,
+      },
       { status: 500 }
     );
   }
