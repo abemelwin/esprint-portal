@@ -43,7 +43,11 @@ export async function GET() {
         message,
         region: process.env.COGNITO_REGION ?? "(missing)",
         poolId: process.env.COGNITO_USER_POOL_ID ? "(set)" : "(missing)",
-        hasStaticKeys: !!(process.env.AWS_ACCESS_KEY_ID && process.env.AWS_SECRET_ACCESS_KEY),
+        hasAccessKey: !!process.env.AWS_ACCESS_KEY_ID,
+        hasSecretKey: !!process.env.AWS_SECRET_ACCESS_KEY,
+        hasSessionToken: !!process.env.AWS_SESSION_TOKEN,
+        accessKeyPrefix: (process.env.AWS_ACCESS_KEY_ID ?? "").slice(0, 4),
+        useStaticFlag: process.env.AWS_USE_STATIC_KEYS ?? "(unset)",
       },
     }, { status: 500 });
   }
