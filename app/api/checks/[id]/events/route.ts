@@ -78,6 +78,49 @@ export async function POST(
 
   try {
     await insertEvent(event);
+
+    // ── Auto-add to bad_account_list on a BLACKLIST cancellation ──────────
+    // When a check is cancelled with reason BLACKLIST, automatically create a
+    // BLACKLIST entry in the bad account monitoring list using the check's
+    // client info. Mirrors the original system (esprint-check-monitoring
+    // app/actions/data.ts addEvent). Silent on failure so it never blocks the
+    // event save.
+    if (event.type === "CANCELLATION" && event.reason?.toUpperCase() === "BLACKLIST") {
+      try {
+        const { query } = await import("@/lib/db");
+        const SCHEMA = "check_monitoring";
+        const cl = await query(
+          `SELECT name FROM ${SCHEMA}.clients WHERE code = $1 LIMIT 1`,
+          [existing.client]
+        );
+        const clientName = (cl[0]?.name as string | undefined) ?? existing.client;
+        // Only insert if this client isn't already blacklisted (avoid duplicates)
+        const dupe = await query(
+          `SELECT id FROM ${SCHEMA}.bad_account_list
+             WHERE client_name = $1 AND status = 'BLACKLIST' LIMIT 1`,
+          [clientName]
+        );
+        if (dupe.length === 0) {
+          await query(
+            `INSERT INTO ${SCHEMA}.bad_account_list
+               (id, ae, branch_id, client_name, status, notes, created_by, created_at, updated_at)
+             VALUES ($1,$2,$3,$4,'BLACKLIST',$5,$6, now(), now())`,
+            [
+              randomUUID(),
+              existing.ae ?? null,
+              existing.branch ?? null,
+              clientName,
+              `Auto-added from Write-off / Blacklist cancellation on check ${params.id}`,
+              guard.ctx.user.email,
+            ]
+          );
+        }
+      } catch (autoErr) {
+        // Silent — don't block the event save if the auto-add fails
+        console.error("BLACKLIST auto-add to bad_account_list failed:", autoErr);
+      }
+    }
+
     invalidateCache();
     return NextResponse.json({ ok: true, event });
   } catch (err) {
