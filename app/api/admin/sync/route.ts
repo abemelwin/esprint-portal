@@ -151,6 +151,25 @@ export async function POST(req: NextRequest) {
     }
     results.notes = notesAdded;
 
+    // ── Recon Schedule ────────────────────────────────────────────────────────
+    const sbSchedule = await sbGetAll("recon_schedule", "sort_order");
+    const rdsSchedule = await query<{ id: string }>(`SELECT id FROM ${SCHEMA}.recon_schedule`);
+    const existingSchedIds = new Set(rdsSchedule.map(r => r.id));
+    let schedAdded = 0;
+    for (const s of sbSchedule) {
+      if (existingSchedIds.has(s.id)) continue;
+      await query(
+        `INSERT INTO ${SCHEMA}.recon_schedule
+          (id, client_code, schedule_date, monthly_amortization, amount, payment_details, sort_order, event_id, check_id, created_at)
+         VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10) ON CONFLICT (id) DO NOTHING`,
+        [s.id, s.client_code, s.schedule_date ?? null, s.monthly_amortization ?? null,
+         s.amount ?? null, s.payment_details ?? null, s.sort_order ?? 0,
+         s.event_id ?? null, s.check_id ?? null, s.updated_at ?? new Date().toISOString()]
+      );
+      schedAdded++;
+    }
+    results.schedule = schedAdded;
+
     // ── Resolve UUID → display names ─────────────────────────────────────────
     const userMap = await buildUserMap();
     let resolved = 0;
