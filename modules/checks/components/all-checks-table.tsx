@@ -448,6 +448,17 @@ export function AllChecksTable({ initialData, perms, userEmail, userName }: Prop
     if (data?.NOTES_COUNTS) setNotesCounts(data.NOTES_COUNTS);
   }, [data?.NOTES_COUNTS]);
 
+  // Auto-refresh every 30 seconds — keeps table in sync with other users.
+  // Paused when a check detail modal or new-check modal is open so it doesn't
+  // interrupt the user mid-action.
+  useEffect(() => {
+    const interval = setInterval(() => {
+      if (selectedCheckId || showModal) return;
+      reload(false);
+    }, 30_000);
+    return () => clearInterval(interval);
+  }, [reload, selectedCheckId, showModal]);
+
   // ── Column visibility ───────────────────────────────────────────────────────
   const ALL_COLS = ['SUBSIDIARY','BRANCH','CLIENT','AE','BANK / CHECK #','CHECK DATE','ORIGINAL ₱','BALANCE ₱','NEXT DEPOSIT','AGING','STATUS','REASON','NOTES','PAYMENT FOR','PAYMENT DE…'] as const;
   type ColName = typeof ALL_COLS[number];
