@@ -1,10 +1,11 @@
 "use client";
 
-import { useState, useEffect } from "react";
-import type { TBAListItem, LookupData } from "../types";
+import { useState, useEffect, useMemo } from "react";
+import type { TBAListItem, Machine, LookupData } from "../types";
 
 export function TBAClient({ isAdmin = false }: { isAdmin?: boolean }) {
   const [tbaList, setTbaList] = useState<TBAListItem[]>([]);
+  const [machines, setMachines] = useState<Machine[]>([]);
   const [lookups, setLookups] = useState<LookupData>({
     branches: [],
     aes: [],
@@ -13,33 +14,45 @@ export function TBAClient({ isAdmin = false }: { isAdmin?: boolean }) {
     reorder_points: [],
   });
   const [loading, setLoading] = useState(true);
-  const [isAddOpen, setIsAddOpen] = useState(false);
-  const [search, setSearch] = useState("");
 
-  // New TBA Form State
-  const [newBrand, setNewBrand] = useState("");
-  const [newModel, setNewModel] = useState("");
-  const [newClient, setNewClient] = useState("");
-  const [newClientCode, setNewClientCode] = useState("");
-  const [newAe, setNewAe] = useState("");
-  const [newLocation, setNewLocation] = useState("");
-  const [newDate, setNewDate] = useState(new Date().toISOString().split("T")[0]);
-  const [newNotes, setNewNotes] = useState("");
-  const [submitting, setSubmitting] = useState(false);
+  // Filters
+  const [q, setQ] = useState("");
+  const [fBrand, setFBrand] = useState("");
+  const [fModel, setFModel] = useState("");
+  const [fAE, setFAE] = useState("");
+
+  // Modals state
+  const [isModalOpen, setIsModalOpen] = useState(false);
+  const [editingTarget, setEditingTarget] = useState<TBAListItem | null>(null);
+  const [form, setForm] = useState({
+    brand: "",
+    model: "",
+    client_name: "",
+    client_code: "",
+    location: "",
+    ae: "",
+    reservation_date: new Date().toISOString().slice(0, 10),
+    notes: "",
+  });
+  const [err, setErr] = useState("");
+  const [saving, setSaving] = useState(false);
 
   async function loadData() {
     setLoading(true);
     try {
-      const [tbaRes, lookRes] = await Promise.all([
+      const [tRes, mRes, lRes] = await Promise.all([
         fetch("/api/machines/tba"),
+        fetch("/api/machines"),
         fetch("/api/machines/lookups"),
       ]);
-      const tData = await tbaRes.json();
-      const lData = await lookRes.json();
+      const tData = await tRes.json();
+      const mData = await mRes.json();
+      const lData = await lRes.json();
       if (tData.tba) setTbaList(tData.tba);
+      if (mData.machines) setMachines(mData.machines);
       if (lData.branches) setLookups(lData);
     } catch (err) {
-      console.error("Error loading TBA:", err);
+      console.error(err);
     } finally {
       setLoading(false);
     }
@@ -49,175 +62,295 @@ export function TBAClient({ isAdmin = false }: { isAdmin?: boolean }) {
     loadData();
   }, []);
 
-  async function handleAddTBA(e: React.FormEvent) {
+  const openAdd = () => {
+    setEditingTarget(null);
+    setForm({
+      brand: lookups.brands[0]?.name || "",
+      model: lookups.models[0]?.name || "",
+      client_name: "",
+      client_code: "",
+      location: "",
+      ae: lookups.aes[0]?.code || "",
+      reservation_date: new Date().toISOString().slice(0, 10),
+      notes: "",
+    });
+    setErr("");
+    setIsModalOpen(true);
+  };
+
+  const openEdit = (t: TBAListItem) => {
+    setEditingTarget(t);
+    setForm({
+      brand: t.brand || "",
+      model: t.model,
+      client_name: t.client_name || "",
+      client_code: t.client_code || "",
+      location: t.location || "",
+      ae: t.ae || "",
+      reservation_date: t.reservation_date || new Date().toISOString().slice(0, 10),
+      notes: t.notes || "",
+    });
+    setErr("");
+    setIsModalOpen(true);
+  };
+
+  async function handleSave(e: React.FormEvent) {
     e.preventDefault();
-    if (!newModel || !newClient) {
-      alert("Model and Client Name are required");
+    if (!form.model.trim()) {
+      setErr("Please enter a Model.");
       return;
     }
-    setSubmitting(true);
+    if (!form.client_name.trim()) {
+      setErr("Please enter a Client Name.");
+      return;
+    }
+    setSaving(true);
+    setErr("");
+
     try {
-      const res = await fetch("/api/machines/tba", {
+      if (editingTarget) {
+        // Update TBA
+        await fetch(`/api/machines/tba?id=${editingTarget.id}`, { method: "DELETE" });
+        await fetch("/api/machines/tba", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(form),
+        });
+      } else {
+        const res = await fetch("/api/machines/tba", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(form),
+        });
+        if (!res.ok) {
+          const d = await res.json();
+          throw new Error(d.error || "Failed to add TBA request.");
+        }
+      }
+      setIsModalOpen(false);
+      loadData();
+    } catch (err: unknown) {
+      setErr(err instanceof Error ? err.message : "Error saving TBA request.");
+    } finally {
+      setSaving(false);
+    }
+  }
+
+  async function handleDelete(t: TBAListItem) {
+    if (!confirm(`Delete TBA reservation for ${t.client_name || "Client"} (${t.brand} ${t.model})?`)) return;
+    try {
+      const res = await fetch(`/api/machines/tba?id=${t.id}`, { method: "DELETE" });
+      if (res.ok) loadData();
+    } catch (err) {
+      console.error(err);
+    }
+  }
+
+  async function handleFulfil(t: TBAListItem) {
+    // Find an in-stock unit of this brand & model
+    const unit = machines.find(
+      (m) =>
+        m.status === "In Stock" &&
+        (m.brand || "").trim().toLowerCase() === (t.brand || "").trim().toLowerCase() &&
+        m.model.trim().toLowerCase() === t.model.trim().toLowerCase()
+    );
+
+    if (!unit) {
+      alert(`No available In Stock unit of ${t.brand} ${t.model} to allot. Add stock first.`);
+      return;
+    }
+
+    const ok = confirm(
+      `Allot in-stock unit (Serial: ${unit.serial_no || "No Serial"}) to ${t.client_name || "Client"} and reserve it?`
+    );
+    if (!ok) return;
+
+    try {
+      // 1. Reserve machine
+      await fetch(`/api/machines/${unit.id}/reserve`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          brand: newBrand,
-          model: newModel,
-          client_name: newClient,
-          client_code: newClientCode,
-          ae: newAe,
-          location: newLocation,
-          reservation_date: newDate,
-          notes: newNotes,
+          client_name: t.client_name,
+          client_code: t.client_code,
+          ae: t.ae,
+          location: t.location,
+          reservation_date: t.reservation_date || new Date().toISOString().slice(0, 10),
+          notes: `Fulfilled from TBA list. ${t.notes || ""}`,
         }),
       });
-      if (res.ok) {
-        setIsAddOpen(false);
-        setNewClient("");
-        setNewClientCode("");
-        setNewNotes("");
-        loadData();
-      } else {
-        const d = await res.json();
-        alert(d.error || "Failed to add TBA request");
-      }
+
+      // 2. Delete TBA item
+      await fetch(`/api/machines/tba?id=${t.id}`, { method: "DELETE" });
+
+      alert(`Successfully reserved unit ${unit.serial_no || unit.model} for ${t.client_name}.`);
+      loadData();
     } catch (err) {
       console.error(err);
-      alert("Error adding TBA item");
-    } finally {
-      setSubmitting(false);
+      alert("Error fulfilling TBA reservation.");
     }
   }
 
-  async function handleDeleteTBA(id: string, clientName: string) {
-    if (!confirm(`Delete TBA reservation for ${clientName || "client"}?`)) return;
-    try {
-      const res = await fetch(`/api/machines/tba?id=${id}`, { method: "DELETE" });
-      if (res.ok) {
-        loadData();
-      } else {
-        const d = await res.json();
-        alert(d.error || "Failed to delete");
-      }
-    } catch (err) {
-      console.error(err);
-      alert("Error deleting TBA request");
+  const filtered = useMemo(() => {
+    let rows = tbaList.slice();
+    if (q.trim()) {
+      const lq = q.toLowerCase();
+      rows = rows.filter((t) => {
+        return (
+          (t.brand || "").toLowerCase().includes(lq) ||
+          (t.model || "").toLowerCase().includes(lq) ||
+          (t.client_name || "").toLowerCase().includes(lq) ||
+          (t.client_code || "").toLowerCase().includes(lq) ||
+          (t.location || "").toLowerCase().includes(lq) ||
+          (t.ae || "").toLowerCase().includes(lq)
+        );
+      });
     }
-  }
+    if (fBrand) rows = rows.filter((t) => t.brand === fBrand);
+    if (fModel) rows = rows.filter((t) => t.model === fModel);
+    if (fAE) rows = rows.filter((t) => t.ae === fAE);
+    return rows.sort((a, b) => (a.brand || "").localeCompare(b.brand || "") || a.model.localeCompare(b.model));
+  }, [tbaList, q, fBrand, fModel, fAE]);
 
-  const filtered = tbaList.filter((item) => {
-    if (search.trim()) {
-      const q = search.toLowerCase();
-      const brand = (item.brand || "").toLowerCase();
-      const model = (item.model || "").toLowerCase();
-      const client = (item.client_name || "").toLowerCase();
-      const ae = (item.ae || "").toLowerCase();
-      return brand.includes(q) || model.includes(q) || client.includes(q) || ae.includes(q);
-    }
-    return true;
-  });
+  const uniq = (k: keyof TBAListItem) => [...new Set(tbaList.map((t) => t[k]).filter(Boolean))].sort() as string[];
 
   return (
-    <div className="p-4 sm:p-6 lg:p-8 space-y-6 max-w-[1600px] mx-auto">
+    <div className="p-4 sm:p-6 lg:p-7 space-y-4 max-w-[1700px] mx-auto">
       {/* Header */}
-      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 bg-white p-5 rounded-2xl border border-slate-200 shadow-xs">
+      <div className="flex flex-col md:flex-row md:items-center justify-between gap-3 bg-white p-4 rounded-2xl border border-slate-200 shadow-xs">
         <div>
-          <h1 className="text-2xl font-black text-slate-900 tracking-tight flex items-center gap-2.5">
-            <span className="w-3 h-3 rounded-full bg-amber-500 animate-pulse" />
-            TBA Reservations List
+          <h1 className="text-xl font-extrabold text-slate-900 tracking-tight flex items-center gap-2">
+            <span>🔖</span> TBA List (Pending Unit Allotment)
           </h1>
-          <p className="text-xs text-slate-500 mt-1">
-            Client bookings awaiting allocation to physical unit serial numbers.
+          <p className="text-xs text-slate-500 mt-0.5">
+            Client reservations not yet assigned to physical serial numbers. Allot to In Stock units when ready.
           </p>
         </div>
 
         <button
-          onClick={() => setIsAddOpen(true)}
-          className="flex items-center gap-1.5 px-4 py-2 text-xs font-bold text-white bg-amber-600 hover:bg-amber-700 rounded-xl shadow-md transition-all hover:shadow-lg active:scale-95"
+          onClick={openAdd}
+          className="flex items-center gap-1.5 px-4 py-1.5 text-xs font-bold text-white bg-blue-600 hover:bg-blue-700 rounded-xl shadow-md transition-all active:scale-95"
         >
-          <svg width="15" height="15" fill="none" stroke="currentColor" strokeWidth="2.5" viewBox="0 0 24 24">
-            <path strokeLinecap="round" strokeLinejoin="round" d="M12 4v16m8-8H4" />
-          </svg>
-          Add TBA Reservation
+          + Add TBA Reservation
         </button>
       </div>
 
-      {/* Search Bar */}
-      <div className="bg-white p-4 rounded-2xl border border-slate-200 shadow-xs">
-        <div className="w-full sm:w-96 relative">
-          <input
-            type="text"
-            value={search}
-            onChange={(e) => setSearch(e.target.value)}
-            placeholder="Search client, brand, model, AE..."
-            className="w-full pl-9 pr-3 py-2 text-xs bg-slate-50 border border-slate-300 rounded-xl focus:bg-white focus:ring-2 focus:ring-amber-500 focus:outline-none"
-          />
-          <svg
-            className="absolute left-3 top-2.5 text-slate-400"
-            width="14"
-            height="14"
-            fill="none"
-            stroke="currentColor"
-            strokeWidth="2.2"
-            viewBox="0 0 24 24"
-          >
-            <path strokeLinecap="round" strokeLinejoin="round" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
-          </svg>
-        </div>
+      {/* Toolbar */}
+      <div className="bg-white p-3.5 rounded-2xl border border-slate-200 shadow-xs flex flex-wrap items-center gap-2.5 text-xs">
+        <input
+          type="search"
+          placeholder="🔍 Search TBA client, model, code, AE…"
+          className="bg-slate-50 border border-slate-300 text-slate-900 px-3 py-1.5 rounded-xl text-xs min-w-[260px] focus:bg-white focus:outline-none focus:ring-2 focus:ring-blue-500"
+          value={q}
+          onChange={(e) => setQ(e.target.value)}
+        />
+
+        <select
+          value={fBrand}
+          onChange={(e) => setFBrand(e.target.value)}
+          className="bg-slate-50 border border-slate-300 text-slate-800 px-2.5 py-1.5 rounded-xl text-xs focus:bg-white font-medium focus:outline-none"
+        >
+          <option value="">All brands</option>
+          {uniq("brand").map((b) => (
+            <option key={b} value={b}>
+              {b}
+            </option>
+          ))}
+        </select>
+
+        <select
+          value={fModel}
+          onChange={(e) => setFModel(e.target.value)}
+          className="bg-slate-50 border border-slate-300 text-slate-800 px-2.5 py-1.5 rounded-xl text-xs focus:bg-white font-medium focus:outline-none"
+        >
+          <option value="">All models</option>
+          {uniq("model").map((m) => (
+            <option key={m} value={m}>
+              {m}
+            </option>
+          ))}
+        </select>
+
+        <select
+          value={fAE}
+          onChange={(e) => setFAE(e.target.value)}
+          className="bg-slate-50 border border-slate-300 text-slate-800 px-2.5 py-1.5 rounded-xl text-xs focus:bg-white font-medium focus:outline-none"
+        >
+          <option value="">All AEs</option>
+          {uniq("ae").map((a) => (
+            <option key={a} value={a}>
+              {a}
+            </option>
+          ))}
+        </select>
+
+        <span className="flex-1" />
+
+        <span className="text-[11.5px] font-bold text-slate-600 bg-slate-100 px-2.5 py-1 rounded-lg border border-slate-200 whitespace-nowrap">
+          {filtered.length} of {tbaList.length} shown
+        </span>
       </div>
 
       {/* TBA List Table */}
       <div className="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden">
         {loading ? (
-          <div className="py-20 text-center space-y-3">
-            <div className="w-8 h-8 border-3 border-amber-500 border-t-transparent rounded-full animate-spin mx-auto" />
-            <p className="text-xs font-bold text-slate-500">Loading TBA reservations...</p>
+          <div className="py-20 text-center space-y-2">
+            <div className="w-8 h-8 border-3 border-blue-600 border-t-transparent rounded-full animate-spin mx-auto" />
+            <p className="text-xs font-bold text-slate-500">Loading TBA list...</p>
           </div>
         ) : filtered.length === 0 ? (
-          <div className="py-20 text-center text-slate-400 text-xs">No pending TBA reservations found.</div>
+          <div className="py-20 text-center text-slate-400 text-xs font-semibold">
+            No pending TBA reservations found.
+          </div>
         ) : (
           <div className="overflow-x-auto">
-            <table className="w-full text-left border-collapse">
+            <table className="w-full text-left border-collapse text-xs">
               <thead>
-                <tr className="bg-slate-50 border-b border-slate-200 text-[11px] font-extrabold uppercase tracking-wider text-slate-500">
-                  <th className="py-3.5 px-4">Client Information</th>
-                  <th className="py-3.5 px-4">Requested Model</th>
-                  <th className="py-3.5 px-4">Assigned AE</th>
-                  <th className="py-3.5 px-4">Location</th>
-                  <th className="py-3.5 px-4">Reservation Date</th>
-                  <th className="py-3.5 px-4">Remarks</th>
-                  <th className="py-3.5 px-4 text-right">Action</th>
+                <tr className="bg-slate-50 border-b border-slate-200 text-[11px] font-extrabold uppercase tracking-wider text-slate-500 whitespace-nowrap">
+                  <th className="py-3 px-3.5">Brand</th>
+                  <th className="py-3 px-3.5">Model</th>
+                  <th className="py-3 px-3.5">Client Name</th>
+                  <th className="py-3 px-3.5">Code</th>
+                  <th className="py-3 px-3.5">Location</th>
+                  <th className="py-3 px-3.5">AE</th>
+                  <th className="py-3 px-3.5">Reservation Date</th>
+                  <th className="py-3 px-3.5">Notes</th>
+                  <th className="py-3 px-3.5 text-right">Actions</th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-slate-100 text-xs text-slate-700 font-medium">
-                {filtered.map((item) => (
-                  <tr key={item.id} className="hover:bg-amber-50/40 transition-colors">
-                    <td className="py-3 px-4">
-                      <div className="font-bold text-slate-900">{item.client_name}</div>
-                      {item.client_code && (
-                        <div className="text-[11px] text-slate-400 font-mono">{item.client_code}</div>
-                      )}
-                    </td>
-                    <td className="py-3 px-4">
-                      <div className="font-bold text-slate-900">{item.model}</div>
-                      <div className="text-[11px] text-amber-600 font-semibold">{item.brand || "Unbranded"}</div>
-                    </td>
-                    <td className="py-3 px-4">
-                      <span className="px-2 py-0.5 rounded-md bg-blue-50 text-blue-700 font-bold text-[11px]">
-                        {item.ae || "Unassigned"}
-                      </span>
-                    </td>
-                    <td className="py-3 px-4 text-slate-600">{item.location || "—"}</td>
-                    <td className="py-3 px-4 text-slate-600 font-semibold">{item.reservation_date || "—"}</td>
-                    <td className="py-3 px-4 text-slate-500 text-[11px] max-w-xs truncate">{item.notes || "—"}</td>
-                    <td className="py-3 px-4 text-right">
-                      <button
-                        onClick={() => handleDeleteTBA(item.id, item.client_name || "")}
-                        title="Delete / Fulfill TBA"
-                        className="px-2.5 py-1 text-[11px] font-bold text-red-600 hover:bg-red-50 border border-red-200 rounded-lg transition-colors"
-                      >
-                        Remove
-                      </button>
+              <tbody className="divide-y divide-slate-100 font-medium text-slate-700 whitespace-nowrap">
+                {filtered.map((t) => (
+                  <tr key={t.id} className="hover:bg-purple-50/30 transition-colors">
+                    <td className="py-2.5 px-3.5 font-bold text-blue-700">{t.brand || "—"}</td>
+                    <td className="py-2.5 px-3.5 font-bold text-slate-900">{t.model}</td>
+                    <td className="py-2.5 px-3.5 font-bold text-slate-900">{t.client_name || "—"}</td>
+                    <td className="py-2.5 px-3.5 font-mono text-slate-500">{t.client_code || "—"}</td>
+                    <td className="py-2.5 px-3.5 text-slate-600">{t.location || "—"}</td>
+                    <td className="py-2.5 px-3.5 font-bold text-blue-600">{t.ae || "—"}</td>
+                    <td className="py-2.5 px-3.5 text-slate-600">{t.reservation_date || "—"}</td>
+                    <td className="py-2.5 px-3.5 text-slate-500 text-[11px] max-w-[200px] truncate">{t.notes || "—"}</td>
+                    <td className="py-2.5 px-3.5 text-right">
+                      <div className="flex items-center justify-end gap-1.5">
+                        {/* Fulfil / Allot Button */}
+                        <button
+                          onClick={() => handleFulfil(t)}
+                          className="px-2.5 py-1 text-[11px] font-bold text-emerald-800 bg-emerald-50 hover:bg-emerald-100 border border-emerald-200 rounded-lg transition-colors"
+                        >
+                          Allot Unit
+                        </button>
+                        <button
+                          onClick={() => openEdit(t)}
+                          className="px-2 py-1 text-[11px] font-bold text-blue-600 hover:bg-blue-50 border border-blue-200 rounded-lg"
+                        >
+                          Edit
+                        </button>
+                        <button
+                          onClick={() => handleDelete(t)}
+                          className="px-2 py-1 text-[11px] font-bold text-red-600 hover:bg-red-50 border border-red-200 rounded-lg"
+                        >
+                          Delete
+                        </button>
+                      </div>
                     </td>
                   </tr>
                 ))}
@@ -227,77 +360,102 @@ export function TBAClient({ isAdmin = false }: { isAdmin?: boolean }) {
         )}
       </div>
 
-      {/* Add TBA Modal */}
-      {isAddOpen && (
+      {/* Add / Edit TBA Modal */}
+      {isModalOpen && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-xs animate-in fade-in duration-150">
-          <div className="bg-white rounded-2xl shadow-2xl max-w-md w-full overflow-hidden border border-slate-100">
-            <div className="px-6 py-4 bg-amber-600 text-white flex items-center justify-between">
-              <div>
-                <h3 className="text-base font-bold">New TBA Reservation</h3>
-                <p className="text-xs text-amber-100">Reservation without assigned serial number</p>
-              </div>
-              <button onClick={() => setIsAddOpen(false)} className="text-amber-200 hover:text-white p-1">
+          <div className="bg-white rounded-2xl shadow-2xl max-w-lg w-full overflow-hidden border border-slate-200">
+            <div className="px-6 py-4 bg-slate-900 text-white flex items-center justify-between">
+              <h3 className="text-sm font-bold">
+                {editingTarget ? "Edit TBA Reservation" : "Add TBA Reservation"}
+              </h3>
+              <button onClick={() => setIsModalOpen(false)} className="text-slate-400 hover:text-white">
                 ✕
               </button>
             </div>
 
-            <form onSubmit={handleAddTBA} className="p-6 space-y-4">
-              <div>
-                <label className="block text-xs font-bold text-slate-700 mb-1">
-                  Client Name <span className="text-red-500">*</span>
-                </label>
-                <input
-                  value={newClient}
-                  onChange={(e) => setNewClient(e.target.value)}
-                  placeholder="e.g. Apex Visuals"
-                  required
-                  className="w-full px-3 py-2 text-sm border border-slate-300 rounded-lg focus:ring-2 focus:ring-amber-500 focus:outline-none"
-                />
-              </div>
+            <form onSubmit={handleSave} className="p-6 space-y-3.5 text-xs">
+              {err && (
+                <div className="p-2.5 bg-red-50 border border-red-200 text-red-700 rounded-xl font-bold">
+                  {err}
+                </div>
+              )}
 
               <div className="grid grid-cols-2 gap-3">
                 <div>
-                  <label className="block text-xs font-bold text-slate-700 mb-1">Brand</label>
-                  <input
-                    list="tba-brands"
-                    value={newBrand}
-                    onChange={(e) => setNewBrand(e.target.value)}
-                    placeholder="e.g. Creons"
-                    className="w-full px-3 py-2 text-sm border border-slate-300 rounded-lg focus:ring-2 focus:ring-amber-500 focus:outline-none"
-                  />
-                  <datalist id="tba-brands">
+                  <label className="block font-bold text-slate-700 mb-1">Brand</label>
+                  <select
+                    value={form.brand}
+                    onChange={(e) => setForm({ ...form, brand: e.target.value })}
+                    className="w-full px-3 py-2 border border-slate-300 rounded-xl bg-white font-bold"
+                  >
+                    <option value="">-- Select Brand --</option>
                     {lookups.brands.map((b) => (
-                      <option key={b.id} value={b.name} />
+                      <option key={b.id} value={b.name}>
+                        {b.name}
+                      </option>
                     ))}
-                  </datalist>
+                  </select>
                 </div>
+
                 <div>
-                  <label className="block text-xs font-bold text-slate-700 mb-1">
+                  <label className="block font-bold text-slate-700 mb-1">
                     Model <span className="text-red-500">*</span>
                   </label>
-                  <input
-                    list="tba-models"
-                    value={newModel}
-                    onChange={(e) => setNewModel(e.target.value)}
-                    placeholder="e.g. Creons DTF 4-Head"
+                  <select
+                    value={form.model}
+                    onChange={(e) => setForm({ ...form, model: e.target.value })}
                     required
-                    className="w-full px-3 py-2 text-sm border border-slate-300 rounded-lg focus:ring-2 focus:ring-amber-500 focus:outline-none"
-                  />
-                  <datalist id="tba-models">
+                    className="w-full px-3 py-2 border border-slate-300 rounded-xl bg-white font-bold"
+                  >
+                    <option value="">-- Select Model --</option>
                     {lookups.models.map((m) => (
-                      <option key={m.id} value={m.name} />
+                      <option key={m.id} value={m.name}>
+                        {m.name}
+                      </option>
                     ))}
-                  </datalist>
+                  </select>
                 </div>
               </div>
 
               <div className="grid grid-cols-2 gap-3">
                 <div>
-                  <label className="block text-xs font-bold text-slate-700 mb-1">Assigned AE</label>
+                  <label className="block font-bold text-slate-700 mb-1">
+                    Client Name <span className="text-red-500">*</span>
+                  </label>
+                  <input
+                    value={form.client_name}
+                    onChange={(e) => setForm({ ...form, client_name: e.target.value })}
+                    required
+                    className="w-full px-3 py-2 border border-slate-300 rounded-xl font-bold"
+                  />
+                </div>
+
+                <div>
+                  <label className="block font-bold text-slate-700 mb-1">Client Code</label>
+                  <input
+                    value={form.client_code}
+                    onChange={(e) => setForm({ ...form, client_code: e.target.value })}
+                    className="w-full px-3 py-2 border border-slate-300 rounded-xl font-mono"
+                  />
+                </div>
+              </div>
+
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="block font-bold text-slate-700 mb-1">Location</label>
+                  <input
+                    value={form.location}
+                    onChange={(e) => setForm({ ...form, location: e.target.value })}
+                    className="w-full px-3 py-2 border border-slate-300 rounded-xl"
+                  />
+                </div>
+
+                <div>
+                  <label className="block font-bold text-slate-700 mb-1">AE</label>
                   <select
-                    value={newAe}
-                    onChange={(e) => setNewAe(e.target.value)}
-                    className="w-full px-3 py-2 text-sm border border-slate-300 rounded-lg focus:ring-2 focus:ring-amber-500 focus:outline-none bg-white"
+                    value={form.ae}
+                    onChange={(e) => setForm({ ...form, ae: e.target.value })}
+                    className="w-full px-3 py-2 border border-slate-300 rounded-xl bg-white font-bold"
                   >
                     <option value="">-- Select AE --</option>
                     {lookups.aes.map((a) => (
@@ -307,52 +465,42 @@ export function TBAClient({ isAdmin = false }: { isAdmin?: boolean }) {
                     ))}
                   </select>
                 </div>
-                <div>
-                  <label className="block text-xs font-bold text-slate-700 mb-1">Location</label>
-                  <input
-                    value={newLocation}
-                    onChange={(e) => setNewLocation(e.target.value)}
-                    placeholder="e.g. Laguna"
-                    className="w-full px-3 py-2 text-sm border border-slate-300 rounded-lg focus:ring-2 focus:ring-amber-500 focus:outline-none"
-                  />
-                </div>
               </div>
 
               <div>
-                <label className="block text-xs font-bold text-slate-700 mb-1">Reservation Date</label>
+                <label className="block font-bold text-slate-700 mb-1">Reservation Date</label>
                 <input
                   type="date"
-                  value={newDate}
-                  onChange={(e) => setNewDate(e.target.value)}
-                  className="w-full px-3 py-2 text-sm border border-slate-300 rounded-lg focus:ring-2 focus:ring-amber-500 focus:outline-none"
+                  value={form.reservation_date}
+                  onChange={(e) => setForm({ ...form, reservation_date: e.target.value })}
+                  className="w-full px-3 py-2 border border-slate-300 rounded-xl"
                 />
               </div>
 
               <div>
-                <label className="block text-xs font-bold text-slate-700 mb-1">Notes</label>
+                <label className="block font-bold text-slate-700 mb-1">Notes</label>
                 <textarea
-                  value={newNotes}
-                  onChange={(e) => setNewNotes(e.target.value)}
+                  value={form.notes}
+                  onChange={(e) => setForm({ ...form, notes: e.target.value })}
                   rows={2}
-                  placeholder="Requested delivery timeframe, deal terms..."
-                  className="w-full px-3 py-2 text-sm border border-slate-300 rounded-lg focus:ring-2 focus:ring-amber-500 focus:outline-none"
+                  className="w-full px-3 py-2 border border-slate-300 rounded-xl"
                 />
               </div>
 
-              <div className="pt-3 border-t border-slate-200 flex items-center justify-end gap-3">
+              <div className="pt-3 border-t border-slate-200 flex justify-end gap-2.5">
                 <button
                   type="button"
-                  onClick={() => setIsAddOpen(false)}
-                  className="px-4 py-2 text-xs font-semibold text-slate-600 hover:bg-slate-100 rounded-lg"
+                  onClick={() => setIsModalOpen(false)}
+                  className="px-4 py-2 font-semibold text-slate-600 hover:bg-slate-100 rounded-xl"
                 >
                   Cancel
                 </button>
                 <button
                   type="submit"
-                  disabled={submitting}
-                  className="px-5 py-2 text-xs font-bold text-white bg-amber-600 hover:bg-amber-700 rounded-lg shadow-md disabled:opacity-50"
+                  disabled={saving}
+                  className="px-5 py-2 font-bold text-white bg-blue-600 hover:bg-blue-700 rounded-xl shadow-md disabled:opacity-50"
                 >
-                  {submitting ? "Saving..." : "Save TBA Reservation"}
+                  {saving ? "Saving..." : "Save TBA"}
                 </button>
               </div>
             </form>

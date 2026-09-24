@@ -3,7 +3,7 @@
 import { useState, useEffect } from "react";
 import type { Machine, MachineHistoryItem, LookupData, MachineStatus } from "../types";
 
-const STATUS_OPTIONS: MachineStatus[] = [
+export const ALL_STATUSES: MachineStatus[] = [
   "In Stock",
   "Incoming",
   "Recertified",
@@ -13,7 +13,17 @@ const STATUS_OPTIONS: MachineStatus[] = [
   "Pullout Parts",
 ];
 
-// ─── Add / Edit Modal ───────────────────────────────────────────────
+export const STATUS_PILLS: Record<MachineStatus, { label: string; bg: string; text: string; border: string; icon: string }> = {
+  "Incoming":      { label: "Incoming",      bg: "#eff6ff", text: "#1d4ed8", border: "#bfdbfe", icon: "🚚" },
+  "In Stock":      { label: "In Stock",      bg: "#ecfdf5", text: "#047857", border: "#a7f3d0", icon: "📦" },
+  "Recertified":   { label: "Recertified",   bg: "#f0fdfa", text: "#0f766e", border: "#99f6e4", icon: "♻️" },
+  "Demo":          { label: "Demo",          bg: "#fdf2f8", text: "#be185d", border: "#fbcfe8", icon: "🧪" },
+  "Reserved":      { label: "Reserved",      bg: "#fffbeb", text: "#b45309", border: "#fde68a", icon: "🔖" },
+  "Delivered":     { label: "Delivered",     bg: "#f0fdf4", text: "#15803d", border: "#bbf7d0", icon: "✅" },
+  "Pullout Parts": { label: "Pullout Parts", bg: "#fef2f2", text: "#b91c1c", border: "#fecaca", icon: "🔧" },
+};
+
+// ─── Add / Edit Machine Modal ───────────────────────────────────────
 export function MachineFormModal({
   isOpen,
   onClose,
@@ -27,8 +37,8 @@ export function MachineFormModal({
   initialData?: Machine | null;
   lookups: LookupData;
 }) {
-  const isEdit = !!initialData;
-  const [formData, setFormData] = useState({
+  const isAdd = !initialData;
+  const [form, setForm] = useState({
     serial_no: "",
     po_no: "",
     brand: "",
@@ -43,13 +53,15 @@ export function MachineFormModal({
     delivery_date: "",
     dispatch_date: "",
     notes: "",
+    history_note: "",
   });
+  const [qty, setQty] = useState(1);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
 
   useEffect(() => {
     if (initialData) {
-      setFormData({
+      setForm({
         serial_no: initialData.serial_no || "",
         po_no: initialData.po_no || "",
         brand: initialData.brand || "",
@@ -64,13 +76,15 @@ export function MachineFormModal({
         delivery_date: initialData.delivery_date || "",
         dispatch_date: initialData.dispatch_date || "",
         notes: initialData.notes || "",
+        history_note: "",
       });
+      setQty(1);
     } else {
-      setFormData({
+      setForm({
         serial_no: "",
         po_no: "",
         brand: lookups.brands[0]?.name || "",
-        model: "",
+        model: lookups.models[0]?.name || "",
         branch: lookups.branches[0]?.code || "",
         status: "In Stock",
         client_name: "",
@@ -81,7 +95,9 @@ export function MachineFormModal({
         delivery_date: "",
         dispatch_date: "",
         notes: "",
+        history_note: "",
       });
+      setQty(1);
     }
   }, [initialData, lookups, isOpen]);
 
@@ -89,8 +105,20 @@ export function MachineFormModal({
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
-    if (!formData.model) {
-      setError("Please specify the Model");
+    if (!form.po_no.trim()) {
+      setError("PO No. is required.");
+      return;
+    }
+    if (!form.brand) {
+      setError("Brand is required.");
+      return;
+    }
+    if (!form.model.trim()) {
+      setError("Model is required.");
+      return;
+    }
+    if (!form.branch) {
+      setError("Branch is required.");
       return;
     }
 
@@ -98,24 +126,39 @@ export function MachineFormModal({
     setError("");
 
     try {
-      const url = isEdit ? `/api/machines/${initialData?.id}` : "/api/machines";
-      const method = isEdit ? "PUT" : "POST";
-
-      const res = await fetch(url, {
-        method,
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(formData),
-      });
-
-      if (!res.ok) {
-        const d = await res.json();
-        throw new Error(d.error || "Failed to save unit");
+      if (isAdd) {
+        // Support batch creation
+        const totalQty = Math.max(1, Math.min(qty, 500));
+        for (let i = 0; i < totalQty; i++) {
+          const res = await fetch("/api/machines", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+              ...form,
+              serial_no: totalQty > 1 && form.serial_no ? `${form.serial_no}-${i + 1}` : form.serial_no,
+            }),
+          });
+          if (!res.ok) {
+            const d = await res.json();
+            throw new Error(d.error || "Failed to add machine unit.");
+          }
+        }
+      } else {
+        const res = await fetch(`/api/machines/${initialData?.id}`, {
+          method: "PUT",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(form),
+        });
+        if (!res.ok) {
+          const d = await res.json();
+          throw new Error(d.error || "Failed to update machine unit.");
+        }
       }
 
       onSuccess();
       onClose();
     } catch (err: unknown) {
-      setError(err instanceof Error ? err.message : "Error saving unit");
+      setError(err instanceof Error ? err.message : "Error saving unit.");
     } finally {
       setLoading(false);
     }
@@ -123,94 +166,145 @@ export function MachineFormModal({
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-xs animate-in fade-in duration-150">
-      <div className="bg-white rounded-2xl shadow-2xl max-w-2xl w-full max-h-[90vh] flex flex-col overflow-hidden border border-slate-100">
+      <div className="bg-white rounded-2xl shadow-2xl max-w-2xl w-full max-h-[92vh] flex flex-col overflow-hidden border border-slate-200">
         <div className="px-6 py-4 bg-slate-900 text-white flex items-center justify-between">
-          <div className="flex items-center gap-2.5">
-            <div className="w-8 h-8 rounded-lg bg-blue-600 flex items-center justify-center text-white font-bold">
-              {isEdit ? "✎" : "+"}
-            </div>
-            <div>
-              <h3 className="text-base font-bold">{isEdit ? "Edit Machine Unit" : "Add New Machine Unit"}</h3>
-              <p className="text-xs text-slate-400">Physical inventory tracking</p>
-            </div>
+          <div className="flex items-center gap-2">
+            <span className="text-lg">{isAdd ? "📦" : "✏️"}</span>
+            <h3 className="text-sm font-bold tracking-tight">
+              {isAdd ? "Add Machine Unit(s)" : "Edit Machine Unit"}
+            </h3>
           </div>
-          <button
-            onClick={onClose}
-            className="text-slate-400 hover:text-white p-1 rounded-lg hover:bg-slate-800 transition-colors"
-          >
+          <button onClick={onClose} className="text-slate-400 hover:text-white p-1">
             ✕
           </button>
         </div>
 
-        <form onSubmit={handleSubmit} className="flex-1 overflow-y-auto p-6 space-y-4">
+        <form onSubmit={handleSubmit} className="p-6 space-y-4 overflow-y-auto text-xs">
+          {isAdd && (
+            <div className="p-3 bg-blue-50 border border-blue-200 text-blue-800 rounded-xl text-xs font-medium">
+              Add one unit or a batch. Pick a <b>Status</b> and set <b>Quantity</b> to add several at once.
+            </div>
+          )}
+
           {error && (
-            <div className="p-3 text-xs bg-red-50 border border-red-200 text-red-700 rounded-lg">
+            <div className="p-3 bg-red-50 border border-red-200 text-red-700 rounded-xl text-xs font-bold">
               {error}
             </div>
           )}
 
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
             <div>
-              <label className="block text-xs font-bold text-slate-700 mb-1">Brand</label>
-              <input
-                list="brands-list"
-                value={formData.brand}
-                onChange={(e) => setFormData({ ...formData, brand: e.target.value })}
-                placeholder="e.g. Creons, Aeon, Canon"
-                className="w-full px-3 py-2 text-sm border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:outline-none"
-              />
-              <datalist id="brands-list">
-                {lookups.brands.map((b) => (
-                  <option key={b.id} value={b.name} />
+              <label className="block font-bold text-slate-700 mb-1">
+                Status <span className="text-red-500">*</span>
+              </label>
+              <select
+                value={form.status}
+                onChange={(e) => setForm({ ...form, status: e.target.value as MachineStatus })}
+                className="w-full px-3 py-2 border border-slate-300 rounded-xl bg-white font-bold text-slate-800 focus:ring-2 focus:ring-blue-500 focus:outline-none"
+              >
+                {ALL_STATUSES.map((s) => (
+                  <option key={s} value={s}>
+                    {STATUS_PILLS[s].icon} {s}
+                  </option>
                 ))}
-              </datalist>
+              </select>
             </div>
 
             <div>
-              <label className="block text-xs font-bold text-slate-700 mb-1">
-                Model <span className="text-red-500">*</span>
+              <label className="block font-bold text-slate-700 mb-1">
+                PO No. <span className="text-red-500">*</span>
               </label>
               <input
-                list="models-list"
-                value={formData.model}
-                onChange={(e) => setFormData({ ...formData, model: e.target.value })}
-                placeholder="e.g. CREONS 6090 UV FLATBED"
+                value={form.po_no}
+                onChange={(e) => setForm({ ...form, po_no: e.target.value })}
+                placeholder="Purchase order no."
                 required
-                className="w-full px-3 py-2 text-sm border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:outline-none"
-              />
-              <datalist id="models-list">
-                {lookups.models.map((m) => (
-                  <option key={m.id} value={m.name} />
-                ))}
-              </datalist>
-            </div>
-
-            <div>
-              <label className="block text-xs font-bold text-slate-700 mb-1">Serial Number</label>
-              <input
-                value={formData.serial_no}
-                onChange={(e) => setFormData({ ...formData, serial_no: e.target.value })}
-                placeholder="e.g. SN-2024-001"
-                className="w-full px-3 py-2 text-sm border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:outline-none"
+                className="w-full px-3 py-2 border border-slate-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:outline-none"
               />
             </div>
+          </div>
 
-            <div>
-              <label className="block text-xs font-bold text-slate-700 mb-1">PO Number</label>
-              <input
-                value={formData.po_no}
-                onChange={(e) => setFormData({ ...formData, po_no: e.target.value })}
-                placeholder="e.g. PO-88912"
-                className="w-full px-3 py-2 text-sm border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:outline-none"
-              />
+          {isAdd && (
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
+              <div>
+                <label className="block font-bold text-slate-700 mb-1">
+                  Quantity <span className="text-red-500">*</span>
+                </label>
+                <input
+                  type="number"
+                  min={1}
+                  max={500}
+                  value={qty}
+                  onChange={(e) => setQty(Number(e.target.value))}
+                  className="w-full px-3 py-2 border border-slate-300 rounded-xl font-bold focus:ring-2 focus:ring-blue-500 focus:outline-none"
+                />
+                <span className="text-[10px] text-slate-400 mt-0.5 block">
+                  Add several identical units at once — each becomes its own row.
+                </span>
+              </div>
             </div>
+          )}
 
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
             <div>
-              <label className="block text-xs font-bold text-slate-700 mb-1">Branch</label>
+              <label className="block font-bold text-slate-700 mb-1">
+                Brand <span className="text-red-500">*</span>
+              </label>
               <select
-                value={formData.branch}
-                onChange={(e) => setFormData({ ...formData, branch: e.target.value })}
-                className="w-full px-3 py-2 text-sm border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:outline-none bg-white"
+                value={form.brand}
+                onChange={(e) => setForm({ ...form, brand: e.target.value })}
+                required
+                className="w-full px-3 py-2 border border-slate-300 rounded-xl bg-white font-bold focus:ring-2 focus:ring-blue-500 focus:outline-none"
+              >
+                <option value="">-- Select Brand --</option>
+                {lookups.brands.map((b) => (
+                  <option key={b.id} value={b.name}>
+                    {b.name}
+                  </option>
+                ))}
+              </select>
+            </div>
+
+            <div>
+              <label className="block font-bold text-slate-700 mb-1">
+                Model <span className="text-red-500">*</span>
+              </label>
+              <select
+                value={form.model}
+                onChange={(e) => setForm({ ...form, model: e.target.value })}
+                required
+                className="w-full px-3 py-2 border border-slate-300 rounded-xl bg-white font-bold focus:ring-2 focus:ring-blue-500 focus:outline-none"
+              >
+                <option value="">-- Select Model --</option>
+                {lookups.models.map((m) => (
+                  <option key={m.id} value={m.name}>
+                    {m.name}
+                  </option>
+                ))}
+              </select>
+            </div>
+          </div>
+
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
+            <div>
+              <label className="block font-bold text-slate-700 mb-1">Serial No.</label>
+              <input
+                value={form.serial_no}
+                onChange={(e) => setForm({ ...form, serial_no: e.target.value })}
+                placeholder="e.g. GR20241280"
+                className="w-full px-3 py-2 border border-slate-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:outline-none font-mono"
+              />
+            </div>
+
+            <div>
+              <label className="block font-bold text-slate-700 mb-1">
+                Branch <span className="text-red-500">*</span>
+              </label>
+              <select
+                value={form.branch}
+                onChange={(e) => setForm({ ...form, branch: e.target.value })}
+                required
+                className="w-full px-3 py-2 border border-slate-300 rounded-xl bg-white font-bold focus:ring-2 focus:ring-blue-500 focus:outline-none"
               >
                 <option value="">-- Select Branch --</option>
                 {lookups.branches.map((b) => (
@@ -220,121 +314,111 @@ export function MachineFormModal({
                 ))}
               </select>
             </div>
+          </div>
+
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5 pt-2 border-t border-slate-100">
+            <div>
+              <label className="block font-bold text-slate-700 mb-1">Client Name</label>
+              <input
+                value={form.client_name}
+                onChange={(e) => setForm({ ...form, client_name: e.target.value })}
+                className="w-full px-3 py-2 border border-slate-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:outline-none"
+              />
+            </div>
 
             <div>
-              <label className="block text-xs font-bold text-slate-700 mb-1">Status</label>
+              <label className="block font-bold text-slate-700 mb-1">Client Code</label>
+              <input
+                value={form.client_code}
+                onChange={(e) => setForm({ ...form, client_code: e.target.value })}
+                className="w-full px-3 py-2 border border-slate-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:outline-none font-mono"
+              />
+            </div>
+          </div>
+
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
+            <div>
+              <label className="block font-bold text-slate-700 mb-1">Location</label>
+              <input
+                value={form.location}
+                onChange={(e) => setForm({ ...form, location: e.target.value })}
+                placeholder="Client / site location"
+                className="w-full px-3 py-2 border border-slate-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:outline-none"
+              />
+            </div>
+
+            <div>
+              <label className="block font-bold text-slate-700 mb-1">AE</label>
               <select
-                value={formData.status}
-                onChange={(e) => setFormData({ ...formData, status: e.target.value as MachineStatus })}
-                className="w-full px-3 py-2 text-sm border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:outline-none bg-white font-medium"
+                value={form.ae}
+                onChange={(e) => setForm({ ...form, ae: e.target.value })}
+                className="w-full px-3 py-2 border border-slate-300 rounded-xl bg-white font-bold focus:ring-2 focus:ring-blue-500 focus:outline-none"
               >
-                {STATUS_OPTIONS.map((st) => (
-                  <option key={st} value={st}>
-                    {st}
+                <option value="">-- Select AE --</option>
+                {lookups.aes.map((a) => (
+                  <option key={a.id} value={a.code}>
+                    {a.code}
                   </option>
                 ))}
               </select>
             </div>
           </div>
 
-          <div className="pt-2 border-t border-slate-200">
-            <h4 className="text-xs font-bold uppercase text-slate-500 tracking-wider mb-3">
-              Client & Assignment Details
-            </h4>
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-              <div>
-                <label className="block text-xs font-bold text-slate-700 mb-1">Client Name</label>
-                <input
-                  value={formData.client_name}
-                  onChange={(e) => setFormData({ ...formData, client_name: e.target.value })}
-                  placeholder="e.g. Print Masters Corp."
-                  className="w-full px-3 py-2 text-sm border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:outline-none"
-                />
-              </div>
-
-              <div>
-                <label className="block text-xs font-bold text-slate-700 mb-1">Client Code</label>
-                <input
-                  value={formData.client_code}
-                  onChange={(e) => setFormData({ ...formData, client_code: e.target.value })}
-                  placeholder="e.g. CLI-9901"
-                  className="w-full px-3 py-2 text-sm border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:outline-none"
-                />
-              </div>
-
-              <div>
-                <label className="block text-xs font-bold text-slate-700 mb-1">Assigned AE</label>
-                <select
-                  value={formData.ae}
-                  onChange={(e) => setFormData({ ...formData, ae: e.target.value })}
-                  className="w-full px-3 py-2 text-sm border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:outline-none bg-white"
-                >
-                  <option value="">-- Select AE --</option>
-                  {lookups.aes.map((a) => (
-                    <option key={a.id} value={a.code}>
-                      {a.code}
-                    </option>
-                  ))}
-                </select>
-              </div>
-
-              <div>
-                <label className="block text-xs font-bold text-slate-700 mb-1">Location</label>
-                <input
-                  value={formData.location}
-                  onChange={(e) => setFormData({ ...formData, location: e.target.value })}
-                  placeholder="e.g. Quezon City Warehouse"
-                  className="w-full px-3 py-2 text-sm border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:outline-none"
-                />
-              </div>
-
-              <div>
-                <label className="block text-xs font-bold text-slate-700 mb-1">Reservation Date</label>
-                <input
-                  type="date"
-                  value={formData.reservation_date}
-                  onChange={(e) => setFormData({ ...formData, reservation_date: e.target.value })}
-                  className="w-full px-3 py-2 text-sm border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:outline-none"
-                />
-              </div>
-
-              <div>
-                <label className="block text-xs font-bold text-slate-700 mb-1">Delivery Date</label>
-                <input
-                  type="date"
-                  value={formData.delivery_date}
-                  onChange={(e) => setFormData({ ...formData, delivery_date: e.target.value })}
-                  className="w-full px-3 py-2 text-sm border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:outline-none"
-                />
-              </div>
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-3.5">
+            <div>
+              <label className="block font-bold text-slate-700 mb-1">Reservation Date</label>
+              <input
+                type="date"
+                value={form.reservation_date}
+                onChange={(e) => setForm({ ...form, reservation_date: e.target.value })}
+                className="w-full px-3 py-2 border border-slate-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:outline-none"
+              />
+            </div>
+            <div>
+              <label className="block font-bold text-slate-700 mb-1">Delivery Date</label>
+              <input
+                type="date"
+                value={form.delivery_date}
+                onChange={(e) => setForm({ ...form, delivery_date: e.target.value })}
+                className="w-full px-3 py-2 border border-slate-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:outline-none"
+              />
+            </div>
+            <div>
+              <label className="block font-bold text-slate-700 mb-1">Transfer Date</label>
+              <input
+                type="date"
+                value={form.dispatch_date}
+                onChange={(e) => setForm({ ...form, dispatch_date: e.target.value })}
+                className="w-full px-3 py-2 border border-slate-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:outline-none"
+              />
             </div>
           </div>
 
           <div>
-            <label className="block text-xs font-bold text-slate-700 mb-1">Notes / Remarks</label>
+            <label className="block font-bold text-slate-700 mb-1">Notes</label>
             <textarea
-              value={formData.notes}
-              onChange={(e) => setFormData({ ...formData, notes: e.target.value })}
+              value={form.notes}
+              onChange={(e) => setForm({ ...form, notes: e.target.value })}
               rows={2}
-              placeholder="Additional specifications, delivery remarks, condition notes..."
-              className="w-full px-3 py-2 text-sm border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:outline-none"
+              placeholder="Anything worth remembering about this unit"
+              className="w-full px-3 py-2 border border-slate-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:outline-none"
             />
           </div>
 
-          <div className="pt-4 border-t border-slate-200 flex items-center justify-end gap-3">
+          <div className="pt-3 border-t border-slate-200 flex justify-end gap-2.5">
             <button
               type="button"
               onClick={onClose}
-              className="px-4 py-2 text-xs font-semibold text-slate-600 hover:bg-slate-100 rounded-lg transition-colors"
+              className="px-4 py-2 text-xs font-semibold text-slate-600 hover:bg-slate-100 rounded-xl transition-colors"
             >
               Cancel
             </button>
             <button
               type="submit"
               disabled={loading}
-              className="px-5 py-2 text-xs font-bold text-white bg-blue-600 hover:bg-blue-700 rounded-lg shadow-md transition-colors disabled:opacity-50"
+              className="px-5 py-2 text-xs font-bold text-white bg-blue-600 hover:bg-blue-700 rounded-xl shadow-md transition-all disabled:opacity-50"
             >
-              {loading ? "Saving..." : isEdit ? "Update Unit" : "Add Unit"}
+              {loading ? "Saving..." : isAdd ? "Add Machine" : "Save Changes"}
             </button>
           </div>
         </form>
@@ -372,11 +456,10 @@ export function ReserveModal({
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
-    if (!clientName) {
-      setError("Client Name is required");
+    if (!clientName.trim()) {
+      setError("Client Name is required.");
       return;
     }
-
     setLoading(true);
     setError("");
 
@@ -396,13 +479,13 @@ export function ReserveModal({
 
       if (!res.ok) {
         const d = await res.json();
-        throw new Error(d.error || "Failed to reserve unit");
+        throw new Error(d.error || "Failed to reserve unit.");
       }
 
       onSuccess();
       onClose();
     } catch (err: unknown) {
-      setError(err instanceof Error ? err.message : "Error reserving unit");
+      setError(err instanceof Error ? err.message : "Error reserving unit.");
     } finally {
       setLoading(false);
     }
@@ -410,12 +493,12 @@ export function ReserveModal({
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-xs animate-in fade-in duration-150">
-      <div className="bg-white rounded-2xl shadow-2xl max-w-lg w-full overflow-hidden border border-slate-100">
+      <div className="bg-white rounded-2xl shadow-2xl max-w-lg w-full overflow-hidden border border-slate-200">
         <div className="px-6 py-4 bg-amber-600 text-white flex items-center justify-between">
           <div>
-            <h3 className="text-base font-bold">Reserve Unit</h3>
-            <p className="text-xs text-amber-100">
-              {machine.brand} {machine.model} (SN: {machine.serial_no || "N/A"})
+            <h3 className="text-sm font-bold">Reserve Machine Unit</h3>
+            <p className="text-[11px] text-amber-100">
+              {machine.brand} {machine.model} (SN: {machine.serial_no || "No Serial"})
             </p>
           </div>
           <button onClick={onClose} className="text-amber-200 hover:text-white p-1">
@@ -423,42 +506,42 @@ export function ReserveModal({
           </button>
         </div>
 
-        <form onSubmit={handleSubmit} className="p-6 space-y-4">
+        <form onSubmit={handleSubmit} className="p-6 space-y-3.5 text-xs">
           {error && (
-            <div className="p-3 text-xs bg-red-50 border border-red-200 text-red-700 rounded-lg">
+            <div className="p-2.5 bg-red-50 border border-red-200 text-red-700 rounded-xl text-xs font-bold">
               {error}
             </div>
           )}
 
           <div>
-            <label className="block text-xs font-bold text-slate-700 mb-1">
+            <label className="block font-bold text-slate-700 mb-1">
               Client Name <span className="text-red-500">*</span>
             </label>
             <input
               value={clientName}
               onChange={(e) => setClientName(e.target.value)}
-              placeholder="e.g. Gold Print Industries"
+              placeholder="e.g. Acme Printing"
               required
-              className="w-full px-3 py-2 text-sm border border-slate-300 rounded-lg focus:ring-2 focus:ring-amber-500 focus:outline-none"
+              className="w-full px-3 py-2 border border-slate-300 rounded-xl focus:ring-2 focus:ring-amber-500 focus:outline-none font-bold"
             />
           </div>
 
           <div className="grid grid-cols-2 gap-3">
             <div>
-              <label className="block text-xs font-bold text-slate-700 mb-1">Client Code</label>
+              <label className="block font-bold text-slate-700 mb-1">Client Code</label>
               <input
                 value={clientCode}
                 onChange={(e) => setClientCode(e.target.value)}
-                placeholder="e.g. GPI-01"
-                className="w-full px-3 py-2 text-sm border border-slate-300 rounded-lg focus:ring-2 focus:ring-amber-500 focus:outline-none"
+                placeholder="e.g. ACM-01"
+                className="w-full px-3 py-2 border border-slate-300 rounded-xl font-mono focus:ring-2 focus:ring-amber-500 focus:outline-none"
               />
             </div>
             <div>
-              <label className="block text-xs font-bold text-slate-700 mb-1">Account Executive</label>
+              <label className="block font-bold text-slate-700 mb-1">Assigned AE</label>
               <select
                 value={ae}
                 onChange={(e) => setAe(e.target.value)}
-                className="w-full px-3 py-2 text-sm border border-slate-300 rounded-lg focus:ring-2 focus:ring-amber-500 focus:outline-none bg-white"
+                className="w-full px-3 py-2 border border-slate-300 rounded-xl bg-white font-bold focus:ring-2 focus:ring-amber-500 focus:outline-none"
               >
                 <option value="">-- Select AE --</option>
                 {lookups.aes.map((a) => (
@@ -472,48 +555,37 @@ export function ReserveModal({
 
           <div className="grid grid-cols-2 gap-3">
             <div>
-              <label className="block text-xs font-bold text-slate-700 mb-1">Location</label>
+              <label className="block font-bold text-slate-700 mb-1">Location</label>
               <input
                 value={location}
                 onChange={(e) => setLocation(e.target.value)}
                 placeholder="e.g. Manila"
-                className="w-full px-3 py-2 text-sm border border-slate-300 rounded-lg focus:ring-2 focus:ring-amber-500 focus:outline-none"
+                className="w-full px-3 py-2 border border-slate-300 rounded-xl focus:ring-2 focus:ring-amber-500 focus:outline-none"
               />
             </div>
             <div>
-              <label className="block text-xs font-bold text-slate-700 mb-1">Reservation Date</label>
+              <label className="block font-bold text-slate-700 mb-1">Reservation Date</label>
               <input
                 type="date"
                 value={reservationDate}
                 onChange={(e) => setReservationDate(e.target.value)}
-                className="w-full px-3 py-2 text-sm border border-slate-300 rounded-lg focus:ring-2 focus:ring-amber-500 focus:outline-none"
+                className="w-full px-3 py-2 border border-slate-300 rounded-xl focus:ring-2 focus:ring-amber-500 focus:outline-none"
               />
             </div>
           </div>
 
-          <div>
-            <label className="block text-xs font-bold text-slate-700 mb-1">Reservation Notes</label>
-            <textarea
-              value={notes}
-              onChange={(e) => setNotes(e.target.value)}
-              rows={2}
-              placeholder="Terms, DP confirmation, expected delivery date..."
-              className="w-full px-3 py-2 text-sm border border-slate-300 rounded-lg focus:ring-2 focus:ring-amber-500 focus:outline-none"
-            />
-          </div>
-
-          <div className="pt-3 border-t border-slate-200 flex items-center justify-end gap-3">
+          <div className="pt-3 border-t border-slate-200 flex justify-end gap-2.5">
             <button
               type="button"
               onClick={onClose}
-              className="px-4 py-2 text-xs font-semibold text-slate-600 hover:bg-slate-100 rounded-lg"
+              className="px-4 py-2 text-xs font-semibold text-slate-600 hover:bg-slate-100 rounded-xl"
             >
               Cancel
             </button>
             <button
               type="submit"
               disabled={loading}
-              className="px-5 py-2 text-xs font-bold text-white bg-amber-600 hover:bg-amber-700 rounded-lg shadow-md disabled:opacity-50"
+              className="px-5 py-2 text-xs font-bold text-white bg-amber-600 hover:bg-amber-700 rounded-xl shadow-md disabled:opacity-50"
             >
               {loading ? "Reserving..." : "Confirm Reservation"}
             </button>
@@ -566,13 +638,13 @@ export function DeliverModal({
 
       if (!res.ok) {
         const d = await res.json();
-        throw new Error(d.error || "Failed to mark as delivered");
+        throw new Error(d.error || "Failed to mark as delivered.");
       }
 
       onSuccess();
       onClose();
     } catch (err: unknown) {
-      setError(err instanceof Error ? err.message : "Error delivering unit");
+      setError(err instanceof Error ? err.message : "Error delivering unit.");
     } finally {
       setLoading(false);
     }
@@ -580,12 +652,12 @@ export function DeliverModal({
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-xs animate-in fade-in duration-150">
-      <div className="bg-white rounded-2xl shadow-2xl max-w-md w-full overflow-hidden border border-slate-100">
+      <div className="bg-white rounded-2xl shadow-2xl max-w-md w-full overflow-hidden border border-slate-200">
         <div className="px-6 py-4 bg-emerald-700 text-white flex items-center justify-between">
           <div>
-            <h3 className="text-base font-bold">Mark as Delivered</h3>
-            <p className="text-xs text-emerald-100">
-              {machine.brand} {machine.model} → {machine.client_name || "Assigned Client"}
+            <h3 className="text-sm font-bold">Mark as Delivered</h3>
+            <p className="text-[11px] text-emerald-100">
+              {machine.brand} {machine.model} → {machine.client_name || "Client"}
             </p>
           </div>
           <button onClick={onClose} className="text-emerald-200 hover:text-white p-1">
@@ -593,59 +665,59 @@ export function DeliverModal({
           </button>
         </div>
 
-        <form onSubmit={handleSubmit} className="p-6 space-y-4">
+        <form onSubmit={handleSubmit} className="p-6 space-y-3.5 text-xs">
           {error && (
-            <div className="p-3 text-xs bg-red-50 border border-red-200 text-red-700 rounded-lg">
+            <div className="p-2.5 bg-red-50 border border-red-200 text-red-700 rounded-xl font-bold">
               {error}
             </div>
           )}
 
           <div className="grid grid-cols-2 gap-3">
             <div>
-              <label className="block text-xs font-bold text-slate-700 mb-1">Delivery Date</label>
+              <label className="block font-bold text-slate-700 mb-1">Delivery Date</label>
               <input
                 type="date"
                 value={deliveryDate}
                 onChange={(e) => setDeliveryDate(e.target.value)}
-                className="w-full px-3 py-2 text-sm border border-slate-300 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:outline-none"
+                className="w-full px-3 py-2 border border-slate-300 rounded-xl font-bold"
               />
             </div>
             <div>
-              <label className="block text-xs font-bold text-slate-700 mb-1">Dispatch Date</label>
+              <label className="block font-bold text-slate-700 mb-1">Shipment Receipt Date</label>
               <input
                 type="date"
                 value={dispatchDate}
                 onChange={(e) => setDispatchDate(e.target.value)}
-                className="w-full px-3 py-2 text-sm border border-slate-300 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:outline-none"
+                className="w-full px-3 py-2 border border-slate-300 rounded-xl"
               />
             </div>
           </div>
 
           <div>
-            <label className="block text-xs font-bold text-slate-700 mb-1">Delivery Notes / DR Reference</label>
+            <label className="block font-bold text-slate-700 mb-1">Delivery Remarks / DR No.</label>
             <textarea
               value={notes}
               onChange={(e) => setNotes(e.target.value)}
               rows={2}
-              placeholder="DR Number, installer engineer, client received signature..."
-              className="w-full px-3 py-2 text-sm border border-slate-300 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:outline-none"
+              placeholder="DR reference, technician remarks..."
+              className="w-full px-3 py-2 border border-slate-300 rounded-xl"
             />
           </div>
 
-          <div className="pt-3 border-t border-slate-200 flex items-center justify-end gap-3">
+          <div className="pt-3 border-t border-slate-200 flex justify-end gap-2.5">
             <button
               type="button"
               onClick={onClose}
-              className="px-4 py-2 text-xs font-semibold text-slate-600 hover:bg-slate-100 rounded-lg"
+              className="px-4 py-2 text-xs font-semibold text-slate-600 hover:bg-slate-100 rounded-xl"
             >
               Cancel
             </button>
             <button
               type="submit"
               disabled={loading}
-              className="px-5 py-2 text-xs font-bold text-white bg-emerald-700 hover:bg-emerald-800 rounded-lg shadow-md disabled:opacity-50"
+              className="px-5 py-2 text-xs font-bold text-white bg-emerald-700 hover:bg-emerald-800 rounded-xl shadow-md disabled:opacity-50"
             >
-              {loading ? "Processing..." : "Confirm Delivery"}
+              {loading ? "Delivering..." : "Confirm Delivery"}
             </button>
           </div>
         </form>
@@ -654,7 +726,7 @@ export function DeliverModal({
   );
 }
 
-// ─── History / Detail Modal ─────────────────────────────────────────
+// ─── History Modal ──────────────────────────────────────────────────
 export function HistoryModal({
   isOpen,
   onClose,
@@ -683,12 +755,12 @@ export function HistoryModal({
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-xs animate-in fade-in duration-150">
-      <div className="bg-white rounded-2xl shadow-2xl max-w-lg w-full max-h-[85vh] flex flex-col overflow-hidden border border-slate-100">
+      <div className="bg-white rounded-2xl shadow-2xl max-w-lg w-full max-h-[85vh] flex flex-col overflow-hidden border border-slate-200">
         <div className="px-6 py-4 bg-slate-900 text-white flex items-center justify-between">
           <div>
-            <h3 className="text-base font-bold">Unit Audit Trail</h3>
-            <p className="text-xs text-slate-400">
-              {machine.brand} {machine.model} · SN: {machine.serial_no || "N/A"}
+            <h3 className="text-sm font-bold">Unit Audit Log</h3>
+            <p className="text-[11px] text-slate-400 font-mono">
+              {machine.brand} {machine.model} · SN: {machine.serial_no || "No Serial"}
             </p>
           </div>
           <button onClick={onClose} className="text-slate-400 hover:text-white p-1">
@@ -696,17 +768,17 @@ export function HistoryModal({
           </button>
         </div>
 
-        <div className="flex-1 overflow-y-auto p-6 space-y-4">
+        <div className="flex-1 overflow-y-auto p-6 space-y-4 text-xs">
           {loading ? (
-            <div className="text-center py-8 text-xs text-slate-400">Loading audit history...</div>
+            <div className="text-center py-8 text-slate-400">Loading audit history...</div>
           ) : history.length === 0 ? (
-            <div className="text-center py-8 text-xs text-slate-400">No history events logged yet.</div>
+            <div className="text-center py-8 text-slate-400">No log events recorded.</div>
           ) : (
-            <div className="relative pl-6 space-y-6 before:absolute before:left-2 before:top-2 before:bottom-2 before:w-0.5 before:bg-slate-200">
+            <div className="relative pl-6 space-y-5 before:absolute before:left-2 before:top-2 before:bottom-2 before:w-0.5 before:bg-slate-200">
               {history.map((h) => (
                 <div key={h.id} className="relative">
-                  <div className="absolute -left-6 top-1 w-3 h-3 rounded-full bg-blue-600 ring-4 ring-white" />
-                  <p className="text-xs font-bold text-slate-800">{h.event}</p>
+                  <div className="absolute -left-6 top-1 w-2.5 h-2.5 rounded-full bg-blue-600 ring-4 ring-white" />
+                  <p className="font-bold text-slate-800">{h.event}</p>
                   <p className="text-[11px] text-slate-500 mt-0.5">
                     By <span className="font-semibold text-slate-700">{h.actor || "System"}</span> ·{" "}
                     {new Date(h.created_at).toLocaleString()}
@@ -720,7 +792,7 @@ export function HistoryModal({
         <div className="p-4 bg-slate-50 border-t border-slate-200 flex justify-end">
           <button
             onClick={onClose}
-            className="px-4 py-2 text-xs font-bold text-slate-700 bg-white border border-slate-200 hover:bg-slate-100 rounded-lg"
+            className="px-4 py-1.5 text-xs font-bold text-slate-700 bg-white border border-slate-200 hover:bg-slate-100 rounded-xl"
           >
             Close
           </button>
