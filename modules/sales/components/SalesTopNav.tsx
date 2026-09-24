@@ -21,70 +21,64 @@ export function SalesTopNav({ isAdmin }: SalesTopNavProps) {
   return (
     <div className="h-[44px] bg-white border-b border-red-200 flex items-center justify-between px-4 sm:px-6 sticky top-[52px] z-30 select-none shadow-2xs">
       {/* Navigation Tabs */}
-      <div className="flex items-center gap-3">
-        <span className="text-xs font-black text-red-600 tracking-tight pr-2 border-r border-slate-200">
-          ESPMI
-        </span>
+      <nav className="flex items-center gap-1.5 overflow-x-auto">
+        <Link
+          href="/sales/quote-builder"
+          className={`px-3.5 py-1.5 rounded-lg text-xs font-bold transition-all whitespace-nowrap ${
+            isQuoteGen
+              ? "bg-[#fee2e2] text-red-600 font-extrabold shadow-2xs"
+              : "text-slate-600 hover:text-red-600 hover:bg-slate-50"
+          }`}
+        >
+          Quote Generator
+        </Link>
 
-        <nav className="flex items-center gap-1.5 overflow-x-auto">
+        <Link
+          href="/sales/calculator"
+          className={`px-3.5 py-1.5 rounded-lg text-xs font-bold transition-all whitespace-nowrap ${
+            isCalc
+              ? "bg-[#fee2e2] text-red-600 font-extrabold shadow-2xs"
+              : "text-slate-600 hover:text-red-600 hover:bg-slate-50"
+          }`}
+        >
+          Calculator
+        </Link>
+
+        <Link
+          href="/sales/catalog"
+          className={`px-3.5 py-1.5 rounded-lg text-xs font-bold transition-all whitespace-nowrap ${
+            isCatalog
+              ? "bg-[#fee2e2] text-red-600 font-extrabold shadow-2xs"
+              : "text-slate-600 hover:text-red-600 hover:bg-slate-50"
+          }`}
+        >
+          Product Info
+        </Link>
+
+        <Link
+          href="/sales/closing-docs"
+          className={`px-3.5 py-1.5 rounded-lg text-xs font-bold transition-all whitespace-nowrap ${
+            isClosingDocs
+              ? "bg-[#fee2e2] text-red-600 font-extrabold shadow-2xs"
+              : "text-slate-600 hover:text-red-600 hover:bg-slate-50"
+          }`}
+        >
+          Closing Docs
+        </Link>
+
+        {isAdmin && (
           <Link
-            href="/sales/quote-builder"
-            className={`px-3 py-1 rounded-md text-xs font-bold transition-all whitespace-nowrap ${
-              isQuoteGen
+            href="/sales/admin"
+            className={`px-3.5 py-1.5 rounded-lg text-xs font-bold transition-all whitespace-nowrap ${
+              isEditor
                 ? "bg-[#fee2e2] text-red-600 font-extrabold shadow-2xs"
                 : "text-slate-600 hover:text-red-600 hover:bg-slate-50"
             }`}
           >
-            Quote Generator
+            Catalog Editor
           </Link>
-
-          <Link
-            href="/sales/calculator"
-            className={`px-3 py-1 rounded-md text-xs font-bold transition-all whitespace-nowrap ${
-              isCalc
-                ? "bg-[#fee2e2] text-red-600 font-extrabold shadow-2xs"
-                : "text-slate-600 hover:text-red-600 hover:bg-slate-50"
-            }`}
-          >
-            Calculator
-          </Link>
-
-          <Link
-            href="/sales/catalog"
-            className={`px-3 py-1 rounded-md text-xs font-bold transition-all whitespace-nowrap ${
-              isCatalog
-                ? "bg-[#fee2e2] text-red-600 font-extrabold shadow-2xs"
-                : "text-slate-600 hover:text-red-600 hover:bg-slate-50"
-            }`}
-          >
-            Product Info
-          </Link>
-
-          <Link
-            href="/sales/closing-docs"
-            className={`px-3 py-1 rounded-md text-xs font-bold transition-all whitespace-nowrap ${
-              isClosingDocs
-                ? "bg-[#fee2e2] text-red-600 font-extrabold shadow-2xs"
-                : "text-slate-600 hover:text-red-600 hover:bg-slate-50"
-            }`}
-          >
-            Closing Docs
-          </Link>
-
-          {isAdmin && (
-            <Link
-              href="/sales/admin"
-              className={`px-3 py-1 rounded-md text-xs font-bold transition-all whitespace-nowrap ${
-                isEditor
-                  ? "bg-[#fee2e2] text-red-600 font-extrabold shadow-2xs"
-                  : "text-slate-600 hover:text-red-600 hover:bg-slate-50"
-              }`}
-            >
-              Catalog Editor
-            </Link>
-          )}
-        </nav>
-      </div>
+        )}
+      </nav>
     </div>
   );
 }
