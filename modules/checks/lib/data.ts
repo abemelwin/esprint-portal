@@ -133,7 +133,7 @@ function computeMeta(
       }
       if (ev.type === "RETURN" || ev.type === "DEPOSIT_CLEARED") break;
     }
-    if (!nextDeposit) nextDeposit = c.checkDate ?? null;
+    if (!nextDeposit) nextDeposit = null; // no fallback — null means no scheduled deposit
 
     meta[c.id] = {
       status: status as CheckStatus,

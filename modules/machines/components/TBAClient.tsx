@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect, useMemo } from "react";
+import Link from "next/link";
 import type { TBAListItem, Machine, LookupData } from "../types";
 
 export function TBAClient({ isAdmin = false }: { isAdmin?: boolean }) {
@@ -215,84 +216,101 @@ export function TBAClient({ isAdmin = false }: { isAdmin?: boolean }) {
   const uniq = (k: keyof TBAListItem) => [...new Set(tbaList.map((t) => t[k]).filter(Boolean))].sort() as string[];
 
   return (
-    <div className="p-4 sm:p-6 lg:p-7 space-y-4 max-w-[1700px] mx-auto">
-      {/* Header */}
-      <div className="flex flex-col md:flex-row md:items-center justify-between gap-3 bg-white p-4 rounded-2xl border border-slate-200 shadow-xs">
-        <div>
-          <h1 className="text-xl font-extrabold text-slate-900 tracking-tight flex items-center gap-2">
-            <span>🔖</span> TBA List (Pending Unit Allotment)
-          </h1>
-          <p className="text-xs text-slate-500 mt-0.5">
-            Client reservations not yet assigned to physical serial numbers. Allot to In Stock units when ready.
-          </p>
+    <div className="p-4 sm:p-6 space-y-4 max-w-[1800px] mx-auto select-none">
+      {/* 1. Pill Tabs Navigation */}
+      <div className="flex items-center justify-between gap-2">
+        <div className="flex items-center gap-2">
+          <Link
+            href="/machines"
+            className="flex items-center gap-1.5 px-4 py-1.5 rounded-xl hover:bg-white text-slate-500 hover:text-slate-900 font-medium text-xs transition-colors"
+          >
+            <span>📊</span>
+            <span>Machines</span>
+          </Link>
+
+          <Link
+            href="/machines/stock"
+            className="flex items-center gap-1.5 px-4 py-1.5 rounded-xl hover:bg-white text-slate-500 hover:text-slate-900 font-medium text-xs transition-colors"
+          >
+            <span>📈</span>
+            <span>Stock Levels</span>
+          </Link>
+
+          <Link
+            href="/machines/tba"
+            className="flex items-center gap-1.5 px-4 py-1.5 rounded-xl bg-white border border-slate-200 shadow-xs font-bold text-slate-900 text-xs"
+          >
+            <span>🔖</span>
+            <span>TBA List</span>
+          </Link>
         </div>
 
         <button
           onClick={openAdd}
-          className="flex items-center gap-1.5 px-4 py-1.5 text-xs font-bold text-white bg-blue-600 hover:bg-blue-700 rounded-xl shadow-md transition-all active:scale-95"
+          className="flex items-center gap-1 px-3.5 py-1.5 text-xs font-bold text-white bg-blue-600 hover:bg-blue-700 rounded-full shadow-xs transition-all active:scale-95 cursor-pointer"
         >
           + Add TBA Reservation
         </button>
       </div>
 
-      {/* Toolbar */}
-      <div className="bg-white p-3.5 rounded-2xl border border-slate-200 shadow-xs flex flex-wrap items-center gap-2.5 text-xs">
-        <input
-          type="search"
-          placeholder="🔍 Search TBA client, model, code, AE…"
-          className="bg-slate-50 border border-slate-300 text-slate-900 px-3 py-1.5 rounded-xl text-xs min-w-[260px] focus:bg-white focus:outline-none focus:ring-2 focus:ring-blue-500"
-          value={q}
-          onChange={(e) => setQ(e.target.value)}
-        />
+      {/* 2. Filter Toolbar Row */}
+      <div className="flex flex-wrap items-center justify-between gap-3 text-xs">
+        <div className="flex flex-wrap items-center gap-2">
+          <input
+            type="search"
+            placeholder="🔍 Search TBA client, model, code, AE…"
+            value={q}
+            onChange={(e) => setQ(e.target.value)}
+            className="bg-white border border-slate-200 text-slate-800 text-xs rounded-full px-3.5 py-1.5 min-w-[280px] shadow-2xs focus:outline-none focus:ring-1 focus:ring-blue-500"
+          />
 
-        <select
-          value={fBrand}
-          onChange={(e) => setFBrand(e.target.value)}
-          className="bg-slate-50 border border-slate-300 text-slate-800 px-2.5 py-1.5 rounded-xl text-xs focus:bg-white font-medium focus:outline-none"
-        >
-          <option value="">All brands</option>
-          {uniq("brand").map((b) => (
-            <option key={b} value={b}>
-              {b}
-            </option>
-          ))}
-        </select>
+          <select
+            value={fBrand}
+            onChange={(e) => setFBrand(e.target.value)}
+            className="bg-white border border-slate-200 text-slate-700 font-medium text-xs rounded-full px-3 py-1.5 shadow-2xs focus:outline-none cursor-pointer"
+          >
+            <option value="">All brands</option>
+            {uniq("brand").map((b) => (
+              <option key={b} value={b}>
+                {b}
+              </option>
+            ))}
+          </select>
 
-        <select
-          value={fModel}
-          onChange={(e) => setFModel(e.target.value)}
-          className="bg-slate-50 border border-slate-300 text-slate-800 px-2.5 py-1.5 rounded-xl text-xs focus:bg-white font-medium focus:outline-none"
-        >
-          <option value="">All models</option>
-          {uniq("model").map((m) => (
-            <option key={m} value={m}>
-              {m}
-            </option>
-          ))}
-        </select>
+          <select
+            value={fModel}
+            onChange={(e) => setFModel(e.target.value)}
+            className="bg-white border border-slate-200 text-slate-700 font-medium text-xs rounded-full px-3 py-1.5 shadow-2xs focus:outline-none cursor-pointer"
+          >
+            <option value="">All models</option>
+            {uniq("model").map((m) => (
+              <option key={m} value={m}>
+                {m}
+              </option>
+            ))}
+          </select>
 
-        <select
-          value={fAE}
-          onChange={(e) => setFAE(e.target.value)}
-          className="bg-slate-50 border border-slate-300 text-slate-800 px-2.5 py-1.5 rounded-xl text-xs focus:bg-white font-medium focus:outline-none"
-        >
-          <option value="">All AEs</option>
-          {uniq("ae").map((a) => (
-            <option key={a} value={a}>
-              {a}
-            </option>
-          ))}
-        </select>
+          <select
+            value={fAE}
+            onChange={(e) => setFAE(e.target.value)}
+            className="bg-white border border-slate-200 text-slate-700 font-medium text-xs rounded-full px-3 py-1.5 shadow-2xs focus:outline-none cursor-pointer"
+          >
+            <option value="">All AEs</option>
+            {uniq("ae").map((a) => (
+              <option key={a} value={a}>
+                {a}
+              </option>
+            ))}
+          </select>
+        </div>
 
-        <span className="flex-1" />
-
-        <span className="text-[11.5px] font-bold text-slate-600 bg-slate-100 px-2.5 py-1 rounded-lg border border-slate-200 whitespace-nowrap">
+        <div className="text-xs text-slate-400 font-medium shrink-0">
           {filtered.length} of {tbaList.length} shown
-        </span>
+        </div>
       </div>
 
-      {/* TBA List Table */}
-      <div className="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden">
+      {/* 3. TBA List Table Container */}
+      <div className="bg-[#f0f9fa] border border-[#d2eaec] rounded-2xl overflow-hidden shadow-xs">
         {loading ? (
           <div className="py-20 text-center space-y-2">
             <div className="w-8 h-8 border-3 border-blue-600 border-t-transparent rounded-full animate-spin mx-auto" />
@@ -507,6 +525,13 @@ export function TBAClient({ isAdmin = false }: { isAdmin?: boolean }) {
           </div>
         </div>
       )}
+
+      {/* Footer */}
+      <footer className="py-6 text-center text-xs text-slate-400 font-medium">
+        ES Machine Monitoring System - ES Print Group of Companies
+      </footer>
     </div>
   );
 }
+
+

@@ -1,10 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
-import { usePathname } from "next/navigation";
-import { PortalNav } from "@/components/portal-nav";
-import { MachinesSidebar } from "./machines-sidebar";
-import { initialsOf } from "@/lib/utils";
+import { MachinesTopNav } from "./MachinesTopNav";
 
 interface MachinesShellProps {
   userName: string;
@@ -19,37 +15,17 @@ export function MachinesShell({
   isAdmin,
   children,
 }: MachinesShellProps) {
-  const [mobileOpen, setMobileOpen] = useState(false);
-  const pathname = usePathname();
-
-  useEffect(() => {
-    setMobileOpen(false);
-  }, [pathname]);
-
   return (
-    <div className="flex flex-col h-screen overflow-hidden bg-slate-50">
-      {/* Top Navigation */}
-      <PortalNav
+    <div className="flex flex-col min-h-screen bg-[#f8fafc]">
+      <MachinesTopNav
         userName={userName}
         userRole={userRole}
-        userInitials={initialsOf(userName)}
-        currentModule="Machine Monitoring"
-        onToggleMobileSidebar={() => setMobileOpen((o) => !o)}
-        isMobileSidebarOpen={mobileOpen}
+        isAdmin={isAdmin}
       />
 
-      {/* Main Body */}
-      <div className="flex-1 flex min-h-0 relative overflow-hidden">
-        <MachinesSidebar
-          isAdmin={isAdmin}
-          isOpen={mobileOpen}
-          onClose={() => setMobileOpen(false)}
-        />
-
-        <main className="flex-1 min-w-0 overflow-y-auto bg-slate-50/50">
-          {children}
-        </main>
-      </div>
+      <main className="flex-1 w-full overflow-y-auto">
+        {children}
+      </main>
     </div>
   );
 }

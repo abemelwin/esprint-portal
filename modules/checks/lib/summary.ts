@@ -148,7 +148,10 @@ export function buildDashboardSummary(data: AppData): DashboardSummary {
     if (status === "HELD" && m.nextDeposit && m.nextDeposit < today) {
       kpi.overdue.count++;
     }
-    if (isStale(c.checkDate)) {
+    if (
+      !["CLEARED", "REPLACED", "SETTLED (PAID)", "CANCELLED", "DEPOSITED"].includes(status) &&
+      isStale(c.checkDate)
+    ) {
       kpi.stale.count++;
       kpi.stale.amount += bal;
     }
@@ -197,7 +200,7 @@ export function buildDashboardSummary(data: AppData): DashboardSummary {
       br.returned++;
       br.retAmt += bal;
     }
-    if (isStale(c.checkDate)) br.stale++;
+    if (!["CLEARED", "REPLACED", "SETTLED (PAID)", "CANCELLED", "DEPOSITED"].includes(status) && isStale(c.checkDate)) br.stale++;
   }
 
   const colors: Record<string, string> = {

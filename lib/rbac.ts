@@ -152,6 +152,7 @@ export type MachineRole =
 
 export interface MachinePermissions {
   canEdit: boolean;
+  canDelete: boolean;
   canReserve: boolean;
   canDeliver: boolean;
   canUnreserve: boolean;
@@ -163,6 +164,7 @@ export function getMachinePermissions(user: PortalUser): MachinePermissions {
   if (isSuperAdmin(user)) {
     return {
       canEdit: true,
+      canDelete: true,
       canReserve: true,
       canDeliver: true,
       canUnreserve: true,
@@ -175,6 +177,7 @@ export function getMachinePermissions(user: PortalUser): MachinePermissions {
   if (!access) {
     return {
       canEdit: false,
+      canDelete: false,
       canReserve: false,
       canDeliver: false,
       canUnreserve: false,
@@ -186,6 +189,7 @@ export function getMachinePermissions(user: PortalUser): MachinePermissions {
   if (access.isModuleAdmin || access.role === "inventory_accounting" || access.role === "Admin" || access.role === "Super Admin") {
     return {
       canEdit: true,
+      canDelete: true,
       canReserve: true,
       canDeliver: true,
       canUnreserve: true,
@@ -197,6 +201,7 @@ export function getMachinePermissions(user: PortalUser): MachinePermissions {
   // sales_admin, asm, team_leader, account_exec
   return {
     canEdit: false,
+    canDelete: false,
     canReserve: true,
     canDeliver: false,
     canUnreserve: false,
