@@ -36,6 +36,17 @@ export function DashboardClient({ summary }: { summary: DashboardSummary }) {
   const [drillKey, setDrillKey] = useState<DrillKey | null>(null);
   const [showExportModal, setShowExportModal] = useState(false);
   const [showDrillExport, setShowDrillExport] = useState(false);
+  const [refreshing, setRefreshing] = useState(false);
+
+  // Auto-refresh every 30 seconds — keeps dashboard in sync with other users
+  useEffect(() => {
+    const interval = setInterval(() => {
+      setRefreshing(true);
+      router.refresh();
+      setTimeout(() => setRefreshing(false), 800);
+    }, 30_000);
+    return () => clearInterval(interval);
+  }, [router]);
 
   const { kpi, branchRows, statusChart, recentEvents, drillChecks } = summary;
 
@@ -66,12 +77,16 @@ export function DashboardClient({ summary }: { summary: DashboardSummary }) {
   return (
     <div className="animate-fade-in space-y-6">
       {/* Header */}
-      <div>
+      <div className="flex items-center justify-between">
         <h1 className="text-xl font-bold text-gray-900">Dashboard</h1>
+        <div className="flex items-center gap-1.5 text-[11px] text-gray-400">
+          <span className="w-2 h-2 rounded-full bg-green-500 animate-pulse inline-block" />
+          <span className="font-medium text-green-600">Live</span>
+        </div>
       </div>
 
       {/* ── Stat cards ── */}
-      <div className="grid grid-cols-2 sm:grid-cols-3 xl:grid-cols-6 gap-3">
+      <div className={`grid grid-cols-2 sm:grid-cols-3 xl:grid-cols-6 gap-3 transition-opacity duration-500 ${refreshing ? 'opacity-60' : 'opacity-100'}`}>
         {stats.map((s) => (
           <div
             key={s.key}

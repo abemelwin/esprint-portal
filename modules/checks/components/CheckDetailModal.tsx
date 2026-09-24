@@ -162,6 +162,15 @@ export default function CheckDetailModal({ checkId, perms, userEmail, userName, 
 
   useEffect(() => { fetchData(); }, [fetchData]);
 
+  // Auto-refresh every 15 seconds while modal is open (keeps status in sync)
+  useEffect(() => {
+    const interval = setInterval(() => {
+      // Only auto-refresh when no form/edit is active to avoid disrupting user input
+      if (!showEdit && !activeForm && !editingEvent) fetchData();
+    }, 15_000);
+    return () => clearInterval(interval);
+  }, [fetchData, showEdit, activeForm, editingEvent]);
+
   // Close on Escape
   useEffect(() => {
     const h = (e: KeyboardEvent) => { if (e.key === 'Escape' && !showEdit && !activeForm) onClose(); };
