@@ -205,6 +205,30 @@ export async function POST(req: NextRequest) {
     }
     results.deleted = deletedCount;
 
+    // ── Remove events deleted from Supabase (keeps status counts accurate) ───
+    const sbEventIds = new Set(sbEvents.map((e: any) => e.id as string));
+    const rdsAllEvents = await query<{ id: string }>(`SELECT id FROM ${SCHEMA}.events`);
+    let deletedEvents = 0;
+    for (const r of rdsAllEvents) {
+      if (!sbEventIds.has(r.id)) {
+        await query(`DELETE FROM ${SCHEMA}.events WHERE id = $1`, [r.id]);
+        deletedEvents++;
+      }
+    }
+    results.deletedEvents = deletedEvents;
+
+    // ── Remove notes deleted from Supabase ───────────────────────────────────
+    const sbNoteIds = new Set(sbNotes.map((n: any) => n.id as string));
+    const rdsAllNotes = await query<{ id: string }>(`SELECT id FROM ${SCHEMA}.check_notes`);
+    let deletedNotes = 0;
+    for (const r of rdsAllNotes) {
+      if (!sbNoteIds.has(r.id)) {
+        await query(`DELETE FROM ${SCHEMA}.check_notes WHERE id = $1`, [r.id]);
+        deletedNotes++;
+      }
+    }
+    results.deletedNotes = deletedNotes;
+
     return NextResponse.json({
       ok: true,
       synced: results,
