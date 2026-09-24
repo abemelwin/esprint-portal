@@ -157,7 +157,7 @@ export function buildDashboardSummary(data: AppData): DashboardSummary {
     }
 
     // Chart buckets
-    if (["CLEARED", "SETTLED (PAID)", "DEPOSITED", "REPLACED"].includes(status)) {
+    if (["CLEARED", "SETTLED (PAID)", "DEPOSITED"].includes(status)) {
       buckets["Cleared / Paid"].count++;
       buckets["Cleared / Paid"].amount += bal;
     } else if (status === "RETURNED") {

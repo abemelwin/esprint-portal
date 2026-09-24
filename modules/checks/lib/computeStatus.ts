@@ -61,15 +61,9 @@ export function computeCheckStatus(
     if (ev.type === 'PARTIAL_PAYMENT' || ev.type === 'REPLACEMENT' || ev.type === 'SETTLED_PAID') totalPaid += ev.amount ?? 0;
   }
 
-  // Override: if finalStatus exists but last event changes the status, use event-based status.
-  // EXCEPTION: "locked" finalStatus values (RECON REPLACED, RECON REPLACEMENT, RECONSTRUCT,
-  // LEGAL, ALTERATION, BSP MEMO XX, RETURNED, HELD) are set programmatically and should NOT
-  // be overridden by subsequent activity events — this matches the original system exactly.
-  const LOCKED_FINAL_STATUSES = [
-    'RECON REPLACED', 'RECON REPLACEMENT', 'RECONSTRUCT',
-    'LEGAL', 'ALTERATION', 'BSP MEMO XX', 'RETURNED', 'HELD',
-  ];
-  if (check.finalStatus && !LOCKED_FINAL_STATUSES.includes(check.finalStatus) && sortedEvents.length > 0) {
+  // Override: if finalStatus exists but last event is a payment/settlement/clear, use event-based status.
+  // This matches the original system exactly — only these three event types may override a finalStatus.
+  if (check.finalStatus && sortedEvents.length > 0) {
     const lastEv = sortedEvents[sortedEvents.length - 1];
     if (lastEv.type === 'SETTLED_PAID') {
       status = 'SETTLED (PAID)';
@@ -77,22 +71,6 @@ export function computeCheckStatus(
       status = (check.originalAmount - totalPaid) <= 0.01 ? 'SETTLED (PAID)' : 'PARTIAL';
     } else if (lastEv.type === 'DEPOSIT_CLEARED') {
       status = 'CLEARED';
-    } else if (lastEv.type === 'BAD_ACCOUNT') {
-      status = 'BAD ACCOUNT';
-    } else if (lastEv.type === 'REPLACEMENT') {
-      status = 'REPLACED';
-    } else if (lastEv.type === 'CANCELLATION') {
-      status = 'CANCELLED';
-    } else if (lastEv.type === 'DEPOSITED') {
-      status = 'DEPOSITED';
-    } else if (lastEv.type === 'HOLD_REQUEST') {
-      status = 'HELD';
-    } else if (lastEv.type === 'RETURN') {
-      status = 'RETURNED';
-    } else if (lastEv.type === 'ALTERATION') {
-      status = 'ALTERATION';
-    } else if (lastEv.type === 'LEGAL') {
-      status = 'LEGAL';
     }
   }
 
