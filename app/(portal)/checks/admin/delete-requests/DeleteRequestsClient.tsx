@@ -66,16 +66,20 @@ export function DeleteRequestsClient({ initialRows }: { initialRows: DeleteReque
                       <span className={`text-[11px] font-bold px-2 py-0.5 rounded-full ${r.targetType === 'event' ? 'bg-orange-100 text-orange-700' : 'bg-red-100 text-red-700'}`}>
                         {r.targetType === 'event' ? '🗒 Event' : '🗑 Check'}
                       </span>
-                      {r.bank && r.checkNo && (
-                        <span className="font-mono text-sm font-semibold text-gray-800">{r.bank} {r.checkNo}</span>
+                      {r.clientName && (
+                        <span className="text-sm font-bold text-gray-900">{r.clientName}</span>
                       )}
-                      {r.client && <span className="text-xs text-gray-500">{r.client}</span>}
+                      {r.bank && r.checkNo && (
+                        <span className="font-mono text-xs font-semibold text-gray-600">
+                          {r.bank} {r.checkNo}{r.checkDate ? ` · ${fmtDate(r.checkDate)}` : ''}
+                        </span>
+                      )}
                     </div>
-                    <p className="text-sm text-gray-700">
-                      <strong className="text-gray-900">Reason:</strong> {r.reason}
+                    <p className="text-sm text-amber-700 font-medium">
+                      {r.reason}
                     </p>
                     <p className="text-xs text-gray-500">
-                      Requested by <strong>{r.requestedByName}</strong> ({r.requestedBy}) · {fmtDate(r.createdAt)}
+                      Requested by <strong>{r.requestedByName || r.requestedBy}</strong> · {fmtDate(r.createdAt)}
                     </p>
                   </div>
                   <div className="flex gap-2 shrink-0">
@@ -121,7 +125,10 @@ export function DeleteRequestsClient({ initialRows }: { initialRows: DeleteReque
                 {resolved.map(r => (
                   <tr key={r.id} className="border-t border-gray-50 hover:bg-gray-50">
                     <td className="px-4 py-2.5">{r.targetType === 'event' ? '🗒 Event' : '🗑 Check'}</td>
-                    <td className="px-4 py-2.5 font-mono text-gray-700">{r.bank} {r.checkNo}</td>
+                    <td className="px-4 py-2.5">
+                      <div className="font-medium text-gray-800 text-xs">{r.clientName || r.client}</div>
+                      <div className="font-mono text-gray-500 text-[11px]">{r.bank} {r.checkNo}{r.checkDate ? ` · ${fmtDate(r.checkDate)}` : ''}</div>
+                    </td>
                     <td className="px-4 py-2.5 text-gray-600 max-w-xs truncate">{r.reason}</td>
                     <td className="px-4 py-2.5 text-gray-600">{r.requestedByName}</td>
                     <td className="px-4 py-2.5">

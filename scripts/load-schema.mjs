@@ -39,6 +39,8 @@ const pool = new Pool({
 const SCHEMA_FILES = [
   "db/schema/00_portal_core.sql",
   "db/schema/01_check_monitoring.sql",
+  "db/schema/02_machine_monitoring.sql",
+  "db/schema/03_sales_portal.sql",
 ];
 
 async function main() {
@@ -57,7 +59,7 @@ async function main() {
     const res = await client.query(`
       SELECT table_schema, table_name
       FROM information_schema.tables
-      WHERE table_schema IN ('public', 'check_monitoring')
+      WHERE table_schema IN ('public', 'check_monitoring', 'machine_monitoring', 'sales_portal')
       ORDER BY table_schema, table_name
     `);
     console.log("\nTables created:");

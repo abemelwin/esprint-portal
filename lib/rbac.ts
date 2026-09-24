@@ -138,3 +138,96 @@ export const CHECK_VIEW_ONLY_ROLES: CheckRole[] = [
   "AE",
   "AE Access",
 ];
+
+// ─── Machine Monitoring role groups ──────────────────────────────
+
+export type MachineRole =
+  | "inventory_accounting"
+  | "sales_admin"
+  | "asm"
+  | "team_leader"
+  | "account_exec"
+  | "Super Admin"
+  | "Admin";
+
+export interface MachinePermissions {
+  canEdit: boolean;
+  canReserve: boolean;
+  canDeliver: boolean;
+  canUnreserve: boolean;
+  canManageLookups: boolean;
+  canViewClient: boolean;
+}
+
+export function getMachinePermissions(user: PortalUser): MachinePermissions {
+  if (isSuperAdmin(user)) {
+    return {
+      canEdit: true,
+      canReserve: true,
+      canDeliver: true,
+      canUnreserve: true,
+      canManageLookups: true,
+      canViewClient: true,
+    };
+  }
+
+  const access = moduleAccessOf(user, "machines");
+  if (!access) {
+    return {
+      canEdit: false,
+      canReserve: false,
+      canDeliver: false,
+      canUnreserve: false,
+      canManageLookups: false,
+      canViewClient: false,
+    };
+  }
+
+  if (access.isModuleAdmin || access.role === "inventory_accounting" || access.role === "Admin" || access.role === "Super Admin") {
+    return {
+      canEdit: true,
+      canReserve: true,
+      canDeliver: true,
+      canUnreserve: true,
+      canManageLookups: true,
+      canViewClient: true,
+    };
+  }
+
+  // sales_admin, asm, team_leader, account_exec
+  return {
+    canEdit: false,
+    canReserve: true,
+    canDeliver: false,
+    canUnreserve: false,
+    canManageLookups: false,
+    canViewClient: false, // hidden unless assigned
+  };
+}
+
+// ─── Sales Portal role groups ────────────────────────────────────
+
+export type SalesRole = "admin" | "salesperson" | "Super Admin" | "Admin";
+
+export interface SalesPermissions {
+  canManageCatalog: boolean;
+  canViewAllQuotes: boolean;
+}
+
+export function getSalesPermissions(user: PortalUser): SalesPermissions {
+  if (isSuperAdmin(user)) {
+    return { canManageCatalog: true, canViewAllQuotes: true };
+  }
+
+  const access = moduleAccessOf(user, "sales");
+  if (!access) {
+    return { canManageCatalog: false, canViewAllQuotes: false };
+  }
+
+  if (access.isModuleAdmin || access.role === "admin" || access.role === "Admin" || access.role === "Super Admin") {
+    return { canManageCatalog: true, canViewAllQuotes: true };
+  }
+
+  return { canManageCatalog: false, canViewAllQuotes: false };
+}
+

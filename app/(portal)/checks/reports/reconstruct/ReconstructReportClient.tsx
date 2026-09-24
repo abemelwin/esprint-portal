@@ -22,7 +22,7 @@ export function ReconstructReportClient({ initialData: data, perms, userName }: 
   const [interestMap, setInterestMap]       = useState<Record<string, string>>({});
   const [interestSaving, setInterestSaving] = useState<Record<string, boolean>>({});
   const [editingInterest, setEditingInterest] = useState<string | null>(null);
-  const [rightMode, setRightMode]       = useState<Record<string, 'payment' | 'schedule'>>({});
+  const [rightMode, setRightMode] = useState<Record<string, 'payment' | 'schedule'>>({});
 
   type ScheduleRowUI = { id: string; scheduleDate: string; monthlyAmortization: string; amount: string; paymentDetails: string; eventId: string | null; checkId: string | null; editing: boolean };
   const [scheduleMap, setScheduleMap]   = useState<Record<string, ScheduleRowUI[]>>({});
@@ -477,7 +477,7 @@ export function ReconstructReportClient({ initialData: data, perms, userName }: 
             <div className="flex-1 min-w-[480px]">
               <div className="relative flex items-center justify-center bg-gray-100 border border-gray-200 rounded-t-lg px-3 py-1.5">
                 <span className="text-xs font-bold text-gray-700">
-                  {(group.replacement.length === 0 && (rightMode[group.code] ?? 'payment') === 'schedule')
+                  {(group.replacement.length === 0 && (rightMode[group.code] ?? 'schedule') === 'schedule')
                     ? 'RECONSTRUCT PAYMENT SCHEDULE'
                     : 'RECONSTRUCT PAYMENT'}
                 </span>
@@ -485,18 +485,18 @@ export function ReconstructReportClient({ initialData: data, perms, userName }: 
                   <button
                     type="button"
                     onClick={() => {
-                      const next = (rightMode[group.code] ?? 'payment') === 'payment' ? 'schedule' : 'payment';
+                      const next = (rightMode[group.code] ?? 'schedule') === 'payment' ? 'schedule' : 'payment';
                       setRightMode(prev => ({ ...prev, [group.code]: next }));
                       if (next === 'schedule') loadSchedule(group.code);
                     }}
                     className="absolute right-2 text-[11px] font-semibold px-2 py-0.5 rounded border border-indigo-300 bg-indigo-50 text-indigo-700 hover:bg-indigo-100 transition-colors"
                   >
-                    {(rightMode[group.code] ?? 'payment') === 'payment' ? 'Switch to Schedule' : 'Switch to Payment'}
+                    {(rightMode[group.code] ?? 'schedule') === 'payment' ? 'Switch to Schedule' : 'Switch to Payment'}
                   </button>
                 )}
               </div>
 
-              {(group.replacement.length > 0 || (rightMode[group.code] ?? 'payment') === 'payment') ? (
+              {(group.replacement.length > 0 || (rightMode[group.code] ?? 'schedule') === 'payment') ? (
                 <div className="overflow-y-auto max-h-[400px] border border-t-0 border-gray-200 rounded-b-lg">
                   <table className="w-full border-collapse">
                     <thead className="sticky top-0">
