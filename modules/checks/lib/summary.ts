@@ -149,7 +149,7 @@ export function buildDashboardSummary(data: AppData): DashboardSummary {
       kpi.overdue.count++;
     }
     if (
-      !["CLEARED", "REPLACED", "SETTLED (PAID)", "CANCELLED", "DEPOSITED"].includes(status) &&
+      !["CLEARED", "REPLACED", "SETTLED (PAID)", "CANCELLED"].includes(status) &&
       isStale(c.checkDate)
     ) {
       kpi.stale.count++;
@@ -200,7 +200,7 @@ export function buildDashboardSummary(data: AppData): DashboardSummary {
       br.returned++;
       br.retAmt += bal;
     }
-    if (!["CLEARED", "REPLACED", "SETTLED (PAID)", "CANCELLED", "DEPOSITED"].includes(status) && isStale(c.checkDate)) br.stale++;
+    if (!["CLEARED", "REPLACED", "SETTLED (PAID)", "CANCELLED"].includes(status) && isStale(c.checkDate)) br.stale++;
   }
 
   const colors: Record<string, string> = {
