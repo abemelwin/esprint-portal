@@ -257,6 +257,19 @@ export function ReconstructReportClient({ initialData: data, perms, userName }: 
     : [activeClient].filter(Boolean);
   const totalPages = selectedClient === null ? Math.max(1, Math.ceil(clientGroups.length / CLIENTS_PER_PAGE)) : 1;
 
+  // Load interest + schedule for visible groups in an effect (NOT during render).
+  // Calling state setters during render causes "Cannot update a component while
+  // rendering" warnings and instability. loadInterest/loadSchedule are guarded
+  // by useRef Sets so each client is only fetched once.
+  useEffect(() => {
+    for (const g of visibleGroups) {
+      if (!g || g.replaced.length === 0) continue;
+      loadInterest(g.code);
+      if (g.replacement.length === 0) loadSchedule(g.code);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [visibleGroups]);
+
   return (
     <div className="animate-fade-in space-y-4">
       {/* Header */}
@@ -415,8 +428,6 @@ export function ReconstructReportClient({ initialData: data, perms, userName }: 
                     )}
                   </tbody>
                   {group.replaced.length > 0 && (() => {
-                    loadInterest(group.code);
-                    if (group.replacement.length === 0) loadSchedule(group.code);
                     const total = group.replaced.reduce((s, c) => s + c.originalAmount, 0);
                     const balanceSum = group.replacement.length > 0 ? 0 : group.replaced.reduce((s, c) => s + (c.balance ?? c.originalAmount), 0);
                     const interestStr = interestMap[group.code] ?? '';

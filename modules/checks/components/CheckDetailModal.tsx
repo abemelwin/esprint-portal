@@ -644,7 +644,7 @@ export default function CheckDetailModal({ checkId, perms, userEmail, userName, 
                   const results = allChecks.filter(c => {
                     if (c.id === checkId) return false;
                     const clientName = allClients.find(cl => cl.code === c.client)?.name ?? '';
-                    return c.checkNo.toUpperCase().includes(q) || c.client.toUpperCase().includes(q) || clientName.toUpperCase().includes(q);
+                    return (c.checkNo ?? '').toUpperCase().includes(q) || (c.client ?? '').toUpperCase().includes(q) || clientName.toUpperCase().includes(q);
                   }).slice(0, 8);
                   if (!results.length) return <p className="text-xs text-gray-400 italic text-center py-2">No checks found</p>;
                   return (

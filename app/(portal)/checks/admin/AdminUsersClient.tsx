@@ -303,7 +303,9 @@ export function AdminUsersClient({ branches, aeList, subsidiaries, deleteRequest
       module: 'checks',
       role: checkRole,
       isModuleAdmin: ADMIN_ROLES.includes(checkRole),
-      branches: form.branchAll ? [] : form.branches,
+      // "All branches" → explicit ['ALL'] so it's distinct from an empty
+      // "no branch" state (AE users can legitimately have no branch).
+      branches: form.branchAll ? ['ALL'] : form.branches,
       aes: form.aes,
       subsidiary: form.subsidiaries.join('/') || undefined,
     }];
