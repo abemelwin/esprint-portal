@@ -1215,9 +1215,9 @@ export function QuoteBuilderClient({
 
           {/* Validation errors box */}
           {showValidationBox && validationErrors.length > 0 && (
-            <div className="p-[8px_10px] bg-[#fef2f2] border border-[#fca5a5] rounded-[6px] text-[#c0392b] text-[11px]">
+            <div className="p-[8px_10px] bg-[#fef2f2] border border-[#fca5a5] rounded-[6px] text-[#c0392b] text-[11px] mb-2">
               <div className="flex justify-between items-center font-bold mb-1">
-                <span>Please fix the following:</span>
+                <span>Please fix the following before continuing:</span>
                 <button
                   type="button"
                   onClick={() => setShowValidationBox(false)}
@@ -1234,17 +1234,40 @@ export function QuoteBuilderClient({
             </div>
           )}
 
-          {/* Action buttons */}
-          <div className="pt-2 space-y-2">
+          <hr className="border-0 border-t border-[#eee] my-2" />
+
+          {/* CLOSING DOCUMENTS SECTION */}
+          <div>
+            <h2 className="text-[11px] font-bold text-[#c0392b] uppercase tracking-[0.5px] border-b-[1.5px] border-[#c0392b] pb-[3px] mb-[7px]">
+              Closing Documents
+            </h2>
+            <p className="text-[10px] text-[#aaa] mb-2 leading-normal">
+              Prepare the delivery &amp; document details, then open the printable closing documents (T&amp;C, Delivery Instructions, Warranty, CAC, PDC, Pullout).
+            </p>
+
+            <button
+              type="button"
+              onClick={() => {
+                if (validationErrors.length > 0) {
+                  setShowValidationBox(true);
+                  return;
+                }
+                window.location.href = "/sales/closing-docs";
+              }}
+              className="w-full p-[10px] bg-[#c0392b] hover:bg-[#a93226] text-white rounded-[6px] font-bold text-[13px] tracking-[0.5px] cursor-pointer text-center block border-0 transition-colors shadow-xs mb-2"
+            >
+              OPEN CLOSING DOCUMENTS
+            </button>
+
             <button
               type="button"
               onClick={handleSavePdf}
               className="w-full p-[10px] bg-[#c0392b] hover:bg-[#a93226] text-white rounded-[6px] font-bold text-[13px] tracking-[0.5px] cursor-pointer text-center block border-0 transition-colors shadow-xs"
             >
-              💾 SAVE AS PDF / PRINT
+              💾 SAVE AS PDF
             </button>
-            <p className="text-[10px] text-[#aaa] text-center m-0">
-              Tip: in the print dialog, set Destination to &quot;Save as PDF&quot;
+            <p className="text-[10px] text-[#aaa] text-center mt-1 mb-0">
+              Tip: In the print dialog, set Destination to &quot;Save as PDF&quot;
             </p>
           </div>
         </div>
