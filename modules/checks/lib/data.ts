@@ -114,16 +114,11 @@ function computeMeta(
       evs
     );
 
-    const balance = Math.max(0, (c.originalAmount ?? 0) - totalPaid);
+    const rawBalance = Math.max(0, Math.round(((c.originalAmount ?? 0) - totalPaid) * 100) / 100);
+    // CLEARED checks always show balance = 0 (matches orig)
+    const balance = status === "CLEARED" ? 0 : rawBalance;
 
-    // latest reason (mirrors buildChecksView)
-    let reason: string | null = null;
-    for (let j = evs.length - 1; j >= 0; j--) {
-      if (evs[j].reason) { reason = evs[j].reason!; break; }
-      if (evs[j].method) { reason = evs[j].method!; break; }
-    }
-
-    // next deposit date
+    // next deposit date — from HOLD_REQUEST/RECONSTRUCT moveDate, or auto-compute for CAN'T OUS
     let nextDeposit: string | null = null;
     for (let j = evs.length - 1; j >= 0; j--) {
       const ev = evs[j];
@@ -133,7 +128,49 @@ function computeMeta(
       }
       if (ev.type === "RETURN" || ev.type === "DEPOSIT_CLEARED") break;
     }
-    if (!nextDeposit) nextDeposit = null; // no fallback — null means no scheduled deposit
+    // Auto-compute next deposit for CAN'T OUS returns — use RETURN EVENT DATE, not check date
+    if (!nextDeposit && (status === "DEPOSITED" || status === "RETURNED")) {
+      const lastReturn = [...evs].reverse().find((e) => e.type === "RETURN");
+      if (lastReturn && lastReturn.reason?.toUpperCase() === "CAN'T OUS") {
+        const baseDt = new Date((lastReturn.eventDate ?? c.checkDate ?? "") + "T00:00:00");
+        const day = baseDt.getDay();
+        let addDays = 1;
+        if (day === 5) addDays = 3;
+        else if (day === 6) addDays = 2;
+        const autoDeposit = new Date(baseDt.getTime() + addDays * 86400000);
+        nextDeposit = autoDeposit.toISOString().slice(0, 10);
+      }
+    }
+
+    // reason — prefer the last RETURN event reason, then fall back to any other
+    // event type that carries a non-empty reason (matches orig)
+    let reason: string | null = null;
+    let fallbackReason: string | null = null;
+    for (let j = evs.length - 1; j >= 0; j--) {
+      const ev = evs[j];
+      if (ev.reason && ev.reason.trim()) {
+        if (ev.type === "RETURN") { reason = ev.reason.trim(); break; }
+        if (!fallbackReason) fallbackReason = ev.reason.trim();
+      }
+    }
+    if (!reason) reason = fallbackReason;
+
+    // payment details from PARTIAL_PAYMENT, SETTLED_PAID, and REPLACEMENT events (matches orig)
+    let paymentDetails: string | null = null;
+    const payEvents = evs.filter(
+      (e) => e.type === "PARTIAL_PAYMENT" || e.type === "SETTLED_PAID" || e.type === "REPLACEMENT"
+    );
+    if (payEvents.length > 0) {
+      paymentDetails = payEvents
+        .map((e) => {
+          const method = e.method ?? "";
+          const ref = e.reference ?? "";
+          const date = e.eventDate ?? "";
+          const amt = e.amount ? e.amount.toLocaleString("en-PH", { minimumFractionDigits: 2 }) : "";
+          return [method, ref, date, amt].filter(Boolean).join(" ");
+        })
+        .join("; ");
+    }
 
     meta[c.id] = {
       status: status as CheckStatus,
@@ -143,7 +180,7 @@ function computeMeta(
       returnCount,
       nextDeposit,
       reason,
-      paymentDetails: null,
+      paymentDetails,
     };
   }
 
