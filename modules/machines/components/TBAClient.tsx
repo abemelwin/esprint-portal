@@ -217,34 +217,9 @@ export function TBAClient({ isAdmin = false }: { isAdmin?: boolean }) {
 
   return (
     <div className="p-4 sm:p-6 space-y-4 max-w-[1800px] mx-auto select-none">
-      {/* 1. Pill Tabs Navigation */}
+      {/* Header row with Add button */}
       <div className="flex items-center justify-between gap-2">
-        <div className="flex items-center gap-2">
-          <Link
-            href="/machines"
-            className="flex items-center gap-1.5 px-4 py-1.5 rounded-xl hover:bg-white text-slate-500 hover:text-slate-900 font-medium text-xs transition-colors"
-          >
-            <span>📊</span>
-            <span>Machines</span>
-          </Link>
-
-          <Link
-            href="/machines/stock"
-            className="flex items-center gap-1.5 px-4 py-1.5 rounded-xl hover:bg-white text-slate-500 hover:text-slate-900 font-medium text-xs transition-colors"
-          >
-            <span>📈</span>
-            <span>Stock Levels</span>
-          </Link>
-
-          <Link
-            href="/machines/tba"
-            className="flex items-center gap-1.5 px-4 py-1.5 rounded-xl bg-white border border-slate-200 shadow-xs font-bold text-slate-900 text-xs"
-          >
-            <span>🔖</span>
-            <span>TBA List</span>
-          </Link>
-        </div>
-
+        <div /> {/* spacer */}
         <button
           onClick={openAdd}
           className="flex items-center gap-1 px-3.5 py-1.5 text-xs font-bold text-white bg-blue-600 hover:bg-blue-700 rounded-full shadow-xs transition-all active:scale-95 cursor-pointer"

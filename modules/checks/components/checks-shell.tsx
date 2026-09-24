@@ -13,6 +13,8 @@ interface ChecksShellProps {
   isAE: boolean;
   isAEAccess: boolean;
   isTL: boolean;
+  canCreate?: boolean;
+  isViewOnly?: boolean;
   children: React.ReactNode;
 }
 
@@ -23,6 +25,8 @@ export function ChecksShell({
   isAE,
   isAEAccess,
   isTL,
+  canCreate = true,
+  isViewOnly = false,
   children,
 }: ChecksShellProps) {
   const [mobileOpen, setMobileOpen] = useState(false);
@@ -72,6 +76,8 @@ export function ChecksShell({
             isAE={isAE}
             isAEAccess={isAEAccess}
             isTL={isTL}
+            canCreate={canCreate}
+            isViewOnly={isViewOnly}
             onItemClick={() => setMobileOpen(false)}
           />
         </aside>

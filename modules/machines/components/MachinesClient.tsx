@@ -1,7 +1,6 @@
 "use client";
 
 import { useState, useEffect, useMemo } from "react";
-import Link from "next/link";
 import type { Machine, LookupData, MachineStatus } from "../types";
 import {
   MachineFormModal,
@@ -67,6 +66,26 @@ export function MachinesClient({
 
   useEffect(() => {
     loadData();
+
+    // Listen for events dispatched from MachinesTopNav (via machines-shell)
+    function handleOpenAdd() {
+      setEditingMachine(null);
+      setIsAddOpen(true);
+    }
+    function handleExportCSV() {
+      exportCSV();
+    }
+
+    window.addEventListener("machines:open-add", handleOpenAdd);
+    window.addEventListener("machines:export-csv", handleExportCSV);
+    window.addEventListener("machines:backup", handleExportCSV); // same action as CSV backup
+
+    return () => {
+      window.removeEventListener("machines:open-add", handleOpenAdd);
+      window.removeEventListener("machines:export-csv", handleExportCSV);
+      window.removeEventListener("machines:backup", handleExportCSV);
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   async function markArrived(m: Machine) {
@@ -246,33 +265,6 @@ export function MachinesClient({
 
   return (
     <div className="p-4 sm:p-6 space-y-4 max-w-[1800px] mx-auto select-none">
-      {/* 1. Pill Tabs Navigation (Matching Screenshot 2) */}
-      <div className="flex items-center gap-2">
-        <Link
-          href="/machines"
-          className="flex items-center gap-1.5 px-4 py-1.5 rounded-xl bg-white border border-slate-200 shadow-xs font-bold text-slate-900 text-xs"
-        >
-          <span>📊</span>
-          <span>Machines</span>
-        </Link>
-
-        <Link
-          href="/machines/stock"
-          className="flex items-center gap-1.5 px-4 py-1.5 rounded-xl hover:bg-white text-slate-500 hover:text-slate-900 font-medium text-xs transition-colors"
-        >
-          <span>📈</span>
-          <span>Stock Levels</span>
-        </Link>
-
-        <Link
-          href="/machines/tba"
-          className="flex items-center gap-1.5 px-4 py-1.5 rounded-xl hover:bg-white text-slate-500 hover:text-slate-900 font-medium text-xs transition-colors"
-        >
-          <span>🔖</span>
-          <span>TBA List</span>
-        </Link>
-      </div>
-
       {/* 2. Filter Toolbar Row (Exact Screenshot 2) */}
       <div className="flex flex-wrap items-center justify-between gap-3 text-xs">
         <div className="flex flex-wrap items-center gap-2">

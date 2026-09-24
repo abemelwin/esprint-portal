@@ -10,8 +10,10 @@ interface NavItem {
   icon: string;
   section?: string;
   adminOnly?: boolean;
-  aeOnly?: boolean;       // Team Leader only (AE Dashboard)
-  alterationOnly?: boolean; // Treasury/Admin roles only
+  aeOnly?: boolean;
+  alterationOnly?: boolean;
+  importOnly?: boolean;   // visible to canCreate roles (mirrors original importOnly)
+  reconOnly?: boolean;    // hidden from View Only roles (Branch Staff)
 }
 
 const NAV: NavItem[] = [
@@ -63,6 +65,7 @@ const NAV: NavItem[] = [
     href: "/checks/reports/reconstruct",
     label: "Reconstruct",
     icon: "M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15",
+    reconOnly: true,
   },
   {
     href: "/checks/reports/bad-account",
@@ -80,7 +83,7 @@ const NAV: NavItem[] = [
     label: "Bulk Import",
     icon: "M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12",
     section: "SETTINGS",
-    adminOnly: true,
+    importOnly: true,
   },
   {
     href: "/checks/admin/deleted",
@@ -111,6 +114,8 @@ interface ChecksSidebarProps {
   isAE?: boolean;
   isAEAccess?: boolean;
   isTL?: boolean;
+  canCreate?: boolean;   // for importOnly gating
+  isViewOnly?: boolean;  // for reconOnly gating (Branch Staff)
   onItemClick?: () => void;
 }
 
@@ -122,6 +127,8 @@ export function ChecksSidebar({
   isAE = false,
   isAEAccess = false,
   isTL = false,
+  canCreate = true,
+  isViewOnly = false,
   onItemClick,
 }: ChecksSidebarProps) {
   const pathname = usePathname();
@@ -142,6 +149,10 @@ export function ChecksSidebar({
     if (i.adminOnly && !isAdmin) return false;
     if (i.aeOnly && !isTL) return false;
     if (i.alterationOnly && !ALTERATION_ROLES.includes(userRole)) return false;
+    // Bulk Import: visible to canCreate roles (mirrors original — not admin-only)
+    if (i.importOnly && !canCreate) return false;
+    // Reconstruct: hidden from View Only roles (Branch Staff) — mirrors original
+    if (i.reconOnly && isViewOnly) return false;
     if (isAE && i.href !== "/checks/reports/clients") return false;
     if (isAEAccess && !isTL && i.href !== "/checks/reports/clients") return false;
     if (isAEAccess && isTL && !i.aeOnly && i.href !== "/checks/reports/clients") return false;

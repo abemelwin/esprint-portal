@@ -424,14 +424,12 @@ export function AdminUsersClient({ branches, aeList, subsidiaries, deleteRequest
             ✉ Invite User
           </button>
 
-          {deleteRequestCount > 0 && (
-            <Link
-              href="/checks/admin/delete-requests"
-              className="flex items-center gap-1.5 px-4 py-2.5 rounded-xl text-sm font-bold text-white bg-[#dc2626] hover:bg-[#b91c1c] transition-colors shadow-sm"
-            >
-              🗑 Delete Requests ({deleteRequestCount})
-            </Link>
-          )}
+          <Link
+            href="/checks/admin/delete-requests"
+            className={`flex items-center gap-1.5 px-4 py-2.5 rounded-xl text-sm font-bold text-white transition-colors shadow-sm ${deleteRequestCount > 0 ? 'bg-[#dc2626] hover:bg-[#b91c1c]' : 'bg-gray-400 hover:bg-gray-500'}`}
+          >
+            🗑 Delete Requests{deleteRequestCount > 0 ? ` (${deleteRequestCount})` : ''}
+          </Link>
         </div>
       </div>
 

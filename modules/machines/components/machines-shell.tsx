@@ -1,7 +1,7 @@
 "use client";
 
-import { PortalNav } from "@/components/portal-nav";
-import { initialsOf } from "@/lib/utils";
+import { MachinesTopNav } from "./MachinesTopNav";
+import { MachinesSubNav } from "./MachinesSubNav";
 
 interface MachinesShellProps {
   userName: string;
@@ -16,14 +16,35 @@ export function MachinesShell({
   isAdmin,
   children,
 }: MachinesShellProps) {
+  function handleAddMachine() {
+    window.dispatchEvent(new CustomEvent("machines:open-add"));
+  }
+
+  function handleExportCSV() {
+    window.dispatchEvent(new CustomEvent("machines:export-csv"));
+  }
+
+  function handleBackup() {
+    window.dispatchEvent(new CustomEvent("machines:backup"));
+  }
+
+  function handleImport() {
+    window.dispatchEvent(new CustomEvent("machines:import"));
+  }
+
   return (
     <div className="flex flex-col min-h-screen bg-[#f8fafc]">
-      <PortalNav
+      <MachinesTopNav
         userName={userName}
         userRole={userRole}
-        userInitials={initialsOf(userName)}
-        currentModule="Machine Monitoring"
+        isAdmin={isAdmin}
+        onAddMachine={handleAddMachine}
+        onExportCSV={handleExportCSV}
+        onBackup={handleBackup}
+        onImport={handleImport}
       />
+
+      <MachinesSubNav />
 
       <main className="flex-1 w-full overflow-y-auto">
         {children}

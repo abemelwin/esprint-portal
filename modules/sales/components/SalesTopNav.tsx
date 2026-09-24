@@ -15,7 +15,6 @@ export function SalesTopNav({ isAdmin }: SalesTopNavProps) {
   const isQuoteGen = pathname === "/sales" || pathname.startsWith("/sales/quote-builder");
   const isCalc = pathname.startsWith("/sales/calculator");
   const isCatalog = pathname.startsWith("/sales/catalog") && !pathname.startsWith("/sales/admin");
-  const isClosingDocs = pathname.startsWith("/sales/closing-docs");
   const isEditor = pathname.startsWith("/sales/admin");
 
   return (
@@ -57,19 +56,6 @@ export function SalesTopNav({ isAdmin }: SalesTopNavProps) {
             }`}
           >
             Product Info
-          </Link>
-        </li>
-
-        <li className="flex shrink-0">
-          <Link
-            href="/sales/closing-docs"
-            className={`flex items-center px-3 py-1 text-[12px] font-bold rounded-[5px] whitespace-nowrap tracking-[0.3px] transition-colors leading-none no-underline ${
-              isClosingDocs
-                ? "text-[#c0392b] bg-[#fff2f0]"
-                : "text-[#666] hover:text-[#c0392b] hover:bg-[#fff2f0]"
-            }`}
-          >
-            Closing Docs
           </Link>
         </li>
 
