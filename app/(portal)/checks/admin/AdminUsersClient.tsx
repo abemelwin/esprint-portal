@@ -246,7 +246,9 @@ export function AdminUsersClient({ branches, aeList, subsidiaries, deleteRequest
     const checks = u.access.find(a => a.module === 'checks');
     const role = checks?.role ?? (u.portalRole === 'super_admin' ? 'Admin' : 'AR Staff');
     const accessLevel = ROLE_TO_ACCESS[role] ?? 'VIEW_EDIT';
-    const isAll = !checks?.branches?.length || checks.branches.includes('ALL');
+    const isAEUser = role === 'AE' || role === 'AE Access';
+    // For AE users, empty branches = "no branch" (not all). For others, empty = all.
+    const isAll = checks?.branches?.includes('ALL') || (!checks?.branches?.length && !isAEUser);
     setForm({
       email: u.email,
       full_name: u.fullName,
@@ -283,10 +285,12 @@ export function AdminUsersClient({ branches, aeList, subsidiaries, deleteRequest
 
   async function handleSave(e: React.FormEvent) {
     e.preventDefault();
-    if (!form.email.trim()) { showToast('Email is required', 'error'); return; }
-    if (!form.full_name.trim()) { showToast('Full name is required', 'error'); return; }
-    if (!editUser && !form.password) { showToast('Password is required', 'error'); return; }
+    setFormError(null);
+    if (!form.email.trim()) { setFormError('Email is required'); showToast('Email is required', 'error'); return; }
+    if (!form.full_name.trim()) { setFormError('Full name is required'); showToast('Full name is required', 'error'); return; }
+    if (!editUser && !form.password) { setFormError('Password is required'); showToast('Password is required', 'error'); return; }
     if (form.password && form.password !== form.confirmPassword) {
+      setFormError('Passwords do not match');
       showToast('Passwords do not match', 'error');
       return;
     }
@@ -522,7 +526,8 @@ export function AdminUsersClient({ branches, aeList, subsidiaries, deleteRequest
                   const subsidiary = checks?.subsidiary ?? '';
                   const roleName = getUserRoleDisplay(u);
                   const isAEUser = roleName === 'AE' || roleName === 'AE Access';
-                  const isAllBranches = !branchesList.length || branchesList.includes('ALL');
+                  // AE / AE Access users with empty branches = "no branch" (scoped by AE), not "all branches".
+                  const isAllBranches = (!branchesList.length && !isAEUser) || branchesList.includes('ALL');
 
                   const dateStr = u.createdAt ? new Date(u.createdAt).toLocaleDateString('en-US', {
                     month: 'numeric', day: 'numeric', year: 'numeric'
@@ -570,7 +575,7 @@ export function AdminUsersClient({ branches, aeList, subsidiaries, deleteRequest
                             <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-semibold bg-[#1e3a8a] text-white whitespace-nowrap w-fit">
                               All branches
                             </span>
-                          ) : (
+                          ) : branchesList.length ? (
                             <div className="flex flex-wrap gap-1">
                               {branchesList.map(b => {
                                 const bName = branchMap.get(b) ?? b;
@@ -581,8 +586,9 @@ export function AdminUsersClient({ branches, aeList, subsidiaries, deleteRequest
                                 );
                               })}
                             </div>
+                          ) : (
+                            <span className="text-gray-400 text-[11px]">— none —</span>
                           )}
-                          {isAEUser && !subsidiary && !branchesList.length && null}
                         </div>
                       </td>
                       <td className="px-3 py-2.5 text-xs">

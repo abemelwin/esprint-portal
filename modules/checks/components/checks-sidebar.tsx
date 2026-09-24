@@ -133,38 +133,6 @@ export function ChecksSidebar({
   const pathname = usePathname();
   const [collapsed, setCollapsed] = useState(false);
 
-  // Change Password modal state
-  const [showPwModal, setShowPwModal] = useState(false);
-  const [pwCurrent,   setPwCurrent]  = useState("");
-  const [pwNew,       setPwNew]      = useState("");
-  const [pwConfirm,   setPwConfirm]  = useState("");
-  const [showPw,      setShowPw]     = useState(false);
-  const [pwSaving,    setPwSaving]   = useState(false);
-  const [pwError,     setPwError]    = useState("");
-  const [pwSuccess,   setPwSuccess]  = useState(false);
-
-  function resetPwForm() {
-    setPwCurrent(""); setPwNew(""); setPwConfirm("");
-    setShowPw(false); setPwError(""); setPwSuccess(false);
-  }
-
-  async function handleChangePw() {
-    setPwError(""); setPwSuccess(false);
-    if (pwNew.length < 8) { setPwError("New password must be at least 8 characters."); return; }
-    if (pwNew !== pwConfirm) { setPwError("Passwords do not match."); return; }
-    setPwSaving(true);
-    try {
-      const res  = await fetch("/api/auth/change-password", {
-        method: "POST", headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ currentPassword: pwCurrent, newPassword: pwNew }),
-      });
-      const data = await res.json().catch(() => ({}));
-      if (data.ok) { setPwSuccess(true); setPwCurrent(""); setPwNew(""); setPwConfirm(""); }
-      else setPwError(data.error ?? "Failed to change password.");
-    } catch { setPwError("Network error. Please try again."); }
-    finally { setPwSaving(false); }
-  }
-
   const ALTERATION_ROLES = [
     "Super Admin",
     "Admin",
@@ -360,11 +328,10 @@ export function ChecksSidebar({
         })}
       </nav>
 
-      {/* User profile footer — click to open Change Password modal */}
+      {/* User profile footer */}
       <div style={{ padding: collapsed ? "8px 6px" : 10, borderTop: "1px solid rgba(255,255,255,.07)" }}>
         <div
-          title={collapsed ? `${userName} (${userRole})` : "Change Password"}
-          onClick={() => !collapsed && setShowPwModal(true)}
+          title={collapsed ? `${userName} (${userRole})` : undefined}
           style={{
             display: "flex",
             alignItems: "center",
@@ -374,7 +341,6 @@ export function ChecksSidebar({
             border: "1px solid rgba(255,255,255,.07)",
             borderRadius: 10,
             padding: collapsed ? "6px 0" : "8px 10px",
-            cursor: collapsed ? "default" : "pointer",
           }}
         >
           <div style={{ width: 28, height: 28, borderRadius: "50%", background: "linear-gradient(135deg,#3b82f6,#1d4ed8)", display: "flex", alignItems: "center", justifyContent: "center", color: "#fff", fontSize: 10.5, fontWeight: 800, flexShrink: 0 }}>
@@ -388,55 +354,7 @@ export function ChecksSidebar({
               <p style={{ fontSize: 9.5, color: "#94a3b8" }}>{userRole}</p>
             </div>
           )}
-          {!collapsed && (
-            <svg width="13" height="13" fill="none" viewBox="0 0 24 24" stroke="#64748b" strokeWidth={2} style={{ flexShrink: 0 }}>
-              <path strokeLinecap="round" strokeLinejoin="round" d="M15.75 5.25a3 3 0 013 3m3 0a6 6 0 01-7.029 5.912c-.563-.097-1.159.026-1.563.43L10.5 17.25H8.25v2.25H6v2.25H2.25v-2.818c0-.597.237-1.17.659-1.591l6.499-6.499c.404-.404.527-1 .43-1.563A6 6 0 1121.75 8.25z" />
-            </svg>
-          )}
         </div>
-
-        {/* Inline Change Password Modal */}
-        {showPwModal && (
-          <div style={{ position: "fixed", inset: 0, zIndex: 99999, background: "rgba(15,23,42,0.6)", display: "flex", alignItems: "center", justifyContent: "center", padding: 16 }} onClick={() => { setShowPwModal(false); resetPwForm(); }}>
-            <div style={{ background: "#fff", borderRadius: 16, width: "100%", maxWidth: 400, boxShadow: "0 20px 60px rgba(0,0,0,0.3)" }} onClick={e => e.stopPropagation()}>
-              <div style={{ padding: "16px 20px", borderBottom: "1px solid #f1f5f9", display: "flex", alignItems: "center", justifyContent: "space-between" }}>
-                <div>
-                  <p style={{ fontWeight: 700, fontSize: 15, color: "#111827", margin: 0 }}>Change Password</p>
-                  <p style={{ fontSize: 12, color: "#94a3b8", margin: "2px 0 0" }}>{userName}</p>
-                </div>
-                <button onClick={() => { setShowPwModal(false); resetPwForm(); }} style={{ background: "none", border: "none", cursor: "pointer", fontSize: 20, color: "#9ca3af", lineHeight: 1 }}>×</button>
-              </div>
-              <div style={{ padding: "16px 20px", display: "flex", flexDirection: "column", gap: 12 }}>
-                {pwError && <div style={{ background: "#fef2f2", border: "1px solid #fecaca", borderRadius: 8, padding: "8px 12px", fontSize: 12, color: "#dc2626" }}>{pwError}</div>}
-                {pwSuccess && <div style={{ background: "#f0fdf4", border: "1px solid #bbf7d0", borderRadius: 8, padding: "8px 12px", fontSize: 12, color: "#16a34a", fontWeight: 600 }}>✓ Password changed successfully!</div>}
-                {[
-                  { label: "Current password", val: pwCurrent, set: setPwCurrent, complete: "current-password" },
-                  { label: "New password", val: pwNew, set: setPwNew, complete: "new-password" },
-                  { label: "Confirm new password", val: pwConfirm, set: setPwConfirm, complete: "new-password" },
-                ].map(f => (
-                  <div key={f.label}>
-                    <label style={{ display: "block", fontSize: 11, fontWeight: 700, color: "#374151", marginBottom: 5, textTransform: "uppercase", letterSpacing: ".03em" }}>{f.label}</label>
-                    <input type={showPw ? "text" : "password"} value={f.val} autoComplete={f.complete}
-                      onChange={e => f.set(e.target.value)}
-                      style={{ width: "100%", border: "1.5px solid #e5e7eb", borderRadius: 8, padding: "9px 12px", fontSize: 13, outline: "none", boxSizing: "border-box" }} />
-                  </div>
-                ))}
-                {pwConfirm && pwNew && pwConfirm !== pwNew && <p style={{ fontSize: 11, color: "#dc2626", margin: 0 }}>Passwords do not match.</p>}
-                {pwConfirm && pwNew && pwConfirm === pwNew && <p style={{ fontSize: 11, color: "#16a34a", margin: 0 }}>✓ Passwords match.</p>}
-                <label style={{ display: "flex", alignItems: "center", gap: 6, fontSize: 12, color: "#6b7280", cursor: "pointer" }}>
-                  <input type="checkbox" checked={showPw} onChange={e => setShowPw(e.target.checked)} /> Show passwords
-                </label>
-              </div>
-              <div style={{ padding: "12px 20px", borderTop: "1px solid #f1f5f9", display: "flex", justifyContent: "flex-end", gap: 8 }}>
-                <button onClick={() => { setShowPwModal(false); resetPwForm(); }} style={{ padding: "8px 16px", borderRadius: 8, fontSize: 13, fontWeight: 600, border: "1px solid #e5e7eb", background: "#fff", cursor: "pointer", color: "#374151" }}>Cancel</button>
-                <button onClick={handleChangePw} disabled={pwSaving || !pwCurrent || !pwNew || !pwConfirm || pwNew !== pwConfirm}
-                  style={{ padding: "8px 16px", borderRadius: 8, fontSize: 13, fontWeight: 700, border: "none", cursor: "pointer", background: "linear-gradient(135deg,#1e40af,#2563eb)", color: "#fff", opacity: (pwSaving || !pwCurrent || !pwNew || !pwConfirm || pwNew !== pwConfirm) ? 0.5 : 1 }}>
-                  {pwSaving ? "Saving…" : "Change Password"}
-                </button>
-              </div>
-            </div>
-          </div>
-        )}
       </div>
     </div>
   );
