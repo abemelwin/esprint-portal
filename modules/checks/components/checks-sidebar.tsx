@@ -328,34 +328,6 @@ export function ChecksSidebar({
         })}
       </nav>
 
-      {/* User profile footer */}
-      <div style={{ padding: collapsed ? "8px 6px" : 10, borderTop: "1px solid rgba(255,255,255,.07)" }}>
-        <div
-          title={collapsed ? `${userName} (${userRole})` : undefined}
-          style={{
-            display: "flex",
-            alignItems: "center",
-            gap: collapsed ? 0 : 9,
-            justifyContent: collapsed ? "center" : "flex-start",
-            background: "rgba(255,255,255,.05)",
-            border: "1px solid rgba(255,255,255,.07)",
-            borderRadius: 10,
-            padding: collapsed ? "6px 0" : "8px 10px",
-          }}
-        >
-          <div style={{ width: 28, height: 28, borderRadius: "50%", background: "linear-gradient(135deg,#3b82f6,#1d4ed8)", display: "flex", alignItems: "center", justifyContent: "center", color: "#fff", fontSize: 10.5, fontWeight: 800, flexShrink: 0 }}>
-            {userName.charAt(0).toUpperCase()}
-          </div>
-          {!collapsed && (
-            <div style={{ minWidth: 0, flex: 1 }}>
-              <p style={{ fontSize: 11.5, fontWeight: 700, color: "#f1f5f9", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis", lineHeight: 1.2 }}>
-                {userName}
-              </p>
-              <p style={{ fontSize: 9.5, color: "#94a3b8" }}>{userRole}</p>
-            </div>
-          )}
-        </div>
-      </div>
     </div>
   );
 }
