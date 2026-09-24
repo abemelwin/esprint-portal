@@ -1,0 +1,26 @@
+name: Daily Supabase → RDS Sync
+
+# Runs every day at 2:00 AM Philippine time (UTC+8 = 18:00 UTC previous day)
+on:
+  schedule:
+    - cron: '0 18 * * *'
+  # Also allow manual trigger from GitHub Actions UI
+  workflow_dispatch:
+
+jobs:
+  sync:
+    name: Sync Supabase data to RDS
+    runs-on: ubuntu-latest
+    steps:
+      - name: Trigger sync endpoint
+        run: |
+          RESPONSE=$(curl -s -o /tmp/sync_response.json -w "%{http_code}" \
+            -X POST \
+            -H "x-sync-secret: ${{ secrets.SYNC_SECRET }}" \
+            "${{ secrets.PORTAL_URL }}/api/admin/sync")
+          echo "HTTP Status: $RESPONSE"
+          cat /tmp/sync_response.json
+          if [ "$RESPONSE" != "200" ]; then
+            echo "Sync failed with status $RESPONSE"
+            exit 1
+          fi
