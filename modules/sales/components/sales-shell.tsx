@@ -1,8 +1,6 @@
 "use client";
 
-import { PortalNav } from "@/components/portal-nav";
 import { SalesTopNav } from "./SalesTopNav";
-import { initialsOf } from "@/lib/utils";
 
 interface SalesShellProps {
   userName: string;
@@ -18,21 +16,14 @@ export function SalesShell({
   children,
 }: SalesShellProps) {
   return (
-    <div className="flex flex-col min-h-screen bg-[#f8fafc]">
-      <PortalNav
-        userName={userName}
-        userRole={userRole}
-        userInitials={initialsOf(userName)}
-        currentModule="Sales Portal"
-      />
-
+    <div className="flex flex-col min-h-screen bg-[#fff]">
       <SalesTopNav
         userName={userName}
         userRole={userRole}
         isAdmin={isAdmin}
       />
 
-      <main className="flex-1 w-full overflow-y-auto">
+      <main className="flex-1 w-full overflow-hidden">
         {children}
       </main>
     </div>

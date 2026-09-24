@@ -1,8 +1,7 @@
 "use client";
 
-import { useState, useEffect, useMemo, useRef } from "react";
-import type { CatalogMachine, DealType, LetterheadType, Quote } from "../types";
-import { formatCurrency, computeFinancial } from "../lib/calculator";
+import React, { useState, useEffect, useMemo, useRef } from "react";
+import type { CatalogMachine, LetterheadType } from "../types";
 
 interface TermOption {
   dealType: string;
@@ -17,10 +16,18 @@ interface TradeInItem {
   value: number;
 }
 
-interface CustomItem {
+interface ToggleableItem {
   id: string;
   description: string;
   enabled: boolean;
+  isCustom?: boolean;
+}
+
+interface ConsumablePriceItem {
+  id: string;
+  name: string;
+  pkg: string;
+  price: number;
 }
 
 export function QuoteBuilderClient({
@@ -33,175 +40,220 @@ export function QuoteBuilderClient({
   const [catalog, setCatalog] = useState<CatalogMachine[]>([]);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
-  const [quoteSuccessMsg, setQuoteSuccessMsg] = useState("");
+  const [showValidationBox, setShowValidationBox] = useState(false);
 
-  // Letterhead & Machine
+  // 1. Letterhead
   const [letterhead, setLetterhead] = useState<LetterheadType>("ES Print Media Inc.");
+
+  // 2. Machine Selection
   const [selectedBrand, setSelectedBrand] = useState("");
   const [selectedModel, setSelectedModel] = useState("");
+  const [selectedSubModel, setSelectedSubModel] = useState("");
   const [unitCondition, setUnitCondition] = useState<"Brand New" | "Re-certified" | "Demo Unit">("Brand New");
 
-  // Client Information
+  // 3. Client Information
   const [clientName, setClientName] = useState("");
-  const [companyName, setCompanyName] = useState("");
+  const [company, setCompany] = useState("");
   const [address, setAddress] = useState("");
-  const [contactNumber, setContactNumber] = useState("");
+  const [contact, setContact] = useState("");
   const [email, setEmail] = useState("");
-  const [quoteDate, setQuoteDate] = useState(new Date().toISOString().slice(0, 10));
+  const [quoteDate, setQuoteDate] = useState(() => new Date().toISOString().slice(0, 10));
   const [salutation, setSalutation] = useState("Dear Ma'am / Sir,");
   const [openingLine, setOpeningLine] = useState(
     "Thank you for your interest in our products and services. Below is our quote as per your inquiry:"
   );
 
-  // Deal Type & Pricing
+  // 4. Deal Type
   const [dealType, setDealType] = useState<"Standard Cash" | "Standard Terms" | "Trade-In Cash" | "Trade-In Terms">("Standard Cash");
-  const [contractPrice, setContractPrice] = useState<number>(0);
-  const [vatInclusive, setVatInclusive] = useState(false);
-  const [downpayment, setDownpayment] = useState<number>(0);
-  const [termMonths, setTermMonths] = useState<number>(12);
 
-  // Trade-in items (3 rows)
+  // 5. Pricing
+  const [contractPrice, setContractPrice] = useState<number>(0);
+  const [downPayment, setDownPayment] = useState<number>(0);
+  const [months, setMonths] = useState<number>(12);
+  const [vatInclusive, setVatInclusive] = useState(false);
+  const [collectionPayment, setCollectionPayment] = useState("Upon confirmation and before delivery");
+  const [collectionDownpayment, setCollectionDownpayment] = useState("Upon confirmation and before delivery");
+  const [collectionAmortization, setCollectionAmortization] = useState("After installation of machine");
+  const [availability, setAvailability] = useState("ON STOCK");
+
+  // Trade-Ins (Always 3 fixed rows in original)
   const [tradeIns, setTradeIns] = useState<TradeInItem[]>([
     { description: "", value: 0 },
     { description: "", value: 0 },
     { description: "", value: 0 },
   ]);
 
-  // Additional Term Options
-  const [termOptions, setTermOptions] = useState<TermOption[]>([
-    { dealType: "Installment", contractPrice: null, downPayment: 0, months: 12, monthlyAmortization: null },
-  ]);
+  // Term Options
+  const [termOptions, setTermOptions] = useState<TermOption[]>([]);
 
-  // Inclusions & Exclusions
-  const [inclusions, setInclusions] = useState<CustomItem[]>([
-    { id: "inc-1", description: "Main Equipment Unit & Accessories", enabled: true },
-    { id: "inc-2", description: "RIP Software & License Dongle", enabled: true },
-    { id: "inc-3", description: "Free 1 Set CMYK Inks / Starter Kit", enabled: true },
-    { id: "inc-4", description: "On-site Installation & Technical Training", enabled: true },
-    { id: "inc-5", description: "1-Year Full Technical Warranty", enabled: true },
-  ]);
-  const [newInclusionText, setNewInclusionText] = useState("");
+  // Promo
+  const [underPromo, setUnderPromo] = useState(false);
+  const [freebies, setFreebies] = useState<string[]>([]);
+  const [freebieInput, setFreebieInput] = useState("");
+  const [promoValidity, setPromoValidity] = useState("");
+
+  // Delivery & Computer Set
+  const [includeDelivery, setIncludeDelivery] = useState(false);
+  const [includeComputerSet, setIncludeComputerSet] = useState(false);
+  const [computerSetSpec, setComputerSetSpec] = useState("");
+
+  // Consumable Prices
+  const [consumablePrices, setConsumablePrices] = useState<ConsumablePriceItem[]>([]);
+
+  // Inclusions & Exclusions & Add-Ons
+  const [inclusionItems, setInclusionItems] = useState<ToggleableItem[]>([]);
   const [showInclusionInput, setShowInclusionInput] = useState(false);
+  const [newInclusionText, setNewInclusionText] = useState("");
 
-  const [exclusions, setExclusions] = useState<CustomItem[]>([
-    { id: "exc-1", description: "Value Added Tax (12% VAT)", enabled: true },
-    { id: "exc-2", description: "Freight & Hauling outside Metro Manila", enabled: true },
-    { id: "exc-3", description: "Electrical Power AVR / UPS & Dedicated Wiring", enabled: true },
-    { id: "exc-4", description: "Computer Desktop / Laptop for RIP Workstation", enabled: true },
-  ]);
-  const [newExclusionText, setNewExclusionText] = useState("");
+  const [exclusionItems, setExclusionItems] = useState<ToggleableItem[]>([]);
   const [showExclusionInput, setShowExclusionInput] = useState(false);
+  const [newExclusionText, setNewExclusionText] = useState("");
 
-  // Consumables custom price list
-  const [consumablePrices, setConsumablePrices] = useState<{ id: string; name: string; pkg: string; price: number }[]>([]);
+  const [addonItems, setAddonItems] = useState<ToggleableItem[]>([]);
+
+  // Warranty
+  const [warrantyCompany, setWarrantyCompany] = useState("ES Print Media Inc.");
+  const [warrantySupplier, setWarrantySupplier] = useState("ESPMI");
+  const [warrantyMachineDuration, setWarrantyMachineDuration] = useState("Twelve (12)");
+  const [warrantyPrintheadDuration, setWarrantyPrintheadDuration] = useState("");
+  const [warrantyPrintheadType, setWarrantyPrintheadType] = useState<string | null>(null);
+  const [serviceFee, setServiceFee] = useState<number | null>(500);
 
   // Signatories
-  const [signatoryName, setSignatoryName] = useState(currentUserName || "ACCOUNT EXECUTIVE");
-  const [signatoryRole, setSignatoryRole] = useState("Account Executive");
+  const [aeName, setAeName] = useState(currentUserName || "ACCOUNT EXECUTIVE");
   const [clientConforme, setClientConforme] = useState("");
   const [notedByName, setNotedByName] = useState("Ness Deomano");
   const [notedByRole, setNotedByRole] = useState("Area Sales Manager");
 
-  async function loadInitialData() {
-    setLoading(true);
-    try {
-      const res = await fetch("/api/sales/catalog");
-      const data = await res.json();
-      if (data.machines && data.machines.length > 0) {
-        setCatalog(data.machines);
-        const first = data.machines[0];
-        setSelectedBrand(first.brand);
-        setSelectedModel(first.model);
-        setContractPrice(first.srp || 0);
-        if (first.consumables && first.consumables.length > 0) {
-          setConsumablePrices(
-            first.consumables.map((c: any, i: number) => ({
-              id: c.id || `c-${i}`,
-              name: c.item_name,
-              pkg: c.package_description || "",
-              price: c.default_price,
-            }))
-          );
-        }
-      }
-    } catch (err) {
-      console.error(err);
-    } finally {
-      setLoading(false);
-    }
-  }
-
+  // Load catalog on mount
   useEffect(() => {
-    loadInitialData();
+    async function loadCatalog() {
+      setLoading(true);
+      try {
+        const res = await fetch("/api/sales/catalog");
+        const data = await res.json();
+        if (data.machines && data.machines.length > 0) {
+          setCatalog(data.machines);
+        }
+      } catch (err) {
+        console.error("Failed to load catalog:", err);
+      } finally {
+        setLoading(false);
+      }
+    }
+    loadCatalog();
   }, []);
 
-  const brands = useMemo(
-    () => Array.from(new Set(catalog.map((m) => m.brand))).filter(Boolean),
-    [catalog]
-  );
-  const modelsForBrand = useMemo(
-    () => catalog.filter((m) => !selectedBrand || m.brand === selectedBrand),
-    [catalog, selectedBrand]
-  );
+  // Unique Brands
+  const brands = useMemo(() => {
+    return Array.from(new Set(catalog.map((m) => m.brand))).filter(Boolean).sort();
+  }, [catalog]);
 
-  const selectedMachine = useMemo(
-    () => (selectedModel ? catalog.find((m) => m.model === selectedModel) : null),
-    [catalog, selectedModel]
-  );
+  function brandCount(b: string) {
+    return catalog.filter((m) => m.brand === b).length;
+  }
 
-  // Update machine details on select
+  // Models for selected Brand
+  const uniqueModels = useMemo(() => {
+    if (!selectedBrand) return [];
+    return Array.from(new Set(catalog.filter((m) => m.brand === selectedBrand).map((m) => m.model))).sort();
+  }, [catalog, selectedBrand]);
+
+  // Selected Machine entry
+  const selectedMachine = useMemo(() => {
+    if (!selectedBrand || !selectedModel) return null;
+    return catalog.find((m) => m.brand === selectedBrand && m.model === selectedModel) || null;
+  }, [catalog, selectedBrand, selectedModel]);
+
+  // Handle machine population
   useEffect(() => {
-    if (selectedMachine) {
-      setContractPrice(selectedMachine.srp || 0);
-      setUnitCondition(selectedMachine.unit_condition || "Brand New");
-      if (selectedMachine.consumables && selectedMachine.consumables.length > 0) {
-        setConsumablePrices(
-          selectedMachine.consumables.map((c, i) => ({
-            id: c.id || `c-${i}`,
-            name: c.item_name,
-            pkg: c.package_description || "",
-            price: c.default_price,
-          }))
-        );
-      }
-      if (selectedMachine.inclusions && selectedMachine.inclusions.length > 0) {
-        setInclusions(
-          selectedMachine.inclusions.map((inc, i) => ({
-            id: `inc-${i}`,
-            description: inc,
-            enabled: true,
-          }))
-        );
-      }
+    if (!selectedMachine) {
+      setContractPrice(0);
+      setInclusionItems([]);
+      setExclusionItems([]);
+      setAddonItems([]);
+      setConsumablePrices([]);
+      return;
     }
+
+    setUnitCondition((selectedMachine.unit_condition as any) || "Brand New");
+    setLetterhead(selectedMachine.letterhead || "ES Print Media Inc.");
+    setContractPrice(selectedMachine.srp || 0);
+
+    // Inclusions
+    const defaultIncls: ToggleableItem[] = (selectedMachine.inclusions || []).map((inc, i) => ({
+      id: `inc-${i}`,
+      description: inc,
+      enabled: true,
+    }));
+    setInclusionItems(defaultIncls);
+
+    // Exclusions
+    const defaultExcls: ToggleableItem[] = (selectedMachine.exclusions || []).map((exc, i) => ({
+      id: `exc-${i}`,
+      description: exc,
+      enabled: true,
+    }));
+    setExclusionItems(defaultExcls);
+
+    // Addons
+    const defaultAddons: ToggleableItem[] = (selectedMachine.addons || []).map((addon, i) => ({
+      id: `addon-${i}`,
+      description: addon,
+      enabled: false,
+    }));
+    setAddonItems(defaultAddons);
+
+    // Consumables
+    if (selectedMachine.consumables && selectedMachine.consumables.length > 0) {
+      setConsumablePrices(
+        selectedMachine.consumables.map((c, i) => ({
+          id: c.id || `c-${i}`,
+          name: c.item_name,
+          pkg: c.package_description || "",
+          price: c.default_price,
+        }))
+      );
+    } else {
+      setConsumablePrices([]);
+    }
+
+    // Warranty
+    setWarrantyMachineDuration(selectedMachine.warranty_machine_duration || "Twelve (12)");
+    setWarrantyPrintheadDuration(selectedMachine.warranty_printhead_duration || "");
+    setServiceFee(selectedMachine.service_fee || 500);
+    setAvailability((selectedMachine as any).availability || "ON STOCK");
   }, [selectedMachine]);
 
+  // Trade in sum
   const showTradeIns = dealType === "Trade-In Cash" || dealType === "Trade-In Terms";
-  const tradeInSum = useMemo(
-    () => (showTradeIns ? tradeIns.reduce((acc, ti) => acc + (Number(ti.value) || 0), 0) : 0),
-    [showTradeIns, tradeIns]
-  );
+  const tradeInSum = useMemo(() => {
+    if (!showTradeIns) return 0;
+    return tradeIns.reduce((sum, ti) => sum + (Number(ti.value) || 0), 0);
+  }, [showTradeIns, tradeIns]);
 
-  const netContractPrice = Math.max(0, contractPrice - tradeInSum);
+  const tradeInDescriptions = useMemo(() => {
+    return tradeIns.map((ti) => ti.description?.trim()).filter(Boolean);
+  }, [tradeIns]);
 
-  // Auto-calculate monthly amortizations for term options
-  const computedTermOptions = useMemo(() => {
-    return termOptions.map((opt) => {
-      const price = opt.contractPrice !== null ? opt.contractPrice : netContractPrice;
-      const dp = opt.downPayment || 0;
-      const principal = Math.max(0, price - dp);
-      // Flat 14% p.a. standard
-      const interest = principal * (0.14 / 12) * (opt.months || 12);
-      const balance = principal + interest;
-      const monthly = (opt.months || 12) > 0 ? balance / (opt.months || 12) : 0;
-      return {
-        ...opt,
-        balance,
-        monthlyAmortization: monthly,
-      };
-    });
-  }, [termOptions, netContractPrice]);
+  // Format currency helpers
+  function formatMoney(val: number | null | undefined): string {
+    if (val === null || val === undefined || val === 0) return "";
+    return val.toLocaleString("en-PH");
+  }
 
+  function formatDisplayCurrency(val: number | null | undefined): string {
+    if (val === null || val === undefined) return "—";
+    return (
+      "₱" +
+      val.toLocaleString("en-PH", {
+        minimumFractionDigits: 2,
+        maximumFractionDigits: 2,
+      })
+    );
+  }
+
+  // Term options calculation
   function addTermOption() {
     if (termOptions.length >= 5) return;
     setTermOptions([
@@ -211,76 +263,39 @@ export function QuoteBuilderClient({
   }
 
   function removeTermOption(idx: number) {
-    if (termOptions.length <= 1) return;
     setTermOptions(termOptions.filter((_, i) => i !== idx));
   }
 
-  function handleAddInclusion() {
-    if (!newInclusionText.trim()) return;
-    setInclusions([...inclusions, { id: `inc-${Date.now()}`, description: newInclusionText.trim(), enabled: true }]);
-    setNewInclusionText("");
-    setShowInclusionInput(false);
-  }
+  // Pricing rows for table preview
+  const pricingRows = useMemo(() => {
+    const cp = contractPrice || 0;
+    const isCash = dealType.toLowerCase().includes("cash");
+    const rows: { downPayment: number; balance: number | null; paymentTerms: string; monthly: number | null }[] = [];
 
-  function handleAddExclusion() {
-    if (!newExclusionText.trim()) return;
-    setExclusions([...exclusions, { id: `exc-${Date.now()}`, description: newExclusionText.trim(), enabled: true }]);
-    setNewExclusionText("");
-    setShowExclusionInput(false);
-  }
+    // Primary row
+    const dp = downPayment || 0;
+    const m = months || 12;
+    const balance = cp - dp - tradeInSum;
+    const paymentTerms = isCash ? "CASH" : `${m} months`;
+    const monthly = isCash ? null : balance > 0 && m > 0 ? balance / m : null;
+    rows.push({ downPayment: dp, balance, paymentTerms, monthly });
 
-  async function handleSaveQuote() {
-    if (!clientName.trim()) {
-      alert("Please enter Client Contact Person Name");
-      return;
-    }
-    setSaving(true);
-    try {
-      const res = await fetch("/api/sales/quotes", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          client_name: clientName,
-          company_name: companyName,
-          contact_number: contactNumber,
-          email,
-          address,
-          deal_type: dealType,
-          letterhead,
-          total_amount: contractPrice,
-          monthly_payment: computedTermOptions[0]?.monthlyAmortization || 0,
-          signatory_name: signatoryName,
-          signatory_title: signatoryRole,
-          items: selectedMachine
-            ? [
-                {
-                  machine_id: selectedMachine.id,
-                  machine_name: `${selectedMachine.brand} ${selectedMachine.model}`,
-                  unit_price: contractPrice,
-                  quantity: 1,
-                  total_price: contractPrice,
-                },
-              ]
-            : [],
-        }),
-      });
+    // Additional term options
+    termOptions.forEach((term) => {
+      const tCp = term.contractPrice || cp;
+      const tDp = term.downPayment || 0;
+      const tMonths = term.months || 12;
+      const tIsCash = (term.dealType || "").toLowerCase().includes("cash");
+      const tBalance = tCp - tDp - tradeInSum;
+      const tPaymentTerms = tIsCash ? "CASH" : `${tMonths} months`;
+      const tMonthly = tIsCash ? null : tBalance > 0 && tMonths > 0 ? tBalance / tMonths : null;
+      rows.push({ downPayment: tDp, balance: tBalance, paymentTerms: tPaymentTerms, monthly: tMonthly });
+    });
 
-      if (res.ok) {
-        const d = await res.json();
-        setQuoteSuccessMsg(`Quote created successfully: ${d.quoteNumber}`);
-        setTimeout(() => setQuoteSuccessMsg(""), 4000);
-      } else {
-        const d = await res.json();
-        alert(d.error || "Failed to save quote");
-      }
-    } catch (err) {
-      console.error(err);
-      alert("Error saving quote");
-    } finally {
-      setSaving(false);
-    }
-  }
+    return rows;
+  }, [contractPrice, dealType, downPayment, months, tradeInSum, termOptions]);
 
+  // Formatted proposal date
   const formattedDate = useMemo(() => {
     if (!quoteDate) return "";
     try {
@@ -295,33 +310,107 @@ export function QuoteBuilderClient({
     }
   }, [quoteDate]);
 
+  // Warranty lines generator
+  const warrantyLines = useMemo(() => {
+    const lines: { text: string; bold: boolean; heading?: boolean }[] = [];
+    const modelUpper = (selectedModel || "").toUpperCase();
+
+    if (modelUpper.includes("SC-T3130X")) {
+      return [
+        { text: "24 months or 10,000 A1 Prints, whichever comes first.", bold: false },
+        { text: "Authorized Epson Service Centers – Warranty and after-sales support are strictly provided by Epson's accredited service centers.", bold: false },
+        { text: "End-users must coordinate directly with the Authorized Service Center to ensure streamlined communication and efficient support.", bold: false },
+        { text: "Online Support — Email: customercare@epc.epson.com.ph", bold: false },
+        { text: "Telephone Support — Toll-Free (PLDT): 1-800-1069-37766 · Metro Manila: (02) 8441-9030", bold: false },
+        { text: "AFTER WARRANTY", bold: true, heading: true },
+        { text: "All service and repairs beyond the warranty period shall be directly coordinated by the BUYER with the Authorized Service Center.", bold: false },
+        { text: "ES Print Media Inc. shall not be responsible for service handling, transport, or repair costs after the warranty period.", bold: false },
+        { text: "Standard service fees, if any, shall be charged by the Authorized Service Center in accordance with their prevailing rates.", bold: false },
+      ];
+    }
+
+    if (warrantyMachineDuration.trim()) {
+      lines.push({
+        text: `${warrantyMachineDuration} months limited warranty on Main unit. Terms and conditions apply.`,
+        bold: false,
+      });
+    }
+
+    if (warrantyPrintheadDuration.trim()) {
+      lines.push({
+        text: `${warrantyPrintheadDuration} months limited warranty on Print Head.`,
+        bold: false,
+      });
+      lines.push({
+        text: `Use of parts and inks other than those supplied by ${warrantySupplier || "ESPMI"} will void the warranty.`,
+        bold: true,
+      });
+    }
+
+    lines.push({ text: "No warranty for package inclusions.", bold: false });
+
+    const formattedFee = formatDisplayCurrency(serviceFee);
+    lines.push({
+      text: `After warranty, a service fee of ${formattedFee} per case will be charged.`,
+      bold: false,
+    });
+
+    lines.push({
+      text: `It is an essential consideration of this Agreement that all matters pertaining to the supply by ${warrantyCompany} to the BUYER shall be held in the strictest confidence.`,
+      bold: false,
+    });
+
+    return lines;
+  }, [selectedModel, warrantyMachineDuration, warrantyPrintheadDuration, warrantySupplier, serviceFee, warrantyCompany]);
+
   const letterheadHeaderImg =
     letterhead === "ACS / Alternative" ? "/letterhead/letterhead-acs-1.jpg" : "/letterhead/letterhead-espmi-1.jpg";
   const letterheadFooterImg =
     letterhead === "ACS / Alternative" ? "/letterhead/letterhead-acs-2.jpg" : "/letterhead/letterhead-espmi-2.jpg";
 
+  // Validation
+  const validationErrors = useMemo(() => {
+    const errs: string[] = [];
+    if (!selectedBrand || !selectedModel) errs.push("Please select a Machine Model");
+    if (!clientName.trim()) errs.push("Client Name is required");
+    if (!contractPrice || contractPrice <= 0) errs.push("Contract Price must be greater than 0");
+    return errs;
+  }, [selectedBrand, selectedModel, clientName, contractPrice]);
+
+  function handleSavePdf() {
+    if (validationErrors.length > 0) {
+      setShowValidationBox(true);
+      return;
+    }
+    setShowValidationBox(false);
+    window.print();
+  }
+
   return (
-    <div className="flex flex-col lg:flex-row min-h-[calc(100vh-96px)] bg-[#eef4fb]">
-      {/* ─── LEFT FORM PANEL (Exact matching QuoteFormPanel.vue) ─── */}
-      <aside className="w-full lg:w-[360px] shrink-0 bg-white border-r-2 border-[#c0392b] flex flex-col overflow-y-auto shadow-md print:hidden select-none">
-        {/* Header Title */}
-        <div className="text-center py-2.5 px-4 border-b border-slate-100 shrink-0">
-          <div className="text-sm font-black text-[#c0392b] tracking-wide">ES PRINT MEDIA INC.</div>
-          <div className="text-[10px] text-slate-400 italic">Quotation Generator</div>
+    <div className="flex flex-col md:flex-row h-[calc(100vh-40px)] bg-[#fff] overflow-hidden">
+      {/* ─── LEFT FORM PANEL (Exact mirror of QuoteFormPanel.vue) ─── */}
+      <aside className="w-full md:w-[350px] lg:w-[360px] shrink-0 h-full overflow-y-auto bg-white border-r-2 border-[#c0392b] flex flex-col select-none print:hidden">
+        {/* Header */}
+        <div className="text-center py-2.5 px-0 border-b border-[#f0f0f0] shrink-0">
+          <div className="text-[14px] font-bold text-[#c0392b]">ES PRINT MEDIA INC.</div>
+          <div className="text-[10px] text-[#999]">Quotation Generator</div>
         </div>
 
-        <div className="p-3 space-y-3.5 text-xs text-slate-700 flex-1">
-          {/* 1. LETTERHEAD */}
+        {/* Content area */}
+        <div className="p-3 pb-8 space-y-2 text-[#222]">
+          {/* LETTERHEAD */}
           <div>
-            <h2 className="text-[11px] font-bold text-[#c0392b] uppercase tracking-wider border-b-[1.5px] border-[#c0392b] pb-0.5 mb-2">
+            <h2 className="text-[11px] font-bold text-[#c0392b] uppercase tracking-[0.5px] border-b-[1.5px] border-[#c0392b] pb-[3px] mb-[7px]">
               Letterhead
             </h2>
-            <div className="space-y-1">
-              <label className="block text-[10px] font-semibold text-slate-600 uppercase">Select Letterhead</label>
+            <div className="mb-2">
+              <label className="block text-[10px] font-semibold text-[#666] uppercase mb-[2px] tracking-[0.3px]">
+                Select Letterhead
+              </label>
               <select
                 value={letterhead}
                 onChange={(e) => setLetterhead(e.target.value as LetterheadType)}
-                className="w-full text-xs font-semibold px-2.5 py-1 bg-white border border-slate-300 rounded focus:border-[#c0392b] focus:outline-none"
+                className="w-full px-[7px] py-[5px] border border-[#ddd] rounded-[4px] text-[12px] bg-[#fafafa] focus:bg-white focus:border-[#c0392b] focus:outline-none"
               >
                 <option value="ES Print Media Inc.">ES Print Media Inc.</option>
                 <option value="ACS / Alternative">ACS / Alternative</option>
@@ -329,55 +418,63 @@ export function QuoteBuilderClient({
             </div>
           </div>
 
-          {/* 2. MACHINE */}
+          <hr className="border-0 border-t border-[#eee] my-2" />
+
+          {/* MACHINE */}
           <div>
-            <h2 className="text-[11px] font-bold text-[#c0392b] uppercase tracking-wider border-b-[1.5px] border-[#c0392b] pb-0.5 mb-2">
+            <h2 className="text-[11px] font-bold text-[#c0392b] uppercase tracking-[0.5px] border-b-[1.5px] border-[#c0392b] pb-[3px] mb-[7px]">
               Machine
             </h2>
             <div className="space-y-2">
               <div>
-                <label className="block text-[10px] font-semibold text-slate-600 uppercase mb-0.5">Brand</label>
+                <label className="block text-[10px] font-semibold text-[#666] uppercase mb-[2px] tracking-[0.3px]">
+                  Brand
+                </label>
                 <select
                   value={selectedBrand}
                   onChange={(e) => {
                     setSelectedBrand(e.target.value);
-                    const first = catalog.find((m) => m.brand === e.target.value);
-                    if (first) setSelectedModel(first.model);
+                    const filtered = catalog.filter((m) => m.brand === e.target.value);
+                    if (filtered.length > 0) setSelectedModel(filtered[0].model);
                   }}
-                  className="w-full text-xs font-semibold px-2.5 py-1 bg-white border border-slate-300 rounded focus:border-[#c0392b] focus:outline-none"
+                  className="w-full px-[7px] py-[5px] border border-[#ddd] rounded-[4px] text-[12px] bg-[#fafafa] focus:bg-white focus:border-[#c0392b] focus:outline-none"
                 >
-                  <option value="">Select brand</option>
+                  <option value="" disabled>Select brand</option>
                   {brands.map((b) => (
                     <option key={b} value={b}>
-                      {b}
+                      {b} ({brandCount(b)})
                     </option>
                   ))}
                 </select>
               </div>
 
               <div>
-                <label className="block text-[10px] font-semibold text-slate-600 uppercase mb-0.5">Machine Model</label>
+                <label className="block text-[10px] font-semibold text-[#666] uppercase mb-[2px] tracking-[0.3px]">
+                  Machine Model
+                </label>
                 <select
                   value={selectedModel}
                   onChange={(e) => setSelectedModel(e.target.value)}
                   disabled={!selectedBrand}
-                  className="w-full text-xs font-semibold px-2.5 py-1 bg-white border border-slate-300 rounded focus:border-[#c0392b] focus:outline-none disabled:bg-slate-100"
+                  className="w-full px-[7px] py-[5px] border border-[#ddd] rounded-[4px] text-[12px] bg-[#fafafa] focus:bg-white focus:border-[#c0392b] focus:outline-none disabled:bg-[#f0f0f0] disabled:text-[#aaa]"
                 >
-                  <option value="">Select model</option>
-                  {modelsForBrand.map((m) => (
-                    <option key={m.id} value={m.model}>
-                      {m.model}
+                  <option value="" disabled>Select model</option>
+                  {uniqueModels.map((m) => (
+                    <option key={m} value={m}>
+                      {m}
                     </option>
                   ))}
                 </select>
               </div>
 
               <div>
-                <label className="block text-[10px] font-semibold text-slate-600 uppercase mb-0.5">Unit Condition</label>
+                <label className="block text-[10px] font-semibold text-[#666] uppercase mb-[2px] tracking-[0.3px]">
+                  Unit Condition
+                </label>
                 <select
                   value={unitCondition}
                   onChange={(e) => setUnitCondition(e.target.value as any)}
-                  className="w-full text-xs font-semibold px-2.5 py-1 bg-white border border-slate-300 rounded focus:border-[#c0392b] focus:outline-none"
+                  className="w-full px-[7px] py-[5px] border border-[#ddd] rounded-[4px] text-[12px] bg-[#fafafa] focus:bg-white focus:border-[#c0392b] focus:outline-none"
                 >
                   <option value="Brand New">Brand New</option>
                   <option value="Re-certified">Re-certified</option>
@@ -387,111 +484,135 @@ export function QuoteBuilderClient({
             </div>
           </div>
 
-          {/* 3. CLIENT INFORMATION */}
+          <hr className="border-0 border-t border-[#eee] my-2" />
+
+          {/* CLIENT INFORMATION */}
           <div>
-            <h2 className="text-[11px] font-bold text-[#c0392b] uppercase tracking-wider border-b-[1.5px] border-[#c0392b] pb-0.5 mb-2">
+            <h2 className="text-[11px] font-bold text-[#c0392b] uppercase tracking-[0.5px] border-b-[1.5px] border-[#c0392b] pb-[3px] mb-[7px]">
               Client Information
             </h2>
             <div className="space-y-2">
               <div>
-                <label className="block text-[10px] font-semibold text-slate-600 uppercase mb-0.5">Client Name</label>
+                <label className="block text-[10px] font-semibold text-[#666] uppercase mb-[2px] tracking-[0.3px]">
+                  Client Name
+                </label>
                 <input
                   type="text"
                   placeholder="Full name"
                   value={clientName}
                   onChange={(e) => setClientName(e.target.value)}
-                  className="w-full text-xs px-2.5 py-1 border border-slate-300 rounded focus:border-[#c0392b] focus:outline-none"
+                  className="w-full px-[7px] py-[5px] border border-[#ddd] rounded-[4px] text-[12px] bg-[#fafafa] focus:bg-white focus:border-[#c0392b] focus:outline-none"
                 />
               </div>
 
               <div>
-                <label className="block text-[10px] font-semibold text-slate-600 uppercase mb-0.5">Company</label>
+                <label className="block text-[10px] font-semibold text-[#666] uppercase mb-[2px] tracking-[0.3px]">
+                  Company
+                </label>
                 <input
                   type="text"
                   placeholder="Company name"
-                  value={companyName}
-                  onChange={(e) => setCompanyName(e.target.value)}
-                  className="w-full text-xs px-2.5 py-1 border border-slate-300 rounded focus:border-[#c0392b] focus:outline-none"
+                  value={company}
+                  onChange={(e) => setCompany(e.target.value)}
+                  className="w-full px-[7px] py-[5px] border border-[#ddd] rounded-[4px] text-[12px] bg-[#fafafa] focus:bg-white focus:border-[#c0392b] focus:outline-none"
                 />
               </div>
 
               <div>
-                <label className="block text-[10px] font-semibold text-slate-600 uppercase mb-0.5">Address</label>
+                <label className="block text-[10px] font-semibold text-[#666] uppercase mb-[2px] tracking-[0.3px]">
+                  Address
+                </label>
                 <input
                   type="text"
                   placeholder="City / Address"
                   value={address}
                   onChange={(e) => setAddress(e.target.value)}
-                  className="w-full text-xs px-2.5 py-1 border border-slate-300 rounded focus:border-[#c0392b] focus:outline-none"
+                  className="w-full px-[7px] py-[5px] border border-[#ddd] rounded-[4px] text-[12px] bg-[#fafafa] focus:bg-white focus:border-[#c0392b] focus:outline-none"
                 />
               </div>
 
-              <div className="grid grid-cols-2 gap-2">
-                <div>
-                  <label className="block text-[10px] font-semibold text-slate-600 uppercase mb-0.5">Contact No.</label>
+              <div className="flex gap-1.5">
+                <div className="flex-1">
+                  <label className="block text-[10px] font-semibold text-[#666] uppercase mb-[2px] tracking-[0.3px]">
+                    Contact No.
+                  </label>
                   <input
-                    type="text"
+                    type="tel"
                     placeholder="09XX XXX XXXX"
-                    value={contactNumber}
-                    onChange={(e) => setContactNumber(e.target.value)}
-                    className="w-full text-xs px-2.5 py-1 border border-slate-300 rounded focus:border-[#c0392b] focus:outline-none"
+                    value={contact}
+                    onChange={(e) => setContact(e.target.value)}
+                    className="w-full px-[7px] py-[5px] border border-[#ddd] rounded-[4px] text-[12px] bg-[#fafafa] focus:bg-white focus:border-[#c0392b] focus:outline-none"
                   />
                 </div>
-                <div>
-                  <label className="block text-[10px] font-semibold text-slate-600 uppercase mb-0.5">Email</label>
+                <div className="flex-1">
+                  <label className="block text-[10px] font-semibold text-[#666] uppercase mb-[2px] tracking-[0.3px]">
+                    Email
+                  </label>
                   <input
-                    type="email"
+                    type="text"
                     placeholder="email@..."
                     value={email}
                     onChange={(e) => setEmail(e.target.value)}
-                    className="w-full text-xs px-2.5 py-1 border border-slate-300 rounded focus:border-[#c0392b] focus:outline-none"
+                    className="w-full px-[7px] py-[5px] border border-[#ddd] rounded-[4px] text-[12px] bg-[#fafafa] focus:bg-white focus:border-[#c0392b] focus:outline-none"
                   />
                 </div>
               </div>
 
               <div>
-                <label className="block text-[10px] font-semibold text-slate-600 uppercase mb-0.5">Date</label>
+                <label className="block text-[10px] font-semibold text-[#666] uppercase mb-[2px] tracking-[0.3px]">
+                  Date
+                </label>
                 <input
                   type="date"
                   value={quoteDate}
                   onChange={(e) => setQuoteDate(e.target.value)}
-                  className="w-full text-xs px-2.5 py-1 border border-slate-300 rounded focus:border-[#c0392b] focus:outline-none"
+                  className="w-full px-[7px] py-[5px] border border-[#ddd] rounded-[4px] text-[12px] bg-[#fafafa] focus:bg-white focus:border-[#c0392b] focus:outline-none"
                 />
               </div>
 
               <div>
-                <label className="block text-[10px] font-semibold text-slate-600 uppercase mb-0.5">Salutation</label>
+                <label className="block text-[10px] font-semibold text-[#666] uppercase mb-[2px] tracking-[0.3px]">
+                  Salutation
+                </label>
                 <input
                   type="text"
+                  placeholder="Dear Ma'am / Sir,"
                   value={salutation}
                   onChange={(e) => setSalutation(e.target.value)}
-                  className="w-full text-xs px-2.5 py-1 border border-slate-300 rounded focus:border-[#c0392b] focus:outline-none"
+                  className="w-full px-[7px] py-[5px] border border-[#ddd] rounded-[4px] text-[12px] bg-[#fafafa] focus:bg-white focus:border-[#c0392b] focus:outline-none"
                 />
               </div>
 
               <div>
-                <label className="block text-[10px] font-semibold text-slate-600 uppercase mb-0.5">Opening Line</label>
-                <textarea
-                  rows={2}
+                <label className="block text-[10px] font-semibold text-[#666] uppercase mb-[2px] tracking-[0.3px]">
+                  Opening Line
+                </label>
+                <input
+                  type="text"
+                  placeholder="Thank you for your interest..."
                   value={openingLine}
                   onChange={(e) => setOpeningLine(e.target.value)}
-                  className="w-full text-xs px-2.5 py-1 border border-slate-300 rounded focus:border-[#c0392b] focus:outline-none resize-none"
+                  className="w-full px-[7px] py-[5px] border border-[#ddd] rounded-[4px] text-[12px] bg-[#fafafa] focus:bg-white focus:border-[#c0392b] focus:outline-none"
                 />
               </div>
             </div>
           </div>
 
-          {/* 4. DEAL TYPE */}
+          <hr className="border-0 border-t border-[#eee] my-2" />
+
+          {/* DEAL TYPE */}
           <div>
-            <h2 className="text-[11px] font-bold text-[#c0392b] uppercase tracking-wider border-b-[1.5px] border-[#c0392b] pb-0.5 mb-2">
+            <h2 className="text-[11px] font-bold text-[#c0392b] uppercase tracking-[0.5px] border-b-[1.5px] border-[#c0392b] pb-[3px] mb-[7px]">
               Deal Type
             </h2>
             <div>
-              <label className="block text-[10px] font-semibold text-slate-600 uppercase mb-0.5">Type of Deal</label>
+              <label className="block text-[10px] font-semibold text-[#666] uppercase mb-[2px] tracking-[0.3px]">
+                Type of Deal
+              </label>
               <select
                 value={dealType}
                 onChange={(e) => setDealType(e.target.value as any)}
-                className="w-full text-xs font-semibold px-2.5 py-1 bg-white border border-slate-300 rounded focus:border-[#c0392b] focus:outline-none"
+                className="w-full px-[7px] py-[5px] border border-[#ddd] rounded-[4px] text-[12px] bg-[#fafafa] focus:bg-white focus:border-[#c0392b] focus:outline-none"
               >
                 <option value="Standard Cash">Standard Cash</option>
                 <option value="Standard Terms">Standard Terms</option>
@@ -501,491 +622,956 @@ export function QuoteBuilderClient({
             </div>
           </div>
 
-          {/* 5. PRICING */}
+          <hr className="border-0 border-t border-[#eee] my-2" />
+
+          {/* PRICING */}
           <div>
-            <h2 className="text-[11px] font-bold text-[#c0392b] uppercase tracking-wider border-b-[1.5px] border-[#c0392b] pb-0.5 mb-2">
+            <h2 className="text-[11px] font-bold text-[#c0392b] uppercase tracking-[0.5px] border-b-[1.5px] border-[#c0392b] pb-[3px] mb-[7px]">
               Pricing
             </h2>
+            {unitCondition === "Re-certified" && (
+              <div className="inline-block mb-1.5 px-2 py-0.5 text-[10px] font-bold uppercase text-[#b45309] bg-[#fef3c7] border border-[#f59e0b] rounded-[3px]">
+                RE-CERTIFIED
+              </div>
+            )}
             <div className="space-y-2">
               <div>
-                <label className="block text-[10px] font-semibold text-slate-600 uppercase mb-0.5">Contract Price (PHP)</label>
+                <label className="block text-[10px] font-semibold text-[#666] uppercase mb-[2px] tracking-[0.3px]">
+                  Contract Price (PHP)
+                </label>
                 <input
-                  type="number"
-                  value={contractPrice || ""}
-                  onChange={(e) => setContractPrice(Number(e.target.value) || 0)}
+                  type="text"
+                  inputMode="decimal"
                   placeholder="0"
-                  className="w-full text-xs font-bold px-2.5 py-1 border border-slate-300 rounded focus:border-[#c0392b] focus:outline-none"
+                  value={formatMoney(contractPrice)}
+                  onChange={(e) => {
+                    const cleaned = e.target.value.replace(/[^0-9.]/g, "");
+                    setContractPrice(cleaned ? parseFloat(cleaned) : 0);
+                  }}
+                  className="w-full px-[7px] py-[5px] border border-[#ddd] rounded-[4px] text-[12px] bg-[#fafafa] focus:bg-white focus:border-[#c0392b] focus:outline-none font-bold"
                 />
               </div>
 
-              {/* Trade In Rows */}
+              {/* Trade-Ins (3 rows) */}
               {showTradeIns && (
-                <div className="p-2 bg-slate-50 border border-slate-200 rounded space-y-2">
-                  <span className="font-bold text-[10px] text-slate-700 uppercase block">Trade-In Units</span>
-                  {tradeIns.map((ti, i) => (
-                    <div key={i} className="grid grid-cols-5 gap-1.5">
-                      <div className="col-span-2">
-                        <input
-                          type="number"
-                          placeholder={`Value ${i + 1}`}
-                          value={ti.value || ""}
-                          onChange={(e) => {
-                            const copy = [...tradeIns];
-                            copy[i].value = Number(e.target.value) || 0;
-                            setTradeIns(copy);
-                          }}
-                          className="w-full text-[11px] px-2 py-0.5 border border-slate-300 rounded"
-                        />
-                      </div>
-                      <div className="col-span-3">
+                <div className="space-y-1.5">
+                  {[0, 1, 2].map((idx) => (
+                    <div key={idx} className="flex gap-1.5">
+                      <div className="w-[44%]">
+                        <label className="block text-[10px] font-semibold text-[#666] uppercase mb-[2px] tracking-[0.3px]">
+                          Trade-In Value {idx + 1} (PHP)
+                        </label>
                         <input
                           type="text"
-                          placeholder={`Unit ${i + 1} model/spec`}
-                          value={ti.description}
+                          inputMode="decimal"
+                          placeholder="0"
+                          value={formatMoney(tradeIns[idx]?.value || 0)}
                           onChange={(e) => {
+                            const cleaned = e.target.value.replace(/[^0-9.]/g, "");
+                            const val = cleaned ? parseFloat(cleaned) : 0;
                             const copy = [...tradeIns];
-                            copy[i].description = e.target.value;
+                            copy[idx] = { ...copy[idx], value: val };
                             setTradeIns(copy);
                           }}
-                          className="w-full text-[11px] px-2 py-0.5 border border-slate-300 rounded"
+                          className="w-full px-[7px] py-[5px] border border-[#ddd] rounded-[4px] text-[12px] bg-[#fafafa] focus:bg-white focus:border-[#c0392b] focus:outline-none"
+                        />
+                      </div>
+                      <div className="flex-1">
+                        <label className="block text-[10px] font-semibold text-[#666] uppercase mb-[2px] tracking-[0.3px]">
+                          Description {idx + 1}
+                        </label>
+                        <input
+                          type="text"
+                          placeholder={idx === 0 ? "Brand, model, heads…" : "Optional"}
+                          value={tradeIns[idx]?.description || ""}
+                          onChange={(e) => {
+                            const copy = [...tradeIns];
+                            copy[idx] = { ...copy[idx], description: e.target.value };
+                            setTradeIns(copy);
+                          }}
+                          className="w-full px-[7px] py-[5px] border border-[#ddd] rounded-[4px] text-[12px] bg-[#fafafa] focus:bg-white focus:border-[#c0392b] focus:outline-none"
                         />
                       </div>
                     </div>
                   ))}
+
                   {tradeInSum > 0 && (
-                    <div className="text-[11px] font-bold text-red-700 text-right pt-1">
-                      Total Trade-In: {formatCurrency(tradeInSum)}
+                    <div className="bg-[#fff8f8] border border-[#f5c6cb] rounded-[4px] p-[5px_8px] text-[11px] text-[#c0392b] font-bold mt-[3px]">
+                      Total Trade-In: PHP {tradeInSum.toLocaleString("en-PH", { minimumFractionDigits: 2 })}
                     </div>
                   )}
                 </div>
               )}
 
-              {/* Term Options */}
-              {(dealType === "Standard Terms" || dealType === "Trade-In Terms") && (
-                <div className="space-y-2 pt-1">
-                  <label className="block text-[10px] font-semibold text-slate-600 uppercase">Payment Term Options</label>
-                  {termOptions.map((opt, idx) => (
-                    <div key={idx} className="p-2 bg-red-50/50 border border-red-200 rounded space-y-1.5">
-                      <div className="flex justify-between items-center text-[10px] font-bold text-red-700">
-                        <span>Option {idx + 1}</span>
-                        {termOptions.length > 1 && (
-                          <button type="button" onClick={() => removeTermOption(idx)} className="text-red-500 hover:text-red-800">
-                            ✕ Remove
-                          </button>
-                        )}
+              {/* Downpayment */}
+              <div>
+                <label className="block text-[10px] font-semibold text-[#666] uppercase mb-[2px] tracking-[0.3px]">
+                  Downpayment (PHP)
+                </label>
+                <input
+                  type="text"
+                  inputMode="decimal"
+                  placeholder="0"
+                  value={formatMoney(downPayment)}
+                  onChange={(e) => {
+                    const cleaned = e.target.value.replace(/[^0-9.]/g, "");
+                    setDownPayment(cleaned ? parseFloat(cleaned) : 0);
+                  }}
+                  className="w-full px-[7px] py-[5px] border border-[#ddd] rounded-[4px] text-[12px] bg-[#fafafa] focus:bg-white focus:border-[#c0392b] focus:outline-none"
+                />
+              </div>
+
+              {/* Terms */}
+              <div>
+                <label className="block text-[10px] font-semibold text-[#666] uppercase mb-[2px] tracking-[0.3px]">
+                  Terms (No. of Months)
+                </label>
+                <input
+                  type="number"
+                  min="1"
+                  max="60"
+                  placeholder="12"
+                  value={months}
+                  onChange={(e) => setMonths(Number(e.target.value) || 12)}
+                  className="w-full px-[7px] py-[5px] border border-[#ddd] rounded-[4px] text-[12px] bg-[#fafafa] focus:bg-white focus:border-[#c0392b] focus:outline-none"
+                />
+              </div>
+
+              {/* Additional Term Options */}
+              <div className="mt-2">
+                <label className="block text-[10px] font-semibold text-[#666] uppercase mb-[2px] tracking-[0.3px]">
+                  Additional Term Options (optional)
+                </label>
+                {termOptions.map((opt, idx) => (
+                  <div key={idx} className="border border-[#e5c9c5] rounded-[6px] p-[6px_8px] mb-[6px] bg-[#fffafa]">
+                    <div className="flex justify-between items-center text-[11px] font-bold text-[#c0392b] mb-[3px]">
+                      <span>Additional Option</span>
+                      <button
+                        type="button"
+                        onClick={() => removeTermOption(idx)}
+                        className="w-[22px] h-[22px] border border-[#ddd] bg-white text-[#c0392b] rounded-[4px] flex items-center justify-center font-bold text-[14px] cursor-pointer hover:bg-[#fdecea]"
+                      >
+                        &times;
+                      </button>
+                    </div>
+
+                    <div className="mb-2">
+                      <label className="block text-[10px] font-semibold text-[#666] uppercase mb-[2px]">Deal Type</label>
+                      <select
+                        value={opt.dealType}
+                        onChange={(e) => {
+                          const copy = [...termOptions];
+                          copy[idx].dealType = e.target.value;
+                          setTermOptions(copy);
+                        }}
+                        className="w-full px-[7px] py-[5px] border border-[#ddd] rounded-[4px] text-[12px] bg-[#fafafa]"
+                      >
+                        <option value="Cash">Cash</option>
+                        <option value="Installment">Installment</option>
+                        <option value="Trade-In — Cash">Trade-In — Cash</option>
+                        <option value="Trade-In — Installment">Trade-In — Installment</option>
+                      </select>
+                    </div>
+
+                    <div className="mb-2">
+                      <label className="block text-[10px] font-semibold text-[#666] uppercase mb-[2px]">Contract Price</label>
+                      <input
+                        type="number"
+                        placeholder="Defaults to main price"
+                        value={opt.contractPrice || ""}
+                        onChange={(e) => {
+                          const copy = [...termOptions];
+                          copy[idx].contractPrice = Number(e.target.value) || null;
+                          setTermOptions(copy);
+                        }}
+                        className="w-full px-[7px] py-[5px] border border-[#ddd] rounded-[4px] text-[12px] bg-[#fafafa]"
+                      />
+                    </div>
+
+                    <div className="flex gap-1.5">
+                      <div className="flex-1">
+                        <label className="block text-[10px] font-semibold text-[#666] uppercase mb-[2px]">Downpayment</label>
+                        <input
+                          type="number"
+                          placeholder="0"
+                          value={opt.downPayment || ""}
+                          onChange={(e) => {
+                            const copy = [...termOptions];
+                            copy[idx].downPayment = Number(e.target.value) || 0;
+                            setTermOptions(copy);
+                          }}
+                          className="w-full px-[7px] py-[5px] border border-[#ddd] rounded-[4px] text-[12px] bg-[#fafafa]"
+                        />
                       </div>
-                      <div className="grid grid-cols-2 gap-1.5">
-                        <div>
-                          <label className="text-[9px] text-slate-500 block">Downpayment (PHP)</label>
-                          <input
-                            type="number"
-                            value={opt.downPayment || ""}
-                            onChange={(e) => {
-                              const copy = [...termOptions];
-                              copy[idx].downPayment = Number(e.target.value) || 0;
-                              setTermOptions(copy);
-                            }}
-                            placeholder="0"
-                            className="w-full text-[11px] px-2 py-0.5 border border-slate-300 rounded bg-white"
-                          />
-                        </div>
-                        <div>
-                          <label className="text-[9px] text-slate-500 block">Terms (Months)</label>
-                          <select
-                            value={opt.months}
-                            onChange={(e) => {
-                              const copy = [...termOptions];
-                              copy[idx].months = Number(e.target.value) || 12;
-                              setTermOptions(copy);
-                            }}
-                            className="w-full text-[11px] px-2 py-0.5 border border-slate-300 rounded bg-white"
-                          >
-                            <option value={3}>3 Months</option>
-                            <option value={6}>6 Months</option>
-                            <option value={12}>12 Months</option>
-                            <option value={18}>18 Months</option>
-                            <option value={24}>24 Months</option>
-                            <option value={36}>36 Months</option>
-                          </select>
-                        </div>
+                      <div className="flex-1">
+                        <label className="block text-[10px] font-semibold text-[#666] uppercase mb-[2px]">Months</label>
+                        <input
+                          type="number"
+                          placeholder="12"
+                          value={opt.months}
+                          onChange={(e) => {
+                            const copy = [...termOptions];
+                            copy[idx].months = Number(e.target.value) || 12;
+                            setTermOptions(copy);
+                          }}
+                          className="w-full px-[7px] py-[5px] border border-[#ddd] rounded-[4px] text-[12px] bg-[#fafafa]"
+                        />
                       </div>
                     </div>
-                  ))}
+                  </div>
+                ))}
 
-                  {termOptions.length < 5 && (
-                    <button
-                      type="button"
-                      onClick={addTermOption}
-                      className="w-full py-1 text-[11px] font-bold text-[#c0392b] border border-dashed border-[#c0392b] rounded hover:bg-red-50"
-                    >
-                      + Add Term Option
-                    </button>
-                  )}
-                </div>
-              )}
+                {termOptions.length < 5 && (
+                  <button
+                    type="button"
+                    onClick={addTermOption}
+                    className="p-[5px_10px] bg-white text-[#c0392b] border border-[#c0392b] rounded-[5px] text-[11px] font-bold cursor-pointer hover:bg-[#fdecea] mt-1"
+                  >
+                    + Add Term Option
+                  </button>
+                )}
+              </div>
 
-              <label className="flex items-center gap-1.5 text-xs text-slate-700 cursor-pointer pt-1">
+              {/* VAT Inclusive */}
+              <div className="flex items-center gap-[6px] py-[3px]">
                 <input
                   type="checkbox"
+                  id="chk-vat"
                   checked={vatInclusive}
                   onChange={(e) => setVatInclusive(e.target.checked)}
-                  className="rounded accent-[#c0392b]"
+                  className="w-[14px] h-[14px] accent-[#c0392b] cursor-pointer"
                 />
-                <span className="font-semibold">VAT Inclusive</span>
+                <label htmlFor="chk-vat" className="text-[12px] text-[#333] cursor-pointer">
+                  VAT Inclusive (moves VAT to Package)
+                </label>
+              </div>
+
+              {/* Collections */}
+              <div>
+                <label className="block text-[10px] font-semibold text-[#666] uppercase mb-[2px]">
+                  Collection — Payment (cash)
+                </label>
+                <input
+                  type="text"
+                  value={collectionPayment}
+                  onChange={(e) => setCollectionPayment(e.target.value)}
+                  className="w-full px-[7px] py-[5px] border border-[#ddd] rounded-[4px] text-[12px] bg-[#fafafa]"
+                />
+              </div>
+
+              <div>
+                <label className="block text-[10px] font-semibold text-[#666] uppercase mb-[2px]">
+                  Collection — Downpayment (terms)
+                </label>
+                <input
+                  type="text"
+                  value={collectionDownpayment}
+                  onChange={(e) => setCollectionDownpayment(e.target.value)}
+                  className="w-full px-[7px] py-[5px] border border-[#ddd] rounded-[4px] text-[12px] bg-[#fafafa]"
+                />
+              </div>
+
+              <div>
+                <label className="block text-[10px] font-semibold text-[#666] uppercase mb-[2px]">
+                  Collection — Amortization (terms)
+                </label>
+                <input
+                  type="text"
+                  value={collectionAmortization}
+                  onChange={(e) => setCollectionAmortization(e.target.value)}
+                  className="w-full px-[7px] py-[5px] border border-[#ddd] rounded-[4px] text-[12px] bg-[#fafafa]"
+                />
+              </div>
+
+              {/* Availability */}
+              <div>
+                <label className="block text-[10px] font-semibold text-[#666] uppercase mb-[2px]">
+                  Availability
+                </label>
+                <input
+                  type="text"
+                  value={availability}
+                  onChange={(e) => setAvailability(e.target.value)}
+                  className="w-full px-[7px] py-[5px] border border-[#ddd] rounded-[4px] text-[12px] bg-[#fafafa]"
+                />
+              </div>
+
+              {/* Under promo */}
+              <div className="flex items-center gap-[6px] py-[3px]">
+                <input
+                  type="checkbox"
+                  id="chk-promo"
+                  checked={underPromo}
+                  onChange={(e) => setUnderPromo(e.target.checked)}
+                  className="w-[14px] h-[14px] accent-[#c0392b] cursor-pointer"
+                />
+                <label htmlFor="chk-promo" className="text-[12px] text-[#333] cursor-pointer font-bold">
+                  UNDER PROMO
+                </label>
+              </div>
+
+              {underPromo && (
+                <div className="space-y-1.5 p-2 bg-red-50/50 border border-red-200 rounded">
+                  <label className="block text-[10px] font-semibold text-[#666] uppercase">Freebies</label>
+                  {freebies.map((fb, idx) => (
+                    <div key={idx} className="flex justify-between items-center p-[3px_6px] bg-white border border-[#eee] rounded text-[12px]">
+                      <span>{fb}</span>
+                      <button
+                        type="button"
+                        onClick={() => setFreebies(freebies.filter((_, i) => i !== idx))}
+                        className="text-[#c0392b] font-bold cursor-pointer"
+                      >
+                        &times;
+                      </button>
+                    </div>
+                  ))}
+                  <div className="flex gap-1.5 pt-1">
+                    <input
+                      type="text"
+                      placeholder="Add a freebie item"
+                      value={freebieInput}
+                      onChange={(e) => setFreebieInput(e.target.value)}
+                      onKeyDown={(e) => {
+                        if (e.key === "Enter" && freebieInput.trim()) {
+                          setFreebies([...freebies, freebieInput.trim()]);
+                          setFreebieInput("");
+                        }
+                      }}
+                      className="flex-1 px-[7px] py-[5px] border border-[#ddd] rounded text-[12px]"
+                    />
+                    <button
+                      type="button"
+                      onClick={() => {
+                        if (freebieInput.trim()) {
+                          setFreebies([...freebies, freebieInput.trim()]);
+                          setFreebieInput("");
+                        }
+                      }}
+                      className="p-[5px_8px] bg-white text-[#c0392b] border border-[#c0392b] rounded text-[11px] font-bold cursor-pointer"
+                    >
+                      + Add
+                    </button>
+                  </div>
+                  <div>
+                    <label className="block text-[10px] font-semibold text-[#666] uppercase mb-[2px]">Promo Validity</label>
+                    <input
+                      type="text"
+                      placeholder="e.g., Valid until Dec 31, 2026"
+                      value={promoValidity}
+                      onChange={(e) => setPromoValidity(e.target.value)}
+                      className="w-full px-[7px] py-[5px] border border-[#ddd] rounded text-[12px] bg-white"
+                    />
+                  </div>
+                </div>
+              )}
+            </div>
+          </div>
+
+          <hr className="border-0 border-t border-[#eee] my-2" />
+
+          {/* Delivery */}
+          <div>
+            <h2 className="text-[11px] font-bold text-[#c0392b] uppercase tracking-[0.5px] border-b-[1.5px] border-[#c0392b] pb-[3px] mb-[7px]">
+              Delivery
+            </h2>
+            <div className="flex items-center gap-[6px] py-[3px]">
+              <input
+                type="checkbox"
+                id="chk-del"
+                checked={includeDelivery}
+                onChange={(e) => setIncludeDelivery(e.target.checked)}
+                className="w-[14px] h-[14px] accent-[#c0392b] cursor-pointer"
+              />
+              <label htmlFor="chk-del" className="text-[12px] text-[#333] cursor-pointer">
+                Include Delivery in Package Inclusions
               </label>
             </div>
+            <p className="text-[10px] text-[#aaa] mt-0.5 mb-1.5">Unchecked = remains under Exclusives (default).</p>
           </div>
 
-          {/* 6. FREEBIES & INCLUSIONS */}
-          <div>
-            <h2 className="text-[11px] font-bold text-[#c0392b] uppercase tracking-wider border-b-[1.5px] border-[#c0392b] pb-0.5 mb-2">
-              Package Inclusions
-            </h2>
-            <div className="space-y-1">
-              {inclusions.map((inc) => (
-                <label key={inc.id} className="flex items-start gap-1.5 text-[11px] text-slate-700 cursor-pointer">
-                  <input
-                    type="checkbox"
-                    checked={inc.enabled}
-                    onChange={(e) => {
-                      setInclusions(inclusions.map((x) => (x.id === inc.id ? { ...x, enabled: e.target.checked } : x)));
-                    }}
-                    className="mt-0.5 rounded accent-[#c0392b]"
-                  />
-                  <span>{inc.description}</span>
-                </label>
-              ))}
+          {/* Consumables - Prices */}
+          {consumablePrices.length > 0 && (
+            <div>
+              <hr className="border-0 border-t border-[#eee] my-2" />
+              <h2 className="text-[11px] font-bold text-[#c0392b] uppercase tracking-[0.5px] border-b-[1.5px] border-[#c0392b] pb-[3px] mb-[7px]">
+                Consumables — Prices
+              </h2>
+              <p className="text-[10px] text-[#aaa] mb-1">Edit prices per client arrangement</p>
+              <div className="flex text-[10px] font-semibold text-[#aaa] border-b border-[#f0f0f0] pb-0.5 mb-1">
+                <span className="flex-1">ITEM</span>
+                <span className="w-[68px] text-right">PKG</span>
+                <span className="w-[70px] text-right">PRICE</span>
+              </div>
+              <div className="space-y-1">
+                {consumablePrices.map((c, i) => (
+                  <div key={c.id} className="flex items-center gap-1 py-0.5 border-b border-[#f5f5f5]">
+                    <span className="flex-1 text-[11px] text-[#444] truncate">{c.name}</span>
+                    <span className="text-[10px] text-[#999] w-[68px] text-right truncate">{c.pkg}</span>
+                    <div className="w-[70px]">
+                      <input
+                        type="number"
+                        value={c.price}
+                        onChange={(e) => {
+                          const val = parseFloat(e.target.value) || 0;
+                          const copy = [...consumablePrices];
+                          copy[i].price = val;
+                          setConsumablePrices(copy);
+                        }}
+                        className="w-full p-[3px_4px] border border-[#e0e0e0] rounded-[3px] text-[11px] text-right bg-[#fafafa] focus:bg-white focus:border-[#c0392b] focus:outline-none"
+                      />
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
 
-              {showInclusionInput ? (
-                <div className="flex gap-1 pt-1">
-                  <input
-                    type="text"
-                    placeholder="Custom inclusion..."
-                    value={newInclusionText}
-                    onChange={(e) => setNewInclusionText(e.target.value)}
-                    className="flex-1 text-[11px] px-2 py-0.5 border border-slate-300 rounded"
-                  />
-                  <button type="button" onClick={handleAddInclusion} className="px-2 py-0.5 bg-[#c0392b] text-white rounded text-[10px] font-bold">
-                    Add
-                  </button>
-                  <button type="button" onClick={() => setShowInclusionInput(false)} className="px-2 py-0.5 bg-slate-200 text-slate-700 rounded text-[10px]">
-                    Cancel
-                  </button>
-                </div>
-              ) : (
-                <button
-                  type="button"
-                  onClick={() => setShowInclusionInput(true)}
-                  className="text-[10px] font-bold text-[#c0392b] hover:underline pt-1 block"
+          {/* Package Inclusions */}
+          {inclusionItems.length > 0 && (
+            <div>
+              <hr className="border-0 border-t border-[#eee] my-2" />
+              <h2 className="text-[11px] font-bold text-[#c0392b] uppercase tracking-[0.5px] border-b-[1.5px] border-[#c0392b] pb-[3px] mb-[7px]">
+                Package Inclusions
+              </h2>
+              <p className="text-[10px] text-[#aaa] mb-1">Uncheck any item not included in this quote</p>
+              <div className="space-y-1">
+                {inclusionItems.map((item) => (
+                  <div key={item.id} className="flex items-center gap-[6px] py-[3px]">
+                    <input
+                      type="checkbox"
+                      id={`incl-${item.id}`}
+                      checked={item.enabled}
+                      onChange={(e) => {
+                        setInclusionItems(
+                          inclusionItems.map((x) => (x.id === item.id ? { ...x, enabled: e.target.checked } : x))
+                        );
+                      }}
+                      className="w-[14px] h-[14px] accent-[#c0392b] cursor-pointer"
+                    />
+                    <label htmlFor={`incl-${item.id}`} className="text-[12px] text-[#333] cursor-pointer flex-1">
+                      {item.description}
+                    </label>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {/* Exclusions */}
+          {exclusionItems.length > 0 && (
+            <div>
+              <hr className="border-0 border-t border-[#eee] my-2" />
+              <h2 className="text-[11px] font-bold text-[#c0392b] uppercase tracking-[0.5px] border-b-[1.5px] border-[#c0392b] pb-[3px] mb-[7px]">
+                Exclusions
+              </h2>
+              <p className="text-[10px] text-[#aaa] mb-1">Uncheck any exclusion that does not apply</p>
+              <div className="space-y-1">
+                {exclusionItems.map((item) => (
+                  <div key={item.id} className="flex items-center gap-[6px] py-[3px]">
+                    <input
+                      type="checkbox"
+                      id={`excl-${item.id}`}
+                      checked={item.enabled}
+                      onChange={(e) => {
+                        setExclusionItems(
+                          exclusionItems.map((x) => (x.id === item.id ? { ...x, enabled: e.target.checked } : x))
+                        );
+                      }}
+                      className="w-[14px] h-[14px] accent-[#c0392b] cursor-pointer"
+                    />
+                    <label htmlFor={`excl-${item.id}`} className="text-[12px] text-[#333] cursor-pointer flex-1">
+                      {item.description}
+                    </label>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {/* Optional Add-Ons */}
+          {addonItems.length > 0 && (
+            <div>
+              <hr className="border-0 border-t border-[#eee] my-2" />
+              <h2 className="text-[11px] font-bold text-[#c0392b] uppercase tracking-[0.5px] border-b-[1.5px] border-[#c0392b] pb-[3px] mb-[7px]">
+                Optional Add-Ons
+              </h2>
+              <div className="space-y-1">
+                {addonItems.map((item) => (
+                  <div key={item.id} className="flex items-center gap-[6px] py-[3px]">
+                    <input
+                      type="checkbox"
+                      id={`addon-${item.id}`}
+                      checked={item.enabled}
+                      onChange={(e) => {
+                        setAddonItems(
+                          addonItems.map((x) => (x.id === item.id ? { ...x, enabled: e.target.checked } : x))
+                        );
+                      }}
+                      className="w-[14px] h-[14px] accent-[#c0392b] cursor-pointer"
+                    />
+                    <label htmlFor={`addon-${item.id}`} className="text-[12px] text-[#333] cursor-pointer flex-1">
+                      {item.description}
+                    </label>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+
+          <hr className="border-0 border-t border-[#eee] my-2" />
+
+          {/* WARRANTY */}
+          <div>
+            <h2 className="text-[11px] font-bold text-[#c0392b] uppercase tracking-[0.5px] border-b-[1.5px] border-[#c0392b] pb-[3px] mb-[7px]">
+              Warranty
+            </h2>
+            <div className="space-y-2">
+              <div>
+                <label className="block text-[10px] font-semibold text-[#666] uppercase mb-[2px]">
+                  Company Name (confidentiality line)
+                </label>
+                <select
+                  value={warrantyCompany}
+                  onChange={(e) => setWarrantyCompany(e.target.value)}
+                  className="w-full px-[7px] py-[5px] border border-[#ddd] rounded-[4px] text-[12px] bg-[#fafafa]"
                 >
-                  + Add Custom Inclusion
-                </button>
-              )}
+                  <option value="ES Print Media Inc.">ES Print Media Inc.</option>
+                  <option value="ACS Premium Solutions Inc.">ACS Premium Solutions Inc.</option>
+                  <option value="ES Concept Group Inc.">ES Concept Group Inc.</option>
+                  <option value="ES Print Industries Inc.">ES Print Industries Inc.</option>
+                </select>
+              </div>
+
+              <div>
+                <label className="block text-[10px] font-semibold text-[#666] uppercase mb-[2px]">
+                  Supplier Name (void-warranty line)
+                </label>
+                <input
+                  type="text"
+                  placeholder="ESPMI"
+                  value={warrantySupplier}
+                  onChange={(e) => setWarrantySupplier(e.target.value)}
+                  className="w-full px-[7px] py-[5px] border border-[#ddd] rounded-[4px] text-[12px] bg-[#fafafa]"
+                />
+              </div>
             </div>
           </div>
 
-          {/* 7. EXCLUSIONS */}
-          <div>
-            <h2 className="text-[11px] font-bold text-[#c0392b] uppercase tracking-wider border-b-[1.5px] border-[#c0392b] pb-0.5 mb-2">
-              Exclusions
-            </h2>
-            <div className="space-y-1">
-              {exclusions.map((exc) => (
-                <label key={exc.id} className="flex items-start gap-1.5 text-[11px] text-slate-700 cursor-pointer">
-                  <input
-                    type="checkbox"
-                    checked={exc.enabled}
-                    onChange={(e) => {
-                      setExclusions(exclusions.map((x) => (x.id === exc.id ? { ...x, enabled: e.target.checked } : x)));
-                    }}
-                    className="mt-0.5 rounded accent-[#c0392b]"
-                  />
-                  <span>{exc.description}</span>
-                </label>
-              ))}
+          <hr className="border-0 border-t border-[#eee] my-2" />
 
-              {showExclusionInput ? (
-                <div className="flex gap-1 pt-1">
-                  <input
-                    type="text"
-                    placeholder="Custom exclusion..."
-                    value={newExclusionText}
-                    onChange={(e) => setNewExclusionText(e.target.value)}
-                    className="flex-1 text-[11px] px-2 py-0.5 border border-slate-300 rounded"
-                  />
-                  <button type="button" onClick={handleAddExclusion} className="px-2 py-0.5 bg-[#c0392b] text-white rounded text-[10px] font-bold">
-                    Add
-                  </button>
-                  <button type="button" onClick={() => setShowExclusionInput(false)} className="px-2 py-0.5 bg-slate-200 text-slate-700 rounded text-[10px]">
-                    Cancel
-                  </button>
-                </div>
-              ) : (
-                <button
-                  type="button"
-                  onClick={() => setShowExclusionInput(true)}
-                  className="text-[10px] font-bold text-[#c0392b] hover:underline pt-1 block"
-                >
-                  + Add Custom Exclusion
-                </button>
-              )}
-            </div>
-          </div>
-
-          {/* 8. SIGNATORIES */}
+          {/* SIGNATORIES */}
           <div>
-            <h2 className="text-[11px] font-bold text-[#c0392b] uppercase tracking-wider border-b-[1.5px] border-[#c0392b] pb-0.5 mb-2">
+            <h2 className="text-[11px] font-bold text-[#c0392b] uppercase tracking-[0.5px] border-b-[1.5px] border-[#c0392b] pb-[3px] mb-[7px]">
               Signatories
             </h2>
             <div className="space-y-2">
-              <div>
-                <label className="block text-[10px] font-semibold text-slate-600 uppercase mb-0.5">Account Executive</label>
-                <input
-                  type="text"
-                  value={signatoryName}
-                  onChange={(e) => setSignatoryName(e.target.value)}
-                  className="w-full text-xs px-2.5 py-1 border border-slate-300 rounded focus:border-[#c0392b] focus:outline-none font-bold"
-                />
+              <div className="flex gap-1.5">
+                <div className="flex-1">
+                  <label className="block text-[10px] font-semibold text-[#666] uppercase mb-[2px]">Account Executive</label>
+                  <input
+                    type="text"
+                    placeholder="AE name"
+                    value={aeName}
+                    onChange={(e) => setAeName(e.target.value)}
+                    className="w-full px-[7px] py-[5px] border border-[#ddd] rounded-[4px] text-[12px] bg-[#fafafa]"
+                  />
+                </div>
+                <div className="flex-1">
+                  <label className="block text-[10px] font-semibold text-[#666] uppercase mb-[2px]">Client Conforme</label>
+                  <input
+                    type="text"
+                    placeholder="Client name"
+                    value={clientConforme}
+                    onChange={(e) => setClientConforme(e.target.value)}
+                    className="w-full px-[7px] py-[5px] border border-[#ddd] rounded-[4px] text-[12px] bg-[#fafafa]"
+                  />
+                </div>
               </div>
 
-              <div>
-                <label className="block text-[10px] font-semibold text-slate-600 uppercase mb-0.5">Client Conforme</label>
-                <input
-                  type="text"
-                  placeholder="Client Authorized Signatory"
-                  value={clientConforme}
-                  onChange={(e) => setClientConforme(e.target.value)}
-                  className="w-full text-xs px-2.5 py-1 border border-slate-300 rounded focus:border-[#c0392b] focus:outline-none"
-                />
+              <div className="flex gap-1.5">
+                <div className="flex-1">
+                  <label className="block text-[10px] font-semibold text-[#666] uppercase mb-[2px]">Noted By (Name)</label>
+                  <input
+                    type="text"
+                    placeholder="Ness Deomano"
+                    value={notedByName}
+                    onChange={(e) => setNotedByName(e.target.value)}
+                    className="w-full px-[7px] py-[5px] border border-[#ddd] rounded-[4px] text-[12px] bg-[#fafafa]"
+                  />
+                </div>
+                <div className="flex-1">
+                  <label className="block text-[10px] font-semibold text-[#666] uppercase mb-[2px]">Noted By (Role)</label>
+                  <input
+                    type="text"
+                    placeholder="Area Sales Manager"
+                    value={notedByRole}
+                    onChange={(e) => setNotedByRole(e.target.value)}
+                    className="w-full px-[7px] py-[5px] border border-[#ddd] rounded-[4px] text-[12px] bg-[#fafafa]"
+                  />
+                </div>
               </div>
             </div>
           </div>
 
-          {/* Action Buttons */}
-          <div className="pt-2 space-y-2">
-            {quoteSuccessMsg && (
-              <div className="p-2 bg-emerald-50 border border-emerald-300 text-emerald-800 text-[11px] font-bold rounded">
-                ✓ {quoteSuccessMsg}
+          {/* Validation errors box */}
+          {showValidationBox && validationErrors.length > 0 && (
+            <div className="p-[8px_10px] bg-[#fef2f2] border border-[#fca5a5] rounded-[6px] text-[#c0392b] text-[11px]">
+              <div className="flex justify-between items-center font-bold mb-1">
+                <span>Please fix the following:</span>
+                <button
+                  type="button"
+                  onClick={() => setShowValidationBox(false)}
+                  className="bg-transparent border-0 text-[#c0392b] font-bold text-[16px] cursor-pointer"
+                >
+                  &times;
+                </button>
               </div>
-            )}
+              <ul className="list-disc pl-4 space-y-0.5">
+                {validationErrors.map((err, i) => (
+                  <li key={i}>{err}</li>
+                ))}
+              </ul>
+            </div>
+          )}
 
+          {/* Action buttons */}
+          <div className="pt-2 space-y-2">
             <button
               type="button"
-              onClick={() => window.print()}
-              className="w-full py-2.5 bg-[#c0392b] hover:bg-[#a93226] text-white font-bold text-xs rounded shadow-xs transition-colors flex items-center justify-center gap-1.5 cursor-pointer"
+              onClick={handleSavePdf}
+              className="w-full p-[10px] bg-[#c0392b] hover:bg-[#a93226] text-white rounded-[6px] font-bold text-[13px] tracking-[0.5px] cursor-pointer text-center block border-0 transition-colors shadow-xs"
             >
-              <span>💾</span> SAVE AS PDF / PRINT
+              💾 SAVE AS PDF / PRINT
             </button>
-
-            <button
-              type="button"
-              onClick={handleSaveQuote}
-              disabled={saving}
-              className="w-full py-2 bg-slate-800 hover:bg-slate-900 text-white font-bold text-xs rounded shadow-xs transition-colors cursor-pointer disabled:opacity-50"
-            >
-              {saving ? "Saving..." : "Save Formal Quote"}
-            </button>
+            <p className="text-[10px] text-[#aaa] text-center m-0">
+              Tip: in the print dialog, set Destination to &quot;Save as PDF&quot;
+            </p>
           </div>
         </div>
       </aside>
 
-      {/* ─── RIGHT LIVE DOCUMENT PREVIEW (Exact matching QuotePreviewPanel.vue) ─── */}
-      <section className="flex-1 overflow-y-auto p-4 md:p-8 flex justify-center">
-        <div className="w-full max-w-[800px] min-h-[1100px] bg-white shadow-2xl rounded-sm p-8 sm:p-12 flex flex-col justify-between text-slate-800 font-sans border border-slate-200 print:shadow-none print:border-none print:m-0 print:p-8">
+      {/* ─── RIGHT LIVE DOCUMENT PREVIEW (Exact mirror of QuotePreviewPanel.vue) ─── */}
+      <section className="flex-1 h-full overflow-y-auto bg-[#e5e7eb] p-4 flex justify-center items-start">
+        <div
+          id="quote-paper"
+          className="w-full max-w-[210mm] min-h-[297mm] bg-white shadow-[0_4px_24px_rgba(0,0,0,0.12),0_1px_4px_rgba(0,0,0,0.08)] rounded-[2px] pb-[6mm] flex flex-col justify-between select-text"
+        >
           <div>
-            {/* Top Letterhead Image */}
-            <div className="w-full border-b border-slate-100 mb-4">
+            {/* Top Letterhead with red bottom bar */}
+            <div className="border-b-[3px] border-[#c0392b] mb-[3mm]">
               <img
                 src={letterheadHeaderImg}
-                alt={`${letterhead} Header`}
-                className="w-full h-auto object-contain block"
+                alt={`${letterhead} letterhead`}
+                className="w-full block"
               />
-            </div>
-
-            {/* Proposal Date */}
-            <div className="text-right text-[11px] text-slate-600 font-medium mb-3">
-              Date: {formattedDate || "September 24, 2026"}
-            </div>
-
-            {/* Client block */}
-            {(clientName || companyName || address || contactNumber || email) && (
-              <div className="text-xs text-slate-700 leading-snug space-y-0.5 mb-4">
-                {clientName && <p className="font-bold text-slate-900">{clientName}</p>}
-                {companyName && <p>{companyName}</p>}
-                {address && <p>{address}</p>}
-                {contactNumber && <p>Tel: {contactNumber}</p>}
-                {email && <p>Email: {email}</p>}
+              <div className="px-[14mm] py-[2px_4px] flex justify-end text-[7.5pt] text-[#555]">
+                {formattedDate && <span>Date: {formattedDate}</span>}
               </div>
-            )}
-
-            {/* Salutation & Intro */}
-            <div className="text-xs text-slate-800 space-y-1 mb-4 leading-relaxed">
-              <p className="font-semibold">{salutation}</p>
-              <p>{openingLine}</p>
             </div>
 
-            {/* Machine Content */}
-            {!selectedMachine ? (
-              <div className="my-10 text-center py-6 text-red-700 font-black text-sm tracking-wider uppercase border-t border-b border-red-100">
-                NO MACHINE SELECTED
-              </div>
-            ) : (
-              <div className="space-y-4 my-4 text-xs">
-                {/* Machine Header */}
-                <div className="flex items-center justify-between border-b border-slate-200 pb-2">
-                  <div className="flex items-center gap-2">
-                    <h3 className="text-sm font-black text-slate-900 uppercase tracking-tight">
-                      {selectedMachine.brand} {selectedMachine.model}
-                    </h3>
-                    <span
-                      className={`text-[9.5px] font-black px-2 py-0.5 rounded tracking-wider uppercase ${
-                        unitCondition === "Brand New"
-                          ? "bg-emerald-100 text-emerald-800"
-                          : "bg-amber-100 text-amber-800"
-                      }`}
-                    >
-                      {unitCondition}
-                    </span>
-                  </div>
-                  <div className="text-right">
-                    <span className="text-[10px] text-slate-500 uppercase font-bold block">Quotation Price</span>
-                    <span className="text-sm font-black text-[#c0392b]">{formatCurrency(contractPrice)}</span>
-                  </div>
+            {/* Document Body */}
+            <div className="px-[14mm]">
+              {/* Client Info Block */}
+              {(clientName || company || address || contact || email) && (
+                <div className="mb-[3mm]">
+                  {clientName && <p className="m-0 text-[10.5pt] font-bold text-[#111]">{clientName}</p>}
+                  {company && <p className="m-0 text-[8.5pt] text-[#555] leading-[1.45]">{company}</p>}
+                  {address && <p className="m-0 text-[8.5pt] text-[#555] leading-[1.45]">{address}</p>}
+                  {contact && <p className="m-0 text-[8.5pt] text-[#555] leading-[1.45]">{contact}</p>}
+                  {email && <p className="m-0 text-[8.5pt] text-[#555] leading-[1.45]">{email}</p>}
                 </div>
+              )}
 
-                {/* PRICING TABLE */}
-                <div>
-                  <div className="text-[10px] font-bold text-[#c0392b] uppercase tracking-wider mb-1">
-                    Pricing & Payment Schedule
+              {/* Salutation */}
+              {salutation && <p className="mt-[3mm] mb-[1mm] text-[8.5pt] text-[#333]">{salutation}</p>}
+
+              {/* Opening Line */}
+              {openingLine && <p className="mt-0 mb-[3mm] text-[8.5pt] text-[#555] leading-[1.55]">{openingLine}</p>}
+
+              {/* Machine Title + Condition Badge */}
+              <div className="text-[11pt] font-bold text-[#c0392b] text-center uppercase tracking-[0.5px] mb-[2mm] border-b border-[#f0f0f0] pb-[1.5mm]">
+                {selectedMachine ? `${selectedMachine.brand} ${selectedMachine.model}` : "NO MACHINE SELECTED"}
+                {selectedMachine && unitCondition && (
+                  <span
+                    className={`block text-[8pt] font-bold tracking-[1px] mt-[1mm] ${
+                      unitCondition === "Brand New" ? "text-[#27ae60]" : "text-[#c0392b]"
+                    }`}
+                  >
+                    {unitCondition.toUpperCase()}
+                  </span>
+                )}
+              </div>
+
+              {/* Specifications / Features if available */}
+              {selectedMachine && selectedMachine.features && selectedMachine.features.length > 0 && (
+                <div className="mb-[3mm] bg-[#fafafa] p-[2mm_3mm] border border-[#eee] rounded-[2px]">
+                  <div className="text-[8pt] font-bold text-[#555] mb-[1mm]">Product Specifications:</div>
+                  <ul className="list-disc pl-[4mm] m-0 space-y-0.5 text-[7.5pt] text-[#444]">
+                    {selectedMachine.features.map((f, i) => (
+                      <li key={i}>{typeof f === "string" ? f : (f as any).description}</li>
+                    ))}
+                  </ul>
+                </div>
+              )}
+
+              {/* PRICING TABLE */}
+              {contractPrice > 0 && (
+                <div className="mb-[3mm]">
+                  <div className="text-[8.5pt] font-bold text-[#c0392b] uppercase my-[3mm_1.5mm] flex items-center gap-1">
+                    Pricing<span className="flex-1 h-[1px] bg-[#f0f0f0]"></span>
                   </div>
-                  <table className="w-full border-collapse text-[11px]">
+                  <table className="w-full border-collapse mb-[1mm] text-[7.5pt]">
                     <thead>
                       <tr className="bg-[#c0392b] text-white">
-                        <th className="py-1.5 px-2 text-left font-semibold">Model</th>
-                        <th className="py-1.5 px-2 text-right font-semibold">Contract Price</th>
-                        {showTradeIns && <th className="py-1.5 px-2 text-right font-semibold">Trade-In Value</th>}
-                        <th className="py-1.5 px-2 text-right font-semibold">Down Payment</th>
-                        <th className="py-1.5 px-2 text-right font-semibold">Balance</th>
-                        <th className="py-1.5 px-2 text-center font-semibold">Payment Terms</th>
-                        <th className="py-1.5 px-2 text-right font-semibold">Monthly Payment</th>
+                        <th className="p-[3px_4px] text-left font-bold">Model</th>
+                        <th className="p-[3px_4px] text-right font-bold">Contract Price</th>
+                        {showTradeIns && <th className="p-[3px_4px] text-right font-bold">Trade-In Value</th>}
+                        <th className="p-[3px_4px] text-right font-bold">Down Payment</th>
+                        <th className="p-[3px_4px] text-right font-bold">Balance</th>
+                        <th className="p-[3px_4px] text-center font-bold">Payment Terms</th>
+                        <th className="p-[3px_4px] text-right font-bold">Monthly Payment</th>
                       </tr>
                     </thead>
-                    <tbody className="divide-y divide-slate-200 border border-slate-200">
-                      {dealType === "Standard Cash" || dealType === "Trade-In Cash" ? (
-                        <tr>
-                          <td className="py-1.5 px-2 font-bold">{selectedMachine.model}</td>
-                          <td className="py-1.5 px-2 text-right font-semibold">{formatCurrency(contractPrice)}</td>
-                          {showTradeIns && <td className="py-1.5 px-2 text-right text-red-600 font-bold">{formatCurrency(tradeInSum)}</td>}
-                          <td className="py-1.5 px-2 text-right">—</td>
-                          <td className="py-1.5 px-2 text-right font-bold text-slate-900">{formatCurrency(netContractPrice)}</td>
-                          <td className="py-1.5 px-2 text-center">Cash</td>
-                          <td className="py-1.5 px-2 text-right">—</td>
+                    <tbody>
+                      {pricingRows.map((row, idx) => (
+                        <tr key={idx} className="border-b border-[#eee]">
+                          <td className="p-[3px_4px]">{idx === 0 ? selectedModel || "" : ""}</td>
+                          <td className="p-[3px_4px] text-right">{formatDisplayCurrency(contractPrice)}</td>
+                          {showTradeIns && (
+                            <td className="p-[3px_4px] text-right">
+                              {tradeInSum > 0 ? formatDisplayCurrency(tradeInSum) : "—"}
+                            </td>
+                          )}
+                          <td className="p-[3px_4px] text-right">{row.downPayment ? formatDisplayCurrency(row.downPayment) : "—"}</td>
+                          <td className="p-[3px_4px] text-right font-bold text-[#111]">{formatDisplayCurrency(row.balance)}</td>
+                          <td className="p-[3px_4px] text-center">{row.paymentTerms}</td>
+                          <td className="p-[3px_4px] text-right font-bold text-[#c0392b]">
+                            {row.monthly !== null ? formatDisplayCurrency(row.monthly) : "—"}
+                          </td>
                         </tr>
-                      ) : (
-                        computedTermOptions.map((opt, i) => (
-                          <tr key={i}>
-                            <td className="py-1.5 px-2 font-bold">{i === 0 ? selectedMachine.model : `Option ${i + 1}`}</td>
-                            <td className="py-1.5 px-2 text-right font-semibold">{formatCurrency(contractPrice)}</td>
-                            {showTradeIns && <td className="py-1.5 px-2 text-right text-red-600 font-bold">{formatCurrency(tradeInSum)}</td>}
-                            <td className="py-1.5 px-2 text-right font-medium">{formatCurrency(opt.downPayment)}</td>
-                            <td className="py-1.5 px-2 text-right font-bold text-slate-900">{formatCurrency(opt.balance)}</td>
-                            <td className="py-1.5 px-2 text-center">{opt.months} Months</td>
-                            <td className="py-1.5 px-2 text-right font-black text-[#c0392b]">{formatCurrency(opt.monthlyAmortization)} / mo</td>
-                          </tr>
-                        ))
+                      ))}
+                      <tr>
+                        <td colSpan={showTradeIns ? 7 : 6} className="p-[2px_4px]">
+                          <div className="flex justify-between items-center">
+                            {vatInclusive ? (
+                              <span className="font-bold text-[#c0392b] tracking-[0.5px]">VAT INCLUSIVE</span>
+                            ) : (
+                              <span></span>
+                            )}
+                            <span className="italic text-[7pt] text-[#888]">
+                              in Philippine Pesos. Prices may change without prior notice.
+                            </span>
+                          </div>
+                        </td>
+                      </tr>
+                      {showTradeIns && tradeInDescriptions.length > 0 && (
+                        <tr className="text-[7.5pt] text-[#444]">
+                          <td colSpan={7} className="p-[2px_4px]">
+                            <strong>Trade-In Unit(s):</strong> {tradeInDescriptions.join("; ")}
+                          </td>
+                        </tr>
                       )}
                     </tbody>
                   </table>
-                  {vatInclusive && (
-                    <div className="text-[10px] font-bold text-[#c0392b] text-right mt-0.5">
-                      * VAT INCLUSIVE
-                    </div>
+                  {underPromo && promoValidity && (
+                    <p className="text-right text-[8.5pt] font-bold text-[#c0392b] my-[0_2mm]">
+                      Promo Validity: {promoValidity}
+                    </p>
                   )}
                 </div>
+              )}
 
-                {/* TWO-COLUMN INCLUSIONS & EXCLUSIONS */}
-                <div className="grid grid-cols-2 gap-3 pt-2">
-                  <div className="border border-slate-200 rounded overflow-hidden">
-                    <div className="bg-[#c0392b] text-white text-[10px] font-bold uppercase px-2.5 py-1">
-                      Package Inclusions
+              {/* COLLECTION ARRANGEMENTS */}
+              {(availability || collectionPayment || collectionDownpayment || collectionAmortization) && (
+                <div className="mb-[3mm]">
+                  <div className="text-[8.5pt] font-bold text-[#c0392b] uppercase my-[3mm_1.5mm] flex items-center gap-1">
+                    Collection Arrangements<span className="flex-1 h-[1px] bg-[#f0f0f0]"></span>
+                  </div>
+                  <div className="text-[8pt] space-y-1">
+                    {collectionPayment && (
+                      <p className="m-0">
+                        <span className="inline-block w-[110px] font-semibold text-[#555]">Payment:</span>
+                        {formatDisplayCurrency(Math.max(0, contractPrice - tradeInSum))} — {collectionPayment}
+                      </p>
+                    )}
+                    {collectionDownpayment && (
+                      <p className="m-0">
+                        <span className="inline-block w-[110px] font-semibold text-[#555]">Down Payment:</span>
+                        {collectionDownpayment}
+                      </p>
+                    )}
+                    {collectionAmortization && (
+                      <p className="m-0">
+                        <span className="inline-block w-[110px] font-semibold text-[#555]">Amortization:</span>
+                        {collectionAmortization}
+                      </p>
+                    )}
+                  </div>
+                </div>
+              )}
+
+              {/* FREEBIES */}
+              {underPromo && freebies.length > 0 && (
+                <div className="mb-[3mm]">
+                  <div className="text-[8.5pt] font-bold text-[#c0392b] uppercase my-[3mm_1.5mm] flex items-center gap-1">
+                    Freebies<span className="flex-1 h-[1px] bg-[#f0f0f0]"></span>
+                  </div>
+                  <ul className="list-none pl-0 my-[0_2mm] text-[8pt] text-[#444] space-y-0.5">
+                    {freebies.map((fb, idx) => (
+                      <li key={idx} className="flex items-center gap-1">
+                        <span className="text-[#c0392b]">★</span> {fb}
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+              )}
+
+              {/* PACKAGE INCLUSIONS / EXCLUSIONS */}
+              {(inclusionItems.some((x) => x.enabled) || exclusionItems.some((x) => x.enabled)) && (
+                <div className="mb-[3mm]">
+                  <div className="text-[8.5pt] font-bold text-[#c0392b] uppercase my-[3mm_1.5mm] flex items-center gap-1">
+                    Package Inclusions / Exclusions<span className="flex-1 h-[1px] bg-[#f0f0f0]"></span>
+                  </div>
+                  <div className="grid grid-cols-2 gap-3 text-[7.5pt]">
+                    {inclusionItems.some((x) => x.enabled) && (
+                      <div>
+                        <div className="bg-[#555] text-white p-[2px_6px] font-bold uppercase text-[7.5pt]">
+                          Package Inclusions
+                        </div>
+                        <ul className="list-disc pl-[4mm] mt-1 space-y-0.5 text-[#444]">
+                          {inclusionItems
+                            .filter((x) => x.enabled)
+                            .map((inc) => (
+                              <li key={inc.id}>{inc.description}</li>
+                            ))}
+                        </ul>
+                      </div>
+                    )}
+                    {exclusionItems.some((x) => x.enabled) && (
+                      <div>
+                        <div className="bg-[#c0392b] text-white p-[2px_6px] font-bold uppercase text-[7.5pt]">
+                          Exclusive
+                        </div>
+                        <ul className="list-disc pl-[4mm] mt-1 space-y-0.5 text-[#444]">
+                          {exclusionItems
+                            .filter((x) => x.enabled)
+                            .map((exc) => (
+                              <li key={exc.id}>{exc.description}</li>
+                            ))}
+                        </ul>
+                      </div>
+                    )}
+                  </div>
+                </div>
+              )}
+
+              {/* CONSUMABLES GRID */}
+              {consumablePrices.length > 0 && (
+                <div className="mb-[3mm]">
+                  <div className="text-[8.5pt] font-bold text-[#c0392b] uppercase my-[3mm_1.5mm] flex items-center gap-1">
+                    Consumables<span className="flex-1 h-[1px] bg-[#f0f0f0]"></span>
+                  </div>
+                  <div className="grid grid-cols-2 gap-x-4 gap-y-0.5 text-[7.5pt]">
+                    {consumablePrices.map((c) => (
+                      <div key={c.id} className="flex justify-between border-b border-[#f0f0f0] py-0.5">
+                        <span className="text-[#444] font-medium">{c.name}</span>
+                        <span className="text-[#999]">{c.pkg}</span>
+                        <span className="text-[#c0392b] font-bold">
+                          {formatDisplayCurrency(vatInclusive ? c.price * 1.12 : c.price)}
+                        </span>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {/* AVAILABILITY */}
+              {availability && (
+                <div className="text-[8pt] text-[#333] my-[2mm]">
+                  <strong>AVAILABILITY:</strong> {availability}
+                </div>
+              )}
+
+              {/* WARRANTY */}
+              {warrantyCompany && (
+                <div className="mb-[3mm]">
+                  <div className="text-[8.5pt] font-bold text-[#c0392b] uppercase my-[3mm_1.5mm] flex items-center gap-1">
+                    Warranty<span className="flex-1 h-[1px] bg-[#f0f0f0]"></span>
+                  </div>
+                  <div className="space-y-0.5">
+                    {warrantyLines.map((line, idx) =>
+                      line.heading ? (
+                        <div key={idx} className="text-[8pt] font-bold text-[#c0392b] uppercase mt-1">
+                          {line.text}
+                        </div>
+                      ) : (
+                        <ul key={idx} className="list-disc pl-[14px] m-0">
+                          <li
+                            className={`text-[8pt] leading-[1.65] ${
+                              line.bold ? "text-[#c0392b] font-bold" : "text-[#555]"
+                            }`}
+                          >
+                            {line.text}
+                          </li>
+                        </ul>
+                      )
+                    )}
+                  </div>
+                </div>
+              )}
+
+              {/* Closing Text & Signatures */}
+              <div className="mt-4 pt-2 border-t border-[#f0f0f0]">
+                <p className="text-[8pt] text-[#444] leading-[1.5] mb-3">
+                  Trusting that the above quotation will receive your favorable consideration and assuring you of our best
+                  service at all times. Thank you very much.
+                </p>
+
+                <div className="grid grid-cols-2 text-[8pt] text-[#555] mb-8">
+                  <span>Very truly yours,</span>
+                  <span>Conforme:</span>
+                </div>
+
+                <div className="grid grid-cols-2 gap-8 text-[8pt]">
+                  <div>
+                    <div className="text-[9pt] font-bold text-[#111] uppercase tracking-tight">
+                      {aeName || "ACCOUNT EXECUTIVE"}
                     </div>
-                    <ul className="p-2 space-y-1 list-disc list-inside text-[10.5px] text-slate-700">
-                      {inclusions.filter((x) => x.enabled).map((inc) => (
-                        <li key={inc.id}>{inc.description}</li>
-                      ))}
-                    </ul>
+                    <div className="w-full max-w-[220px] h-[1px] bg-[#222] my-1" />
+                    <div className="text-[7.5pt] text-[#555]">Account Executive</div>
+                    <div className="text-[7pt] text-[#888] italic">Signature over Printed Name</div>
                   </div>
 
-                  <div className="border border-slate-200 rounded overflow-hidden">
-                    <div className="bg-slate-700 text-white text-[10px] font-bold uppercase px-2.5 py-1">
-                      Exclusive (Client Provision)
+                  <div>
+                    <div className="text-[9pt] font-bold text-[#111] uppercase tracking-tight">
+                      {clientConforme || clientName || "CLIENT"}
                     </div>
-                    <ul className="p-2 space-y-1 list-disc list-inside text-[10.5px] text-slate-700">
-                      {exclusions.filter((x) => x.enabled).map((exc) => (
-                        <li key={exc.id}>{exc.description}</li>
-                      ))}
-                    </ul>
+                    <div className="w-full max-w-[220px] h-[1px] bg-[#222] my-1" />
+                    <div className="text-[7.5pt] text-[#555]">Client / Authorized Representative</div>
+                    <div className="text-[7pt] text-[#888] italic">Signature over Printed Name</div>
                   </div>
                 </div>
 
-                {/* CONSUMABLES TABLE */}
-                {consumablePrices.length > 0 && (
-                  <div className="pt-2">
-                    <div className="text-[10px] font-bold text-[#c0392b] uppercase tracking-wider mb-1">
-                      Standard Consumables & Ink Pricing
-                    </div>
-                    <div className="grid grid-cols-2 gap-x-4 gap-y-1 text-[10.5px]">
-                      {consumablePrices.map((c) => (
-                        <div key={c.id} className="flex justify-between border-b border-slate-100 py-0.5">
-                          <span className="text-slate-700 font-medium">{c.name} {c.pkg ? `(${c.pkg})` : ""}</span>
-                          <span className="text-[#c0392b] font-bold">{formatCurrency(c.price)}</span>
-                        </div>
-                      ))}
-                    </div>
+                {(notedByName || notedByRole) && (
+                  <div className="mt-4 text-[8pt]">
+                    <div className="text-[7.5pt] text-[#666] mb-0.5">Noted By:</div>
+                    <div className="text-[8.5pt] font-bold text-[#111]">{notedByName}</div>
+                    <div className="w-full max-w-[180px] h-[1px] bg-[#444] my-0.5" />
+                    <div className="text-[7pt] text-[#777]">{notedByRole}</div>
                   </div>
                 )}
               </div>
-            )}
-
-            {/* Closing text */}
-            <div className="text-xs text-slate-700 leading-relaxed border-t border-slate-200 pt-3 mt-4">
-              <p>
-                Trusting that the above quotation will receive your favorable consideration and assuring you of our best service at all times. Thank you very much.
-              </p>
-            </div>
-
-            {/* Signatures */}
-            <div className="grid grid-cols-2 gap-8 mt-8 text-xs">
-              <div>
-                <p className="text-slate-600">Very truly yours,</p>
-                <div className="mt-12 border-b border-slate-800 w-full max-w-[240px]" />
-                <p className="font-black text-slate-900 uppercase tracking-tight mt-1">
-                  {signatoryName || "ACCOUNT EXECUTIVE"}
-                </p>
-                <p className="text-[10px] text-slate-500 font-medium">{signatoryRole || "Account Executive"}</p>
-                <p className="text-[9.5px] text-slate-400 italic">Signature over Printed Name</p>
-              </div>
-
-              <div>
-                <p className="text-slate-600">Conforme:</p>
-                <div className="mt-12 border-b border-slate-800 w-full max-w-[240px]" />
-                <p className="font-black text-slate-900 uppercase tracking-tight mt-1">
-                  {clientConforme || clientName || "AUTHORIZED SIGNATORY"}
-                </p>
-                <p className="text-[10px] text-slate-500 font-medium">Authorized Client Representative</p>
-                <p className="text-[9.5px] text-slate-400 italic">Signature over Printed Name</p>
-              </div>
             </div>
           </div>
 
-          {/* Bottom Letterhead Footer Image */}
-          <div className="w-full border-t border-slate-100 mt-6 pt-2">
+          {/* Bottom Letterhead Footer */}
+          <footer className="mt-4">
             <img
               src={letterheadFooterImg}
-              alt={`${letterhead} Footer`}
-              className="w-full h-auto object-contain block"
+              alt={`${letterhead} footer`}
+              className="w-full block"
             />
-          </div>
+          </footer>
         </div>
       </section>
     </div>

@@ -41,7 +41,8 @@ export function computeFinancial(
   };
 }
 
-export function formatCurrency(val: number): string {
+export function formatCurrency(val: number | null | undefined): string {
+  if (val === null || val === undefined) return "—";
   const n = Number(val) || 0;
   return "₱" + n.toLocaleString("en-PH", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
 }

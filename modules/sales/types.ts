@@ -5,15 +5,19 @@ export interface CatalogMachine {
   id: string;
   brand: string;
   model: string;
-  sub_model: string | null;
+  sub_model?: string | null;
   unit_condition: UnitCondition;
   letterhead: LetterheadType;
   srp: number;
-  lbp: number;
-  cash_price: number;
-  machine_warranty_months: number;
-  printhead_warranty: string;
-  is_active: boolean;
+  lbp?: number;
+  cash_price?: number;
+  machine_warranty_months?: number;
+  printhead_warranty?: string;
+  warranty_machine_duration?: string;
+  warranty_printhead_duration?: string;
+  service_fee?: number;
+  availability?: string;
+  is_active?: boolean;
   features: string[];
   consumables: {
     id?: string;
@@ -24,7 +28,7 @@ export interface CatalogMachine {
   inclusions: string[];
   exclusions: string[];
   addons: string[];
-  product_info_links: {
+  product_info_links?: {
     id?: string;
     display_name: string;
     url: string;
