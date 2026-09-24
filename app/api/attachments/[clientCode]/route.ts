@@ -46,8 +46,9 @@ export async function POST(
       return NextResponse.json({ ok: false, error: "File too large (max 10 MB)." }, { status: 400 });
     }
 
+    const clientName = String(form.get("clientName") ?? "");
     const buffer = Buffer.from(await file.arrayBuffer());
-    await uploadAttachment(clientCode, file.name, buffer, file.type || "application/octet-stream");
+    await uploadAttachment(clientCode, file.name, buffer, file.type || "application/octet-stream", clientName);
     return NextResponse.json({ ok: true });
   } catch (err) {
     console.error("Upload attachment failed:", err);

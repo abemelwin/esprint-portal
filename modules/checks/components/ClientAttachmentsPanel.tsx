@@ -36,7 +36,7 @@ function fileIcon(name: string): string {
   return '📎';
 }
 
-export default function ClientAttachmentsPanel({ clientCode, canUpload }: Props) {
+export default function ClientAttachmentsPanel({ clientCode, clientName, canUpload }: Props) {
   const [files,     setFiles]     = useState<FileEntry[]>([]);
   const [loading,   setLoading]   = useState(false);
   const [uploading, setUploading] = useState(false);
@@ -71,6 +71,7 @@ export default function ClientAttachmentsPanel({ clientCode, canUpload }: Props)
     try {
       const form = new FormData();
       form.append('file', file);
+      form.append('clientName', clientName ?? '');
       const res  = await fetch(`/api/attachments/${encodeURIComponent(clientCode)}`, {
         method: 'POST',
         body:   form,
@@ -85,16 +86,16 @@ export default function ClientAttachmentsPanel({ clientCode, canUpload }: Props)
     }
   }
 
-  async function handleDelete(filename: string) {
-    if (!confirm(`Delete "${filename.replace(/^\d+_/, '')}"?`)) return;
-    setDeleting(filename);
+  async function handleDelete(file: FileEntry) {
+    if (!confirm(`Delete "${file.name.replace(/^\d+_/, '')}"?`)) return;
+    setDeleting(file.name);
     try {
       const res  = await fetch(
-        `/api/attachments/${encodeURIComponent(clientCode)}/${encodeURIComponent(filename)}`,
+        `/api/attachments/${encodeURIComponent(clientCode)}/${encodeURIComponent(file.name)}?path=${encodeURIComponent(file.path)}`,
         { method: 'DELETE' }
       );
       const json = await res.json();
-      if (json.ok) setFiles(prev => prev.filter(f => f.name !== filename));
+      if (json.ok) setFiles(prev => prev.filter(f => f.path !== file.path));
       else setError(json.error ?? 'Delete failed');
     } catch {
       setError('Delete failed');
@@ -163,7 +164,7 @@ export default function ClientAttachmentsPanel({ clientCode, canUpload }: Props)
           ) : (
             <div className="space-y-1.5">
               {files.map(f => (
-                <div key={f.name} className="flex items-center gap-2 bg-white border border-gray-100 rounded-lg px-3 py-2 hover:border-gray-200 transition-colors">
+                <div key={f.path} className="flex items-center gap-2 bg-white border border-gray-100 rounded-lg px-3 py-2 hover:border-gray-200 transition-colors">
                   <span className="text-base shrink-0">{fileIcon(f.name)}</span>
                   <div className="flex-1 min-w-0">
                     <p className="text-xs font-medium text-gray-800 truncate" title={f.name}>
@@ -180,7 +181,7 @@ export default function ClientAttachmentsPanel({ clientCode, canUpload }: Props)
                     )}
                     {canUpload && (
                       <button type="button" disabled={deleting === f.name}
-                        onClick={() => handleDelete(f.name)}
+                        onClick={() => handleDelete(f)}
                         className="text-[11px] font-semibold text-red-500 hover:text-red-700 disabled:opacity-40 transition-colors">
                         {deleting === f.name ? '…' : 'Delete'}
                       </button>

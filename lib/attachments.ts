@@ -28,6 +28,17 @@ function getS3(): S3Client {
   return client;
 }
 
+/**
+ * Build the S3 folder name for a client. Uses "CODE - NAME" so folders are
+ * human-readable in the S3 console while staying stable (the code never
+ * changes). Slashes and other unsafe characters are replaced so they don't
+ * create nested folders.
+ */
+function clientFolder(clientCode: string, clientName?: string): string {
+  const safeName = (clientName ?? "").trim().replace(/[/\\]/g, "-").replace(/\s+/g, " ");
+  return safeName ? `${clientCode} - ${safeName}` : clientCode;
+}
+
 export interface AttachmentFile {
   name:      string;
   size:      number;
@@ -36,19 +47,25 @@ export interface AttachmentFile {
   path:      string;
 }
 
-/** List all files for a client, with presigned download URLs (1h). */
+/**
+ * List all files for a client. Matches any folder that starts with the client
+ * code (so files are found even if the client was renamed). Each file gets a
+ * presigned download URL (1h).
+ */
 export async function listAttachments(clientCode: string): Promise<AttachmentFile[]> {
-  const prefix = `${FOLDER}/${clientCode}/`;
+  // Match "Clients/<code>" and "Clients/<code> - <name>/"
+  const prefix = `${FOLDER}/${clientCode}`;
   const res = await getS3().send(
     new ListObjectsV2Command({ Bucket: BUCKET, Prefix: prefix })
   );
   const objects = res.Contents ?? [];
   const files = await Promise.all(
     objects
-      .filter((o) => o.Key && o.Key !== prefix)
+      .filter((o) => o.Key && !o.Key.endsWith("/"))
       .map(async (o) => {
         const key = o.Key!;
-        const name = key.slice(prefix.length);
+        // Display name = last path segment
+        const name = key.split("/").pop() ?? key;
         const url = await getSignedUrl(
           getS3(),
           new GetObjectCommand({ Bucket: BUCKET, Key: key }),
@@ -63,20 +80,20 @@ export async function listAttachments(clientCode: string): Promise<AttachmentFil
         };
       })
   );
-  // Newest first
   return files.sort((a, b) => (b.createdAt ?? "").localeCompare(a.createdAt ?? ""));
 }
 
-/** Upload a file for a client. Returns the stored key. */
+/** Upload a file for a client. Stores under "Clients/<code> - <name>/". */
 export async function uploadAttachment(
   clientCode: string,
   fileName: string,
   body: Buffer,
-  contentType: string
+  contentType: string,
+  clientName?: string
 ): Promise<string> {
-  // Prefix with timestamp to avoid collisions (matches original)
+  const folder = clientFolder(clientCode, clientName);
   const safeName = fileName.replace(/[^\w.\- ]/g, "_");
-  const key = `${FOLDER}/${clientCode}/${Date.now()}_${safeName}`;
+  const key = `${FOLDER}/${folder}/${Date.now()}_${safeName}`;
   await getS3().send(
     new PutObjectCommand({
       Bucket: BUCKET,
@@ -88,8 +105,10 @@ export async function uploadAttachment(
   return key;
 }
 
-/** Delete a file for a client by its stored name. */
-export async function deleteAttachment(clientCode: string, fileName: string): Promise<void> {
-  const key = `${FOLDER}/${clientCode}/${fileName}`;
-  await getS3().send(new DeleteObjectCommand({ Bucket: BUCKET, Key: key }));
+/**
+ * Delete a file for a client. The client `path` (full S3 key) is passed from
+ * the list result so we delete the exact object regardless of folder naming.
+ */
+export async function deleteAttachment(pathOrKey: string): Promise<void> {
+  await getS3().send(new DeleteObjectCommand({ Bucket: BUCKET, Key: pathOrKey }));
 }

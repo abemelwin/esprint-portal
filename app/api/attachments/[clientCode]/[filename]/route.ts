@@ -1,6 +1,7 @@
 /**
  * /api/attachments/[clientCode]/[filename]
- *   DELETE — remove a file for a client.
+ *   DELETE — remove a file. The full S3 key is passed as ?path=<key>
+ *            (from the list result) so we delete the exact object.
  */
 import { NextRequest, NextResponse } from "next/server";
 import { requireCheckAccess } from "@/modules/checks/lib/api-guard";
@@ -8,8 +9,8 @@ import { canCreate } from "@/modules/checks/lib/permissions";
 import { deleteAttachment } from "@/lib/attachments";
 
 export async function DELETE(
-  _req: NextRequest,
-  context: { params: Promise<{ clientCode: string; filename: string }> }
+  req: NextRequest,
+  _context: { params: Promise<{ clientCode: string; filename: string }> }
 ) {
   const guard = await requireCheckAccess();
   if (!guard.ok) return guard.response;
@@ -17,9 +18,13 @@ export async function DELETE(
     return NextResponse.json({ ok: false, error: "Your role cannot delete files." }, { status: 403 });
   }
 
-  const { clientCode, filename } = await context.params;
+  const path = req.nextUrl.searchParams.get("path");
+  if (!path) {
+    return NextResponse.json({ ok: false, error: "Missing file path." }, { status: 400 });
+  }
+
   try {
-    await deleteAttachment(clientCode, decodeURIComponent(filename));
+    await deleteAttachment(decodeURIComponent(path));
     return NextResponse.json({ ok: true });
   } catch (err) {
     console.error("Delete attachment failed:", err);
