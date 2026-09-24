@@ -236,3 +236,80 @@ export function getSalesPermissions(user: PortalUser): SalesPermissions {
   return { canManageCatalog: false, canViewAllQuotes: false };
 }
 
+
+
+// ─── Support Scheduler role groups ───────────────────────────────────────────
+
+export type SchedulerRole =
+  | "admin"
+  | "service_manager"
+  | "service_coordinator"
+  | "senior_fse"
+  | "junior_fse"
+  | "field_service_engineer"
+  | "trainee"
+  | "employee"
+  | "branch"
+  | "Super Admin";
+
+export interface SchedulerPermissions {
+  /** Can create / edit / delete job tickets */
+  canEditJobs: boolean;
+  /** Can manage staff roster */
+  canManageStaff: boolean;
+  /** Can manage branches */
+  canManageBranches: boolean;
+  /** Can manage app users (grant access, set roles) */
+  canManageUsers: boolean;
+  /** Can view the multi-branch Overview tab */
+  canViewOverview: boolean;
+  /** Has read-only access (no mutations) */
+  isReadOnly: boolean;
+}
+
+export function getSchedulerPermissions(
+  user: PortalUser
+): SchedulerPermissions {
+  if (isSuperAdmin(user)) {
+    return {
+      canEditJobs: true,
+      canManageStaff: true,
+      canManageBranches: true,
+      canManageUsers: true,
+      canViewOverview: true,
+      isReadOnly: false,
+    };
+  }
+
+  const access = moduleAccessOf(user, "scheduler");
+  if (!access) {
+    return {
+      canEditJobs: false,
+      canManageStaff: false,
+      canManageBranches: false,
+      canManageUsers: false,
+      canViewOverview: false,
+      isReadOnly: true,
+    };
+  }
+
+  const role = access.role as SchedulerRole;
+  const isAdmin = access.isModuleAdmin || role === "admin";
+  const isManagerOrCoord =
+    role === "service_manager" || role === "service_coordinator";
+  const isViewOnly =
+    role === "senior_fse" ||
+    role === "junior_fse" ||
+    role === "field_service_engineer" ||
+    role === "trainee" ||
+    role === "employee";
+
+  return {
+    canEditJobs: isAdmin || role === "service_manager" || role === "branch",
+    canManageStaff: isAdmin,
+    canManageBranches: isAdmin,
+    canManageUsers: isAdmin,
+    canViewOverview: isAdmin || isManagerOrCoord,
+    isReadOnly: isViewOnly,
+  };
+}

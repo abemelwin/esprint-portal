@@ -291,4 +291,34 @@ export const DEV_USERS: Record<string, PortalUser> = {
       },
     ],
   },
+  "scheduleradmin@esprint.com": {
+    id: "dev-scheduleradmin",
+    email: "scheduleradmin@esprint.com",
+    fullName: "Arnold Rioja",
+    portalRole: "user",
+    access: [
+      {
+        module: "scheduler",
+        role: "admin",
+        isModuleAdmin: true,
+        branches: [],
+        aes: [],
+      },
+    ],
+  },
+  "schedulerbranch@esprint.com": {
+    id: "dev-schedulerbranch",
+    email: "schedulerbranch@esprint.com",
+    fullName: "Branch User",
+    portalRole: "user",
+    access: [
+      {
+        module: "scheduler",
+        role: "branch",
+        isModuleAdmin: false,
+        branches: ["MAK"],
+        aes: [],
+      },
+    ],
+  },
 };
