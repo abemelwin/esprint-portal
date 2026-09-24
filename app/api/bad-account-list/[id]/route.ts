@@ -8,7 +8,7 @@ import { requireCheckAccess } from "@/modules/checks/lib/api-guard";
 import { canCreate } from "@/modules/checks/lib/permissions";
 import { sanitizeDeep } from "@/modules/checks/lib/sanitize";
 import { query } from "@/lib/db";
-import { VALID_STATUSES } from "../route";
+import { VALID_STATUSES } from "@/modules/checks/lib/bad-account-statuses";
 
 const SCHEMA = "check_monitoring";
 

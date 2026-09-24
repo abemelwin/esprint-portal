@@ -12,12 +12,9 @@ import { canCreate } from "@/modules/checks/lib/permissions";
 import { sanitizeDeep } from "@/modules/checks/lib/sanitize";
 import { query } from "@/lib/db";
 
-const SCHEMA = "check_monitoring";
+import { VALID_STATUSES } from "@/modules/checks/lib/bad-account-statuses";
 
-export const VALID_STATUSES = new Set([
-  "BAD ACCOUNT", "DEMAND LETTER", "WITH OVERDUE BALANCE",
-  "WITH RECON", "WITH LEGAL CASE", "BLACKLIST",
-]);
+const SCHEMA = "check_monitoring";
 
 export async function GET() {
   const guard = await requireCheckAccess();
