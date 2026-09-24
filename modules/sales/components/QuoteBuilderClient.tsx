@@ -1,8 +1,27 @@
 "use client";
 
-import { useState, useEffect, useMemo } from "react";
+import { useState, useEffect, useMemo, useRef } from "react";
 import type { CatalogMachine, DealType, LetterheadType, Quote } from "../types";
 import { formatCurrency, computeFinancial } from "../lib/calculator";
+
+interface TermOption {
+  dealType: string;
+  contractPrice: number | null;
+  downPayment: number;
+  months: number;
+  monthlyAmortization: number | null;
+}
+
+interface TradeInItem {
+  description: string;
+  value: number;
+}
+
+interface CustomItem {
+  id: string;
+  description: string;
+  enabled: boolean;
+}
 
 export function QuoteBuilderClient({
   currentUserEmail,
@@ -13,50 +32,98 @@ export function QuoteBuilderClient({
 }) {
   const [catalog, setCatalog] = useState<CatalogMachine[]>([]);
   const [loading, setLoading] = useState(true);
-  const [savedQuotes, setSavedQuotes] = useState<Quote[]>([]);
   const [saving, setSaving] = useState(false);
   const [quoteSuccessMsg, setQuoteSuccessMsg] = useState("");
 
-  // Form State matching Screenshot 1
+  // Letterhead & Machine
   const [letterhead, setLetterhead] = useState<LetterheadType>("ES Print Media Inc.");
   const [selectedBrand, setSelectedBrand] = useState("");
   const [selectedModel, setSelectedModel] = useState("");
-  const [unitCondition, setUnitCondition] = useState("Brand New");
+  const [unitCondition, setUnitCondition] = useState<"Brand New" | "Re-certified" | "Demo Unit">("Brand New");
 
+  // Client Information
   const [clientName, setClientName] = useState("");
   const [companyName, setCompanyName] = useState("");
   const [address, setAddress] = useState("");
   const [contactNumber, setContactNumber] = useState("");
   const [email, setEmail] = useState("");
-  const [quoteDate, setQuoteDate] = useState(
-    new Date().toISOString().slice(0, 10)
-  );
+  const [quoteDate, setQuoteDate] = useState(new Date().toISOString().slice(0, 10));
   const [salutation, setSalutation] = useState("Dear Ma'am / Sir,");
   const [openingLine, setOpeningLine] = useState(
     "Thank you for your interest in our products and services. Below is our quote as per your inquiry:"
   );
 
-  const [dealType, setDealType] = useState<DealType>("Cash");
-  const [downPaymentPct, setDownPaymentPct] = useState(20);
-  const [interestRatePct, setInterestRatePct] = useState(14);
-  const [termMonths, setTermMonths] = useState(12);
-  const [notes, setNotes] = useState("");
+  // Deal Type & Pricing
+  const [dealType, setDealType] = useState<"Standard Cash" | "Standard Terms" | "Trade-In Cash" | "Trade-In Terms">("Standard Cash");
+  const [contractPrice, setContractPrice] = useState<number>(0);
+  const [vatInclusive, setVatInclusive] = useState(false);
+  const [downpayment, setDownpayment] = useState<number>(0);
+  const [termMonths, setTermMonths] = useState<number>(12);
+
+  // Trade-in items (3 rows)
+  const [tradeIns, setTradeIns] = useState<TradeInItem[]>([
+    { description: "", value: 0 },
+    { description: "", value: 0 },
+    { description: "", value: 0 },
+  ]);
+
+  // Additional Term Options
+  const [termOptions, setTermOptions] = useState<TermOption[]>([
+    { dealType: "Installment", contractPrice: null, downPayment: 0, months: 12, monthlyAmortization: null },
+  ]);
+
+  // Inclusions & Exclusions
+  const [inclusions, setInclusions] = useState<CustomItem[]>([
+    { id: "inc-1", description: "Main Equipment Unit & Accessories", enabled: true },
+    { id: "inc-2", description: "RIP Software & License Dongle", enabled: true },
+    { id: "inc-3", description: "Free 1 Set CMYK Inks / Starter Kit", enabled: true },
+    { id: "inc-4", description: "On-site Installation & Technical Training", enabled: true },
+    { id: "inc-5", description: "1-Year Full Technical Warranty", enabled: true },
+  ]);
+  const [newInclusionText, setNewInclusionText] = useState("");
+  const [showInclusionInput, setShowInclusionInput] = useState(false);
+
+  const [exclusions, setExclusions] = useState<CustomItem[]>([
+    { id: "exc-1", description: "Value Added Tax (12% VAT)", enabled: true },
+    { id: "exc-2", description: "Freight & Hauling outside Metro Manila", enabled: true },
+    { id: "exc-3", description: "Electrical Power AVR / UPS & Dedicated Wiring", enabled: true },
+    { id: "exc-4", description: "Computer Desktop / Laptop for RIP Workstation", enabled: true },
+  ]);
+  const [newExclusionText, setNewExclusionText] = useState("");
+  const [showExclusionInput, setShowExclusionInput] = useState(false);
+
+  // Consumables custom price list
+  const [consumablePrices, setConsumablePrices] = useState<{ id: string; name: string; pkg: string; price: number }[]>([]);
+
+  // Signatories
   const [signatoryName, setSignatoryName] = useState(currentUserName || "ACCOUNT EXECUTIVE");
-  const [signatoryTitle, setSignatoryTitle] = useState("Account Executive");
+  const [signatoryRole, setSignatoryRole] = useState("Account Executive");
+  const [clientConforme, setClientConforme] = useState("");
+  const [notedByName, setNotedByName] = useState("Ness Deomano");
+  const [notedByRole, setNotedByRole] = useState("Area Sales Manager");
 
   async function loadInitialData() {
     setLoading(true);
     try {
-      const [catRes, qRes] = await Promise.all([
-        fetch("/api/sales/catalog"),
-        fetch("/api/sales/quotes"),
-      ]);
-      const catData = await catRes.json();
-      const qData = await qRes.json();
-      if (catData.machines && catData.machines.length > 0) {
-        setCatalog(catData.machines);
+      const res = await fetch("/api/sales/catalog");
+      const data = await res.json();
+      if (data.machines && data.machines.length > 0) {
+        setCatalog(data.machines);
+        const first = data.machines[0];
+        setSelectedBrand(first.brand);
+        setSelectedModel(first.model);
+        setContractPrice(first.srp || 0);
+        if (first.consumables && first.consumables.length > 0) {
+          setConsumablePrices(
+            first.consumables.map((c: any, i: number) => ({
+              id: c.id || `c-${i}`,
+              name: c.item_name,
+              pkg: c.package_description || "",
+              price: c.default_price,
+            }))
+          );
+        }
       }
-      if (qData.quotes) setSavedQuotes(qData.quotes);
     } catch (err) {
       console.error(err);
     } finally {
@@ -82,28 +149,89 @@ export function QuoteBuilderClient({
     [catalog, selectedModel]
   );
 
-  // Price calculations
-  const machinePrice = useMemo(() => {
-    if (!selectedMachine) return 0;
-    return dealType === "Cash"
-      ? selectedMachine.cash_price || selectedMachine.srp
-      : selectedMachine.srp;
-  }, [selectedMachine, dealType]);
+  // Update machine details on select
+  useEffect(() => {
+    if (selectedMachine) {
+      setContractPrice(selectedMachine.srp || 0);
+      setUnitCondition(selectedMachine.unit_condition || "Brand New");
+      if (selectedMachine.consumables && selectedMachine.consumables.length > 0) {
+        setConsumablePrices(
+          selectedMachine.consumables.map((c, i) => ({
+            id: c.id || `c-${i}`,
+            name: c.item_name,
+            pkg: c.package_description || "",
+            price: c.default_price,
+          }))
+        );
+      }
+      if (selectedMachine.inclusions && selectedMachine.inclusions.length > 0) {
+        setInclusions(
+          selectedMachine.inclusions.map((inc, i) => ({
+            id: `inc-${i}`,
+            description: inc,
+            enabled: true,
+          }))
+        );
+      }
+    }
+  }, [selectedMachine]);
 
-  const downpaymentAmount = Math.round((machinePrice * downPaymentPct) / 100);
+  const showTradeIns = dealType === "Trade-In Cash" || dealType === "Trade-In Terms";
+  const tradeInSum = useMemo(
+    () => (showTradeIns ? tradeIns.reduce((acc, ti) => acc + (Number(ti.value) || 0), 0) : 0),
+    [showTradeIns, tradeIns]
+  );
 
-  const financial = useMemo(() => {
-    return computeFinancial(
-      machinePrice,
-      dealType === "Cash" ? machinePrice : downpaymentAmount,
-      dealType === "In-House" ? interestRatePct : 0,
-      dealType === "In-House" ? termMonths : 1
-    );
-  }, [machinePrice, dealType, downpaymentAmount, interestRatePct, termMonths]);
+  const netContractPrice = Math.max(0, contractPrice - tradeInSum);
+
+  // Auto-calculate monthly amortizations for term options
+  const computedTermOptions = useMemo(() => {
+    return termOptions.map((opt) => {
+      const price = opt.contractPrice !== null ? opt.contractPrice : netContractPrice;
+      const dp = opt.downPayment || 0;
+      const principal = Math.max(0, price - dp);
+      // Flat 14% p.a. standard
+      const interest = principal * (0.14 / 12) * (opt.months || 12);
+      const balance = principal + interest;
+      const monthly = (opt.months || 12) > 0 ? balance / (opt.months || 12) : 0;
+      return {
+        ...opt,
+        balance,
+        monthlyAmortization: monthly,
+      };
+    });
+  }, [termOptions, netContractPrice]);
+
+  function addTermOption() {
+    if (termOptions.length >= 5) return;
+    setTermOptions([
+      ...termOptions,
+      { dealType: "Installment", contractPrice: null, downPayment: 0, months: 12, monthlyAmortization: null },
+    ]);
+  }
+
+  function removeTermOption(idx: number) {
+    if (termOptions.length <= 1) return;
+    setTermOptions(termOptions.filter((_, i) => i !== idx));
+  }
+
+  function handleAddInclusion() {
+    if (!newInclusionText.trim()) return;
+    setInclusions([...inclusions, { id: `inc-${Date.now()}`, description: newInclusionText.trim(), enabled: true }]);
+    setNewInclusionText("");
+    setShowInclusionInput(false);
+  }
+
+  function handleAddExclusion() {
+    if (!newExclusionText.trim()) return;
+    setExclusions([...exclusions, { id: `exc-${Date.now()}`, description: newExclusionText.trim(), enabled: true }]);
+    setNewExclusionText("");
+    setShowExclusionInput(false);
+  }
 
   async function handleSaveQuote() {
     if (!clientName.trim()) {
-      alert("Please enter Client Name");
+      alert("Please enter Client Contact Person Name");
       return;
     }
     setSaving(true);
@@ -119,22 +247,18 @@ export function QuoteBuilderClient({
           address,
           deal_type: dealType,
           letterhead,
-          term_months: dealType === "In-House" ? termMonths : 0,
-          down_payment_pct: dealType === "In-House" ? downPaymentPct : 0,
-          interest_rate_pct: dealType === "In-House" ? interestRatePct : 0,
-          total_amount: financial.contractPrice,
-          monthly_payment: dealType === "In-House" ? financial.monthlyAmortization : 0,
+          total_amount: contractPrice,
+          monthly_payment: computedTermOptions[0]?.monthlyAmortization || 0,
           signatory_name: signatoryName,
-          signatory_title: signatoryTitle,
-          notes,
+          signatory_title: signatoryRole,
           items: selectedMachine
             ? [
                 {
                   machine_id: selectedMachine.id,
                   machine_name: `${selectedMachine.brand} ${selectedMachine.model}`,
-                  unit_price: machinePrice,
+                  unit_price: contractPrice,
                   quantity: 1,
-                  total_price: machinePrice,
+                  total_price: contractPrice,
                 },
               ]
             : [],
@@ -145,7 +269,6 @@ export function QuoteBuilderClient({
         const d = await res.json();
         setQuoteSuccessMsg(`Quote created successfully: ${d.quoteNumber}`);
         setTimeout(() => setQuoteSuccessMsg(""), 4000);
-        loadInitialData();
       } else {
         const d = await res.json();
         alert(d.error || "Failed to save quote");
@@ -164,11 +287,7 @@ export function QuoteBuilderClient({
       const parts = quoteDate.split("-");
       if (parts.length === 3) {
         const d = new Date(parseInt(parts[0]), parseInt(parts[1]) - 1, parseInt(parts[2]));
-        return d.toLocaleDateString("en-US", {
-          month: "long",
-          day: "numeric",
-          year: "numeric",
-        });
+        return d.toLocaleDateString("en-US", { month: "long", day: "numeric", year: "numeric" });
       }
       return quoteDate;
     } catch {
@@ -176,474 +295,696 @@ export function QuoteBuilderClient({
     }
   }, [quoteDate]);
 
+  const letterheadHeaderImg =
+    letterhead === "ACS / Alternative" ? "/letterhead/letterhead-acs-1.jpg" : "/letterhead/letterhead-espmi-1.jpg";
+  const letterheadFooterImg =
+    letterhead === "ACS / Alternative" ? "/letterhead/letterhead-acs-2.jpg" : "/letterhead/letterhead-espmi-2.jpg";
+
   return (
-    <div className="flex flex-col lg:flex-row min-h-[calc(100vh-46px)] bg-[#f1f5f9]">
-      {/* LEFT FORM SIDEBAR (Exact Screenshot 1: Width ~340px, red sections, red underline) */}
-      <aside className="w-full lg:w-[350px] shrink-0 bg-white border-r border-red-300 p-4 overflow-y-auto space-y-4 shadow-sm print:hidden select-none">
-        {/* Header Branding */}
-        <div className="text-center pb-2">
-          <h2 className="text-sm font-black text-red-600 tracking-wide">
-            ES PRINT MEDIA INC.
-          </h2>
-          <p className="text-[11px] text-slate-400 italic mt-0.5">
-            Quotation Generator
-          </p>
+    <div className="flex flex-col lg:flex-row min-h-[calc(100vh-96px)] bg-[#eef4fb]">
+      {/* ─── LEFT FORM PANEL (Exact matching QuoteFormPanel.vue) ─── */}
+      <aside className="w-full lg:w-[360px] shrink-0 bg-white border-r-2 border-[#c0392b] flex flex-col overflow-y-auto shadow-md print:hidden select-none">
+        {/* Header Title */}
+        <div className="text-center py-2.5 px-4 border-b border-slate-100 shrink-0">
+          <div className="text-sm font-black text-[#c0392b] tracking-wide">ES PRINT MEDIA INC.</div>
+          <div className="text-[10px] text-slate-400 italic">Quotation Generator</div>
         </div>
 
-        {/* SECTION 1: LETTERHEAD */}
-        <div>
-          <h3 className="text-xs font-black text-red-600 tracking-wider uppercase border-b border-red-400 pb-1 mb-2">
-            LETTERHEAD
-          </h3>
-          <div className="space-y-1">
-            <label className="block text-[10px] font-bold text-slate-500 uppercase">
-              SELECT LETTERHEAD
-            </label>
-            <select
-              value={letterhead}
-              onChange={(e) => setLetterhead(e.target.value as LetterheadType)}
-              className="w-full text-xs font-semibold px-2.5 py-1.5 bg-white border border-slate-300 rounded-md focus:border-red-500 focus:outline-none"
-            >
-              <option value="ES Print Media Inc.">ES Print Media Inc.</option>
-              <option value="ACS / Alternative">ACS / Alternative</option>
-            </select>
-          </div>
-        </div>
-
-        {/* SECTION 2: MACHINE */}
-        <div>
-          <h3 className="text-xs font-black text-red-600 tracking-wider uppercase border-b border-red-400 pb-1 mb-2">
-            MACHINE
-          </h3>
-          <div className="space-y-2.5">
-            <div>
-              <label className="block text-[10px] font-bold text-slate-500 uppercase mb-0.5">
-                BRAND
-              </label>
+        <div className="p-3 space-y-3.5 text-xs text-slate-700 flex-1">
+          {/* 1. LETTERHEAD */}
+          <div>
+            <h2 className="text-[11px] font-bold text-[#c0392b] uppercase tracking-wider border-b-[1.5px] border-[#c0392b] pb-0.5 mb-2">
+              Letterhead
+            </h2>
+            <div className="space-y-1">
+              <label className="block text-[10px] font-semibold text-slate-600 uppercase">Select Letterhead</label>
               <select
-                value={selectedBrand}
-                onChange={(e) => {
-                  setSelectedBrand(e.target.value);
-                  setSelectedModel("");
-                }}
-                className="w-full text-xs font-semibold px-2.5 py-1.5 bg-white border border-slate-300 rounded-md focus:border-red-500 focus:outline-none"
+                value={letterhead}
+                onChange={(e) => setLetterhead(e.target.value as LetterheadType)}
+                className="w-full text-xs font-semibold px-2.5 py-1 bg-white border border-slate-300 rounded focus:border-[#c0392b] focus:outline-none"
               >
-                <option value="">Select brand</option>
-                {brands.map((b) => (
-                  <option key={b} value={b}>
-                    {b}
-                  </option>
-                ))}
-              </select>
-            </div>
-
-            <div>
-              <label className="block text-[10px] font-bold text-slate-500 uppercase mb-0.5">
-                MACHINE MODEL
-              </label>
-              <select
-                value={selectedModel}
-                onChange={(e) => setSelectedModel(e.target.value)}
-                disabled={!selectedBrand}
-                className="w-full text-xs font-semibold px-2.5 py-1.5 bg-white border border-slate-300 rounded-md focus:border-red-500 focus:outline-none disabled:bg-slate-100 disabled:text-slate-400"
-              >
-                <option value="">Select model</option>
-                {modelsForBrand.map((m) => (
-                  <option key={m.id} value={m.model}>
-                    {m.model}
-                  </option>
-                ))}
-              </select>
-            </div>
-
-            <div>
-              <label className="block text-[10px] font-bold text-slate-500 uppercase mb-0.5">
-                UNIT CONDITION
-              </label>
-              <select
-                value={unitCondition}
-                onChange={(e) => setUnitCondition(e.target.value)}
-                className="w-full text-xs font-semibold px-2.5 py-1.5 bg-white border border-slate-300 rounded-md focus:border-red-500 focus:outline-none"
-              >
-                <option value="Brand New">Brand New</option>
-                <option value="Refurbished">Refurbished</option>
-                <option value="Demo Unit">Demo Unit</option>
-                <option value="Good Condition">Good Condition</option>
+                <option value="ES Print Media Inc.">ES Print Media Inc.</option>
+                <option value="ACS / Alternative">ACS / Alternative</option>
               </select>
             </div>
           </div>
-        </div>
 
-        {/* SECTION 3: CLIENT INFORMATION */}
-        <div>
-          <h3 className="text-xs font-black text-red-600 tracking-wider uppercase border-b border-red-400 pb-1 mb-2">
-            CLIENT INFORMATION
-          </h3>
-          <div className="space-y-2">
-            <div>
-              <label className="block text-[10px] font-bold text-slate-500 uppercase mb-0.5">
-                CLIENT NAME
-              </label>
-              <input
-                type="text"
-                placeholder="Full name"
-                value={clientName}
-                onChange={(e) => setClientName(e.target.value)}
-                className="w-full text-xs px-2.5 py-1.5 bg-white border border-slate-300 rounded-md focus:border-red-500 focus:outline-none"
-              />
-            </div>
-
-            <div>
-              <label className="block text-[10px] font-bold text-slate-500 uppercase mb-0.5">
-                COMPANY
-              </label>
-              <input
-                type="text"
-                placeholder="Company name"
-                value={companyName}
-                onChange={(e) => setCompanyName(e.target.value)}
-                className="w-full text-xs px-2.5 py-1.5 bg-white border border-slate-300 rounded-md focus:border-red-500 focus:outline-none"
-              />
-            </div>
-
-            <div>
-              <label className="block text-[10px] font-bold text-slate-500 uppercase mb-0.5">
-                ADDRESS
-              </label>
-              <input
-                type="text"
-                placeholder="City / Address"
-                value={address}
-                onChange={(e) => setAddress(e.target.value)}
-                className="w-full text-xs px-2.5 py-1.5 bg-white border border-slate-300 rounded-md focus:border-red-500 focus:outline-none"
-              />
-            </div>
-
-            <div className="grid grid-cols-2 gap-2">
+          {/* 2. MACHINE */}
+          <div>
+            <h2 className="text-[11px] font-bold text-[#c0392b] uppercase tracking-wider border-b-[1.5px] border-[#c0392b] pb-0.5 mb-2">
+              Machine
+            </h2>
+            <div className="space-y-2">
               <div>
-                <label className="block text-[10px] font-bold text-slate-500 uppercase mb-0.5">
-                  CONTACT NO.
-                </label>
+                <label className="block text-[10px] font-semibold text-slate-600 uppercase mb-0.5">Brand</label>
+                <select
+                  value={selectedBrand}
+                  onChange={(e) => {
+                    setSelectedBrand(e.target.value);
+                    const first = catalog.find((m) => m.brand === e.target.value);
+                    if (first) setSelectedModel(first.model);
+                  }}
+                  className="w-full text-xs font-semibold px-2.5 py-1 bg-white border border-slate-300 rounded focus:border-[#c0392b] focus:outline-none"
+                >
+                  <option value="">Select brand</option>
+                  {brands.map((b) => (
+                    <option key={b} value={b}>
+                      {b}
+                    </option>
+                  ))}
+                </select>
+              </div>
+
+              <div>
+                <label className="block text-[10px] font-semibold text-slate-600 uppercase mb-0.5">Machine Model</label>
+                <select
+                  value={selectedModel}
+                  onChange={(e) => setSelectedModel(e.target.value)}
+                  disabled={!selectedBrand}
+                  className="w-full text-xs font-semibold px-2.5 py-1 bg-white border border-slate-300 rounded focus:border-[#c0392b] focus:outline-none disabled:bg-slate-100"
+                >
+                  <option value="">Select model</option>
+                  {modelsForBrand.map((m) => (
+                    <option key={m.id} value={m.model}>
+                      {m.model}
+                    </option>
+                  ))}
+                </select>
+              </div>
+
+              <div>
+                <label className="block text-[10px] font-semibold text-slate-600 uppercase mb-0.5">Unit Condition</label>
+                <select
+                  value={unitCondition}
+                  onChange={(e) => setUnitCondition(e.target.value as any)}
+                  className="w-full text-xs font-semibold px-2.5 py-1 bg-white border border-slate-300 rounded focus:border-[#c0392b] focus:outline-none"
+                >
+                  <option value="Brand New">Brand New</option>
+                  <option value="Re-certified">Re-certified</option>
+                  <option value="Demo Unit">Demo Unit</option>
+                </select>
+              </div>
+            </div>
+          </div>
+
+          {/* 3. CLIENT INFORMATION */}
+          <div>
+            <h2 className="text-[11px] font-bold text-[#c0392b] uppercase tracking-wider border-b-[1.5px] border-[#c0392b] pb-0.5 mb-2">
+              Client Information
+            </h2>
+            <div className="space-y-2">
+              <div>
+                <label className="block text-[10px] font-semibold text-slate-600 uppercase mb-0.5">Client Name</label>
                 <input
                   type="text"
-                  placeholder="09XX XXX XXXX"
-                  value={contactNumber}
-                  onChange={(e) => setContactNumber(e.target.value)}
-                  className="w-full text-xs px-2.5 py-1.5 bg-white border border-slate-300 rounded-md focus:border-red-500 focus:outline-none"
+                  placeholder="Full name"
+                  value={clientName}
+                  onChange={(e) => setClientName(e.target.value)}
+                  className="w-full text-xs px-2.5 py-1 border border-slate-300 rounded focus:border-[#c0392b] focus:outline-none"
                 />
               </div>
 
               <div>
-                <label className="block text-[10px] font-bold text-slate-500 uppercase mb-0.5">
-                  EMAIL
-                </label>
+                <label className="block text-[10px] font-semibold text-slate-600 uppercase mb-0.5">Company</label>
                 <input
-                  type="email"
-                  placeholder="email@..."
-                  value={email}
-                  onChange={(e) => setEmail(e.target.value)}
-                  className="w-full text-xs px-2.5 py-1.5 bg-white border border-slate-300 rounded-md focus:border-red-500 focus:outline-none"
+                  type="text"
+                  placeholder="Company name"
+                  value={companyName}
+                  onChange={(e) => setCompanyName(e.target.value)}
+                  className="w-full text-xs px-2.5 py-1 border border-slate-300 rounded focus:border-[#c0392b] focus:outline-none"
+                />
+              </div>
+
+              <div>
+                <label className="block text-[10px] font-semibold text-slate-600 uppercase mb-0.5">Address</label>
+                <input
+                  type="text"
+                  placeholder="City / Address"
+                  value={address}
+                  onChange={(e) => setAddress(e.target.value)}
+                  className="w-full text-xs px-2.5 py-1 border border-slate-300 rounded focus:border-[#c0392b] focus:outline-none"
+                />
+              </div>
+
+              <div className="grid grid-cols-2 gap-2">
+                <div>
+                  <label className="block text-[10px] font-semibold text-slate-600 uppercase mb-0.5">Contact No.</label>
+                  <input
+                    type="text"
+                    placeholder="09XX XXX XXXX"
+                    value={contactNumber}
+                    onChange={(e) => setContactNumber(e.target.value)}
+                    className="w-full text-xs px-2.5 py-1 border border-slate-300 rounded focus:border-[#c0392b] focus:outline-none"
+                  />
+                </div>
+                <div>
+                  <label className="block text-[10px] font-semibold text-slate-600 uppercase mb-0.5">Email</label>
+                  <input
+                    type="email"
+                    placeholder="email@..."
+                    value={email}
+                    onChange={(e) => setEmail(e.target.value)}
+                    className="w-full text-xs px-2.5 py-1 border border-slate-300 rounded focus:border-[#c0392b] focus:outline-none"
+                  />
+                </div>
+              </div>
+
+              <div>
+                <label className="block text-[10px] font-semibold text-slate-600 uppercase mb-0.5">Date</label>
+                <input
+                  type="date"
+                  value={quoteDate}
+                  onChange={(e) => setQuoteDate(e.target.value)}
+                  className="w-full text-xs px-2.5 py-1 border border-slate-300 rounded focus:border-[#c0392b] focus:outline-none"
+                />
+              </div>
+
+              <div>
+                <label className="block text-[10px] font-semibold text-slate-600 uppercase mb-0.5">Salutation</label>
+                <input
+                  type="text"
+                  value={salutation}
+                  onChange={(e) => setSalutation(e.target.value)}
+                  className="w-full text-xs px-2.5 py-1 border border-slate-300 rounded focus:border-[#c0392b] focus:outline-none"
+                />
+              </div>
+
+              <div>
+                <label className="block text-[10px] font-semibold text-slate-600 uppercase mb-0.5">Opening Line</label>
+                <textarea
+                  rows={2}
+                  value={openingLine}
+                  onChange={(e) => setOpeningLine(e.target.value)}
+                  className="w-full text-xs px-2.5 py-1 border border-slate-300 rounded focus:border-[#c0392b] focus:outline-none resize-none"
                 />
               </div>
             </div>
-
-            <div>
-              <label className="block text-[10px] font-bold text-slate-500 uppercase mb-0.5">
-                DATE
-              </label>
-              <input
-                type="date"
-                value={quoteDate}
-                onChange={(e) => setQuoteDate(e.target.value)}
-                className="w-full text-xs px-2.5 py-1.5 bg-white border border-slate-300 rounded-md focus:border-red-500 focus:outline-none"
-              />
-            </div>
-
-            <div>
-              <label className="block text-[10px] font-bold text-slate-500 uppercase mb-0.5">
-                SALUTATION
-              </label>
-              <input
-                type="text"
-                value={salutation}
-                onChange={(e) => setSalutation(e.target.value)}
-                className="w-full text-xs px-2.5 py-1.5 bg-white border border-slate-300 rounded-md focus:border-red-500 focus:outline-none"
-              />
-            </div>
-
-            <div>
-              <label className="block text-[10px] font-bold text-slate-500 uppercase mb-0.5">
-                OPENING LINE
-              </label>
-              <textarea
-                rows={2}
-                value={openingLine}
-                onChange={(e) => setOpeningLine(e.target.value)}
-                className="w-full text-xs px-2.5 py-1.5 bg-white border border-slate-300 rounded-md focus:border-red-500 focus:outline-none resize-none"
-              />
-            </div>
           </div>
-        </div>
 
-        {/* SECTION 4: PAYMENT TERMS & FINANCING */}
-        <div>
-          <h3 className="text-xs font-black text-red-600 tracking-wider uppercase border-b border-red-400 pb-1 mb-2">
-            TERMS & SIGNATORY
-          </h3>
-          <div className="space-y-2">
+          {/* 4. DEAL TYPE */}
+          <div>
+            <h2 className="text-[11px] font-bold text-[#c0392b] uppercase tracking-wider border-b-[1.5px] border-[#c0392b] pb-0.5 mb-2">
+              Deal Type
+            </h2>
             <div>
-              <label className="block text-[10px] font-bold text-slate-500 uppercase mb-0.5">
-                DEAL TYPE
-              </label>
+              <label className="block text-[10px] font-semibold text-slate-600 uppercase mb-0.5">Type of Deal</label>
               <select
                 value={dealType}
-                onChange={(e) => setDealType(e.target.value as DealType)}
-                className="w-full text-xs font-semibold px-2.5 py-1.5 bg-white border border-slate-300 rounded-md focus:border-red-500 focus:outline-none"
+                onChange={(e) => setDealType(e.target.value as any)}
+                className="w-full text-xs font-semibold px-2.5 py-1 bg-white border border-slate-300 rounded focus:border-[#c0392b] focus:outline-none"
               >
-                <option value="Cash">Cash (Discounted Promo)</option>
-                <option value="PDC">PDC (30/60/90 Days)</option>
-                <option value="In-House">In-House Financing</option>
-                <option value="Straight">Straight Terms</option>
+                <option value="Standard Cash">Standard Cash</option>
+                <option value="Standard Terms">Standard Terms</option>
+                <option value="Trade-In Cash">Trade-In Cash</option>
+                <option value="Trade-In Terms">Trade-In Terms</option>
               </select>
             </div>
+          </div>
 
-            {dealType === "In-House" && (
-              <div className="p-2.5 bg-red-50/70 border border-red-200 rounded-md space-y-2">
-                <div className="flex justify-between text-[11px] font-bold">
-                  <span>Downpayment:</span>
-                  <span className="text-red-700">{downPaymentPct}% ({formatCurrency(downpaymentAmount)})</span>
-                </div>
+          {/* 5. PRICING */}
+          <div>
+            <h2 className="text-[11px] font-bold text-[#c0392b] uppercase tracking-wider border-b-[1.5px] border-[#c0392b] pb-0.5 mb-2">
+              Pricing
+            </h2>
+            <div className="space-y-2">
+              <div>
+                <label className="block text-[10px] font-semibold text-slate-600 uppercase mb-0.5">Contract Price (PHP)</label>
                 <input
-                  type="range"
-                  min="0"
-                  max="50"
-                  step="5"
-                  value={downPaymentPct}
-                  onChange={(e) => setDownPaymentPct(Number(e.target.value))}
-                  className="w-full accent-red-600 h-1.5"
+                  type="number"
+                  value={contractPrice || ""}
+                  onChange={(e) => setContractPrice(Number(e.target.value) || 0)}
+                  placeholder="0"
+                  className="w-full text-xs font-bold px-2.5 py-1 border border-slate-300 rounded focus:border-[#c0392b] focus:outline-none"
                 />
+              </div>
 
-                <div className="grid grid-cols-2 gap-2 text-xs">
-                  <div>
-                    <label className="text-[10px] font-bold text-slate-600">Interest %</label>
-                    <input
-                      type="number"
-                      value={interestRatePct}
-                      onChange={(e) => setInterestRatePct(Number(e.target.value))}
-                      className="w-full px-2 py-1 text-xs border border-slate-300 rounded bg-white"
-                    />
-                  </div>
-                  <div>
-                    <label className="text-[10px] font-bold text-slate-600">Term (Mos)</label>
-                    <select
-                      value={termMonths}
-                      onChange={(e) => setTermMonths(Number(e.target.value))}
-                      className="w-full px-2 py-1 text-xs border border-slate-300 rounded bg-white"
-                    >
-                      <option value={6}>6 Months</option>
-                      <option value={12}>12 Months</option>
-                      <option value={18}>18 Months</option>
-                      <option value={24}>24 Months</option>
-                    </select>
-                  </div>
+              {/* Trade In Rows */}
+              {showTradeIns && (
+                <div className="p-2 bg-slate-50 border border-slate-200 rounded space-y-2">
+                  <span className="font-bold text-[10px] text-slate-700 uppercase block">Trade-In Units</span>
+                  {tradeIns.map((ti, i) => (
+                    <div key={i} className="grid grid-cols-5 gap-1.5">
+                      <div className="col-span-2">
+                        <input
+                          type="number"
+                          placeholder={`Value ${i + 1}`}
+                          value={ti.value || ""}
+                          onChange={(e) => {
+                            const copy = [...tradeIns];
+                            copy[i].value = Number(e.target.value) || 0;
+                            setTradeIns(copy);
+                          }}
+                          className="w-full text-[11px] px-2 py-0.5 border border-slate-300 rounded"
+                        />
+                      </div>
+                      <div className="col-span-3">
+                        <input
+                          type="text"
+                          placeholder={`Unit ${i + 1} model/spec`}
+                          value={ti.description}
+                          onChange={(e) => {
+                            const copy = [...tradeIns];
+                            copy[i].description = e.target.value;
+                            setTradeIns(copy);
+                          }}
+                          className="w-full text-[11px] px-2 py-0.5 border border-slate-300 rounded"
+                        />
+                      </div>
+                    </div>
+                  ))}
+                  {tradeInSum > 0 && (
+                    <div className="text-[11px] font-bold text-red-700 text-right pt-1">
+                      Total Trade-In: {formatCurrency(tradeInSum)}
+                    </div>
+                  )}
                 </div>
+              )}
+
+              {/* Term Options */}
+              {(dealType === "Standard Terms" || dealType === "Trade-In Terms") && (
+                <div className="space-y-2 pt-1">
+                  <label className="block text-[10px] font-semibold text-slate-600 uppercase">Payment Term Options</label>
+                  {termOptions.map((opt, idx) => (
+                    <div key={idx} className="p-2 bg-red-50/50 border border-red-200 rounded space-y-1.5">
+                      <div className="flex justify-between items-center text-[10px] font-bold text-red-700">
+                        <span>Option {idx + 1}</span>
+                        {termOptions.length > 1 && (
+                          <button type="button" onClick={() => removeTermOption(idx)} className="text-red-500 hover:text-red-800">
+                            ✕ Remove
+                          </button>
+                        )}
+                      </div>
+                      <div className="grid grid-cols-2 gap-1.5">
+                        <div>
+                          <label className="text-[9px] text-slate-500 block">Downpayment (PHP)</label>
+                          <input
+                            type="number"
+                            value={opt.downPayment || ""}
+                            onChange={(e) => {
+                              const copy = [...termOptions];
+                              copy[idx].downPayment = Number(e.target.value) || 0;
+                              setTermOptions(copy);
+                            }}
+                            placeholder="0"
+                            className="w-full text-[11px] px-2 py-0.5 border border-slate-300 rounded bg-white"
+                          />
+                        </div>
+                        <div>
+                          <label className="text-[9px] text-slate-500 block">Terms (Months)</label>
+                          <select
+                            value={opt.months}
+                            onChange={(e) => {
+                              const copy = [...termOptions];
+                              copy[idx].months = Number(e.target.value) || 12;
+                              setTermOptions(copy);
+                            }}
+                            className="w-full text-[11px] px-2 py-0.5 border border-slate-300 rounded bg-white"
+                          >
+                            <option value={3}>3 Months</option>
+                            <option value={6}>6 Months</option>
+                            <option value={12}>12 Months</option>
+                            <option value={18}>18 Months</option>
+                            <option value={24}>24 Months</option>
+                            <option value={36}>36 Months</option>
+                          </select>
+                        </div>
+                      </div>
+                    </div>
+                  ))}
+
+                  {termOptions.length < 5 && (
+                    <button
+                      type="button"
+                      onClick={addTermOption}
+                      className="w-full py-1 text-[11px] font-bold text-[#c0392b] border border-dashed border-[#c0392b] rounded hover:bg-red-50"
+                    >
+                      + Add Term Option
+                    </button>
+                  )}
+                </div>
+              )}
+
+              <label className="flex items-center gap-1.5 text-xs text-slate-700 cursor-pointer pt-1">
+                <input
+                  type="checkbox"
+                  checked={vatInclusive}
+                  onChange={(e) => setVatInclusive(e.target.checked)}
+                  className="rounded accent-[#c0392b]"
+                />
+                <span className="font-semibold">VAT Inclusive</span>
+              </label>
+            </div>
+          </div>
+
+          {/* 6. FREEBIES & INCLUSIONS */}
+          <div>
+            <h2 className="text-[11px] font-bold text-[#c0392b] uppercase tracking-wider border-b-[1.5px] border-[#c0392b] pb-0.5 mb-2">
+              Package Inclusions
+            </h2>
+            <div className="space-y-1">
+              {inclusions.map((inc) => (
+                <label key={inc.id} className="flex items-start gap-1.5 text-[11px] text-slate-700 cursor-pointer">
+                  <input
+                    type="checkbox"
+                    checked={inc.enabled}
+                    onChange={(e) => {
+                      setInclusions(inclusions.map((x) => (x.id === inc.id ? { ...x, enabled: e.target.checked } : x)));
+                    }}
+                    className="mt-0.5 rounded accent-[#c0392b]"
+                  />
+                  <span>{inc.description}</span>
+                </label>
+              ))}
+
+              {showInclusionInput ? (
+                <div className="flex gap-1 pt-1">
+                  <input
+                    type="text"
+                    placeholder="Custom inclusion..."
+                    value={newInclusionText}
+                    onChange={(e) => setNewInclusionText(e.target.value)}
+                    className="flex-1 text-[11px] px-2 py-0.5 border border-slate-300 rounded"
+                  />
+                  <button type="button" onClick={handleAddInclusion} className="px-2 py-0.5 bg-[#c0392b] text-white rounded text-[10px] font-bold">
+                    Add
+                  </button>
+                  <button type="button" onClick={() => setShowInclusionInput(false)} className="px-2 py-0.5 bg-slate-200 text-slate-700 rounded text-[10px]">
+                    Cancel
+                  </button>
+                </div>
+              ) : (
+                <button
+                  type="button"
+                  onClick={() => setShowInclusionInput(true)}
+                  className="text-[10px] font-bold text-[#c0392b] hover:underline pt-1 block"
+                >
+                  + Add Custom Inclusion
+                </button>
+              )}
+            </div>
+          </div>
+
+          {/* 7. EXCLUSIONS */}
+          <div>
+            <h2 className="text-[11px] font-bold text-[#c0392b] uppercase tracking-wider border-b-[1.5px] border-[#c0392b] pb-0.5 mb-2">
+              Exclusions
+            </h2>
+            <div className="space-y-1">
+              {exclusions.map((exc) => (
+                <label key={exc.id} className="flex items-start gap-1.5 text-[11px] text-slate-700 cursor-pointer">
+                  <input
+                    type="checkbox"
+                    checked={exc.enabled}
+                    onChange={(e) => {
+                      setExclusions(exclusions.map((x) => (x.id === exc.id ? { ...x, enabled: e.target.checked } : x)));
+                    }}
+                    className="mt-0.5 rounded accent-[#c0392b]"
+                  />
+                  <span>{exc.description}</span>
+                </label>
+              ))}
+
+              {showExclusionInput ? (
+                <div className="flex gap-1 pt-1">
+                  <input
+                    type="text"
+                    placeholder="Custom exclusion..."
+                    value={newExclusionText}
+                    onChange={(e) => setNewExclusionText(e.target.value)}
+                    className="flex-1 text-[11px] px-2 py-0.5 border border-slate-300 rounded"
+                  />
+                  <button type="button" onClick={handleAddExclusion} className="px-2 py-0.5 bg-[#c0392b] text-white rounded text-[10px] font-bold">
+                    Add
+                  </button>
+                  <button type="button" onClick={() => setShowExclusionInput(false)} className="px-2 py-0.5 bg-slate-200 text-slate-700 rounded text-[10px]">
+                    Cancel
+                  </button>
+                </div>
+              ) : (
+                <button
+                  type="button"
+                  onClick={() => setShowExclusionInput(true)}
+                  className="text-[10px] font-bold text-[#c0392b] hover:underline pt-1 block"
+                >
+                  + Add Custom Exclusion
+                </button>
+              )}
+            </div>
+          </div>
+
+          {/* 8. SIGNATORIES */}
+          <div>
+            <h2 className="text-[11px] font-bold text-[#c0392b] uppercase tracking-wider border-b-[1.5px] border-[#c0392b] pb-0.5 mb-2">
+              Signatories
+            </h2>
+            <div className="space-y-2">
+              <div>
+                <label className="block text-[10px] font-semibold text-slate-600 uppercase mb-0.5">Account Executive</label>
+                <input
+                  type="text"
+                  value={signatoryName}
+                  onChange={(e) => setSignatoryName(e.target.value)}
+                  className="w-full text-xs px-2.5 py-1 border border-slate-300 rounded focus:border-[#c0392b] focus:outline-none font-bold"
+                />
+              </div>
+
+              <div>
+                <label className="block text-[10px] font-semibold text-slate-600 uppercase mb-0.5">Client Conforme</label>
+                <input
+                  type="text"
+                  placeholder="Client Authorized Signatory"
+                  value={clientConforme}
+                  onChange={(e) => setClientConforme(e.target.value)}
+                  className="w-full text-xs px-2.5 py-1 border border-slate-300 rounded focus:border-[#c0392b] focus:outline-none"
+                />
+              </div>
+            </div>
+          </div>
+
+          {/* Action Buttons */}
+          <div className="pt-2 space-y-2">
+            {quoteSuccessMsg && (
+              <div className="p-2 bg-emerald-50 border border-emerald-300 text-emerald-800 text-[11px] font-bold rounded">
+                ✓ {quoteSuccessMsg}
               </div>
             )}
 
-            <div>
-              <label className="block text-[10px] font-bold text-slate-500 uppercase mb-0.5">
-                ACCOUNT EXECUTIVE
-              </label>
-              <input
-                type="text"
-                value={signatoryName}
-                onChange={(e) => setSignatoryName(e.target.value)}
-                className="w-full text-xs px-2.5 py-1.5 bg-white border border-slate-300 rounded-md focus:border-red-500 focus:outline-none"
-              />
-            </div>
-          </div>
-        </div>
-
-        {/* Action Buttons */}
-        <div className="pt-2 space-y-2">
-          {quoteSuccessMsg && (
-            <div className="p-2 bg-emerald-50 border border-emerald-300 text-emerald-800 text-[11px] font-bold rounded">
-              ✓ {quoteSuccessMsg}
-            </div>
-          )}
-
-          <div className="flex gap-2">
             <button
+              type="button"
               onClick={() => window.print()}
-              className="flex-1 py-2 text-xs font-bold text-slate-700 bg-white border border-slate-300 hover:bg-slate-50 rounded-md shadow-xs transition-colors cursor-pointer"
+              className="w-full py-2.5 bg-[#c0392b] hover:bg-[#a93226] text-white font-bold text-xs rounded shadow-xs transition-colors flex items-center justify-center gap-1.5 cursor-pointer"
             >
-              Print / PDF
+              <span>💾</span> SAVE AS PDF / PRINT
             </button>
+
             <button
+              type="button"
               onClick={handleSaveQuote}
               disabled={saving}
-              className="flex-1 py-2 text-xs font-bold text-white bg-red-600 hover:bg-red-700 rounded-md shadow-xs transition-colors cursor-pointer disabled:opacity-50"
+              className="w-full py-2 bg-slate-800 hover:bg-slate-900 text-white font-bold text-xs rounded shadow-xs transition-colors cursor-pointer disabled:opacity-50"
             >
-              {saving ? "Saving..." : "Save Quote"}
+              {saving ? "Saving..." : "Save Formal Quote"}
             </button>
           </div>
         </div>
       </aside>
 
-      {/* RIGHT LIVE A4 SHEET PREVIEW (Exact Screenshot 1: ES logo with gradient bar, date on right, red divider, letter body, NO MACHINE SELECTED, signatures, footer) */}
+      {/* ─── RIGHT LIVE DOCUMENT PREVIEW (Exact matching QuotePreviewPanel.vue) ─── */}
       <section className="flex-1 overflow-y-auto p-4 md:p-8 flex justify-center">
-        <div className="w-full max-w-[820px] min-h-[1050px] bg-white shadow-xl rounded-sm p-8 md:p-12 flex flex-col justify-between text-slate-800 font-sans border border-slate-200 print:shadow-none print:border-none print:m-0 print:p-8">
-          {/* Top Letterhead Header */}
+        <div className="w-full max-w-[800px] min-h-[1100px] bg-white shadow-2xl rounded-sm p-8 sm:p-12 flex flex-col justify-between text-slate-800 font-sans border border-slate-200 print:shadow-none print:border-none print:m-0 print:p-8">
           <div>
-            <div className="flex items-center justify-between gap-4">
-              {/* Stylized Red ES Logo + Accent Bar */}
-              <div className="flex items-center gap-3 flex-1">
-                <div className="relative">
-                  {/* Stylized ES Icon matching screenshot */}
-                  <svg width="72" height="56" viewBox="0 0 100 75" fill="none" xmlns="http://www.w3.org/2000/svg">
-                    <path
-                      d="M10 15H42C44 15 45 17 43 19L38 27H18V35H36C38 35 39 37 37 39L32 47H18V55H42C44 55 45 57 43 59L38 67H8C4 67 2 64 2 60V22C2 18 4 15 10 15Z"
-                      fill="#E11D48"
-                    />
-                    <path
-                      d="M52 24C52 18 56 15 62 15H88C94 15 98 18 98 24V28C98 32 95 35 90 37L70 41C66 42 64 43 64 45V48C64 50 66 52 70 52H88V44H98V56C98 62 94 66 88 66H62C56 66 52 62 52 56V52C52 48 55 45 60 43L80 39C84 38 86 37 86 35V32C86 30 84 28 80 28H52V24Z"
-                      fill="#E11D48"
-                    />
-                  </svg>
-                </div>
-                {/* Horizontal Pink Gradient Accent Bar */}
-                <div className="flex-1 h-3.5 bg-gradient-to-r from-red-300 via-red-200/60 to-red-100/30 rounded-full" />
-              </div>
-
-              {/* Date */}
-              <div className="text-right shrink-0">
-                <span className="text-xs text-slate-700 font-medium">
-                  Date: {formattedDate || "September 24, 2026"}
-                </span>
-              </div>
+            {/* Top Letterhead Image */}
+            <div className="w-full border-b border-slate-100 mb-4">
+              <img
+                src={letterheadHeaderImg}
+                alt={`${letterhead} Header`}
+                className="w-full h-auto object-contain block"
+              />
             </div>
 
-            {/* Horizontal Dark Red Bar Divider */}
-            <div className="w-full h-[2.5px] bg-[#991b1b] mt-3 mb-6" />
+            {/* Proposal Date */}
+            <div className="text-right text-[11px] text-slate-600 font-medium mb-3">
+              Date: {formattedDate || "September 24, 2026"}
+            </div>
 
-            {/* Salutation & Opening */}
-            <div className="text-xs text-slate-800 space-y-1 leading-relaxed">
+            {/* Client block */}
+            {(clientName || companyName || address || contactNumber || email) && (
+              <div className="text-xs text-slate-700 leading-snug space-y-0.5 mb-4">
+                {clientName && <p className="font-bold text-slate-900">{clientName}</p>}
+                {companyName && <p>{companyName}</p>}
+                {address && <p>{address}</p>}
+                {contactNumber && <p>Tel: {contactNumber}</p>}
+                {email && <p>Email: {email}</p>}
+              </div>
+            )}
+
+            {/* Salutation & Intro */}
+            <div className="text-xs text-slate-800 space-y-1 mb-4 leading-relaxed">
               <p className="font-semibold">{salutation}</p>
               <p>{openingLine}</p>
             </div>
 
-            {/* Machine Content or NO MACHINE SELECTED */}
-            <div className="my-8">
-              {!selectedMachine ? (
-                <div className="py-12 text-center">
-                  <h4 className="text-base font-extrabold text-[#991b1b] tracking-wider uppercase">
-                    NO MACHINE SELECTED
-                  </h4>
+            {/* Machine Content */}
+            {!selectedMachine ? (
+              <div className="my-10 text-center py-6 text-red-700 font-black text-sm tracking-wider uppercase border-t border-b border-red-100">
+                NO MACHINE SELECTED
+              </div>
+            ) : (
+              <div className="space-y-4 my-4 text-xs">
+                {/* Machine Header */}
+                <div className="flex items-center justify-between border-b border-slate-200 pb-2">
+                  <div className="flex items-center gap-2">
+                    <h3 className="text-sm font-black text-slate-900 uppercase tracking-tight">
+                      {selectedMachine.brand} {selectedMachine.model}
+                    </h3>
+                    <span
+                      className={`text-[9.5px] font-black px-2 py-0.5 rounded tracking-wider uppercase ${
+                        unitCondition === "Brand New"
+                          ? "bg-emerald-100 text-emerald-800"
+                          : "bg-amber-100 text-amber-800"
+                      }`}
+                    >
+                      {unitCondition}
+                    </span>
+                  </div>
+                  <div className="text-right">
+                    <span className="text-[10px] text-slate-500 uppercase font-bold block">Quotation Price</span>
+                    <span className="text-sm font-black text-[#c0392b]">{formatCurrency(contractPrice)}</span>
+                  </div>
                 </div>
-              ) : (
-                <div className="space-y-4 border-t border-b border-slate-200 py-4 text-xs">
-                  {/* Machine Header */}
-                  <div className="flex justify-between items-start">
-                    <div>
-                      <h4 className="text-sm font-black text-slate-900 uppercase tracking-tight">
-                        {selectedMachine.brand} {selectedMachine.model}
-                      </h4>
-                      <p className="text-slate-500 font-medium mt-0.5">
-                        {selectedMachine.sub_model || "Printing Equipment"} · Condition: {unitCondition}
-                      </p>
-                    </div>
 
-                    <div className="text-right">
-                      <span className="text-[10px] text-slate-500 block uppercase font-bold">Quotation Price ({dealType})</span>
-                      <span className="text-sm font-black text-red-600">
-                        {formatCurrency(machinePrice)}
-                      </span>
-                    </div>
+                {/* PRICING TABLE */}
+                <div>
+                  <div className="text-[10px] font-bold text-[#c0392b] uppercase tracking-wider mb-1">
+                    Pricing & Payment Schedule
                   </div>
-
-                  {/* Financial Breakdown Table */}
-                  <div className="bg-slate-50 p-3 rounded-lg border border-slate-200">
-                    <table className="w-full text-xs">
-                      <tbody>
-                        <tr className="border-b border-slate-200/60">
-                          <td className="py-1 text-slate-600">Payment Term:</td>
-                          <td className="py-1 font-bold text-right text-slate-800">{dealType}</td>
-                        </tr>
-                        {dealType === "In-House" && (
-                          <>
-                            <tr className="border-b border-slate-200/60">
-                              <td className="py-1 text-slate-600">Downpayment ({downPaymentPct}%):</td>
-                              <td className="py-1 font-bold text-right text-slate-800">{formatCurrency(downpaymentAmount)}</td>
-                            </tr>
-                            <tr className="border-b border-slate-200/60">
-                              <td className="py-1 text-slate-600">Monthly Amortization ({termMonths} mos):</td>
-                              <td className="py-1 font-bold text-right text-red-600">{formatCurrency(financial.monthlyAmortization)} / mo</td>
-                            </tr>
-                          </>
-                        )}
+                  <table className="w-full border-collapse text-[11px]">
+                    <thead>
+                      <tr className="bg-[#c0392b] text-white">
+                        <th className="py-1.5 px-2 text-left font-semibold">Model</th>
+                        <th className="py-1.5 px-2 text-right font-semibold">Contract Price</th>
+                        {showTradeIns && <th className="py-1.5 px-2 text-right font-semibold">Trade-In Value</th>}
+                        <th className="py-1.5 px-2 text-right font-semibold">Down Payment</th>
+                        <th className="py-1.5 px-2 text-right font-semibold">Balance</th>
+                        <th className="py-1.5 px-2 text-center font-semibold">Payment Terms</th>
+                        <th className="py-1.5 px-2 text-right font-semibold">Monthly Payment</th>
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y divide-slate-200 border border-slate-200">
+                      {dealType === "Standard Cash" || dealType === "Trade-In Cash" ? (
                         <tr>
-                          <td className="py-1 text-slate-600">Total Proposal Amount:</td>
-                          <td className="py-1 font-extrabold text-right text-slate-900">{formatCurrency(financial.contractPrice)}</td>
+                          <td className="py-1.5 px-2 font-bold">{selectedMachine.model}</td>
+                          <td className="py-1.5 px-2 text-right font-semibold">{formatCurrency(contractPrice)}</td>
+                          {showTradeIns && <td className="py-1.5 px-2 text-right text-red-600 font-bold">{formatCurrency(tradeInSum)}</td>}
+                          <td className="py-1.5 px-2 text-right">—</td>
+                          <td className="py-1.5 px-2 text-right font-bold text-slate-900">{formatCurrency(netContractPrice)}</td>
+                          <td className="py-1.5 px-2 text-center">Cash</td>
+                          <td className="py-1.5 px-2 text-right">—</td>
                         </tr>
-                      </tbody>
-                    </table>
-                  </div>
-
-                  {/* Machine Inclusions */}
-                  {selectedMachine.inclusions && selectedMachine.inclusions.length > 0 && (
-                    <div>
-                      <span className="font-bold text-[11px] text-slate-700 block mb-1">Package Inclusions & Warranties:</span>
-                      <ul className="grid grid-cols-2 gap-1 text-[11px] text-slate-600 list-disc list-inside">
-                        {selectedMachine.inclusions.map((inc, i) => (
-                          <li key={i}>{inc}</li>
-                        ))}
-                      </ul>
+                      ) : (
+                        computedTermOptions.map((opt, i) => (
+                          <tr key={i}>
+                            <td className="py-1.5 px-2 font-bold">{i === 0 ? selectedMachine.model : `Option ${i + 1}`}</td>
+                            <td className="py-1.5 px-2 text-right font-semibold">{formatCurrency(contractPrice)}</td>
+                            {showTradeIns && <td className="py-1.5 px-2 text-right text-red-600 font-bold">{formatCurrency(tradeInSum)}</td>}
+                            <td className="py-1.5 px-2 text-right font-medium">{formatCurrency(opt.downPayment)}</td>
+                            <td className="py-1.5 px-2 text-right font-bold text-slate-900">{formatCurrency(opt.balance)}</td>
+                            <td className="py-1.5 px-2 text-center">{opt.months} Months</td>
+                            <td className="py-1.5 px-2 text-right font-black text-[#c0392b]">{formatCurrency(opt.monthlyAmortization)} / mo</td>
+                          </tr>
+                        ))
+                      )}
+                    </tbody>
+                  </table>
+                  {vatInclusive && (
+                    <div className="text-[10px] font-bold text-[#c0392b] text-right mt-0.5">
+                      * VAT INCLUSIVE
                     </div>
                   )}
                 </div>
-              )}
-            </div>
+
+                {/* TWO-COLUMN INCLUSIONS & EXCLUSIONS */}
+                <div className="grid grid-cols-2 gap-3 pt-2">
+                  <div className="border border-slate-200 rounded overflow-hidden">
+                    <div className="bg-[#c0392b] text-white text-[10px] font-bold uppercase px-2.5 py-1">
+                      Package Inclusions
+                    </div>
+                    <ul className="p-2 space-y-1 list-disc list-inside text-[10.5px] text-slate-700">
+                      {inclusions.filter((x) => x.enabled).map((inc) => (
+                        <li key={inc.id}>{inc.description}</li>
+                      ))}
+                    </ul>
+                  </div>
+
+                  <div className="border border-slate-200 rounded overflow-hidden">
+                    <div className="bg-slate-700 text-white text-[10px] font-bold uppercase px-2.5 py-1">
+                      Exclusive (Client Provision)
+                    </div>
+                    <ul className="p-2 space-y-1 list-disc list-inside text-[10.5px] text-slate-700">
+                      {exclusions.filter((x) => x.enabled).map((exc) => (
+                        <li key={exc.id}>{exc.description}</li>
+                      ))}
+                    </ul>
+                  </div>
+                </div>
+
+                {/* CONSUMABLES TABLE */}
+                {consumablePrices.length > 0 && (
+                  <div className="pt-2">
+                    <div className="text-[10px] font-bold text-[#c0392b] uppercase tracking-wider mb-1">
+                      Standard Consumables & Ink Pricing
+                    </div>
+                    <div className="grid grid-cols-2 gap-x-4 gap-y-1 text-[10.5px]">
+                      {consumablePrices.map((c) => (
+                        <div key={c.id} className="flex justify-between border-b border-slate-100 py-0.5">
+                          <span className="text-slate-700 font-medium">{c.name} {c.pkg ? `(${c.pkg})` : ""}</span>
+                          <span className="text-[#c0392b] font-bold">{formatCurrency(c.price)}</span>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
+              </div>
+            )}
 
             {/* Closing text */}
-            <div className="text-xs text-slate-700 leading-relaxed border-t border-slate-100 pt-4">
+            <div className="text-xs text-slate-700 leading-relaxed border-t border-slate-200 pt-3 mt-4">
               <p>
                 Trusting that the above quotation will receive your favorable consideration and assuring you of our best service at all times. Thank you very much.
               </p>
             </div>
 
             {/* Signatures */}
-            <div className="grid grid-cols-2 gap-8 mt-12 text-xs">
+            <div className="grid grid-cols-2 gap-8 mt-8 text-xs">
               <div>
                 <p className="text-slate-600">Very truly yours,</p>
-                <div className="mt-14 border-b border-slate-700 w-full max-w-[240px]" />
+                <div className="mt-12 border-b border-slate-800 w-full max-w-[240px]" />
                 <p className="font-black text-slate-900 uppercase tracking-tight mt-1">
                   {signatoryName || "ACCOUNT EXECUTIVE"}
                 </p>
-                <p className="text-[10px] text-slate-400 italic">Signature over Printed Name</p>
+                <p className="text-[10px] text-slate-500 font-medium">{signatoryRole || "Account Executive"}</p>
+                <p className="text-[9.5px] text-slate-400 italic">Signature over Printed Name</p>
               </div>
 
               <div>
                 <p className="text-slate-600">Conforme:</p>
-                <div className="mt-14 border-b border-slate-700 w-full max-w-[240px]" />
+                <div className="mt-12 border-b border-slate-800 w-full max-w-[240px]" />
                 <p className="font-black text-slate-900 uppercase tracking-tight mt-1">
-                  {clientName || "CLIENT"}
+                  {clientConforme || clientName || "AUTHORIZED SIGNATORY"}
                 </p>
-                <p className="text-[10px] text-slate-400 italic">Signature over Printed Name</p>
+                <p className="text-[10px] text-slate-500 font-medium">Authorized Client Representative</p>
+                <p className="text-[9.5px] text-slate-400 italic">Signature over Printed Name</p>
               </div>
             </div>
           </div>
 
-          {/* Bottom Footer */}
-          <div className="mt-12 pt-4">
-            <div className="w-full h-[2px] bg-slate-300 mb-3" />
-            <div className="flex items-center justify-end gap-1.5 text-xs font-bold text-slate-800">
-              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
-                <circle cx="12" cy="12" r="10" />
-                <line x1="2" y1="12" x2="22" y2="12" />
-                <path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z" />
-              </svg>
-              <span>www.esprintmedia.com</span>
-            </div>
+          {/* Bottom Letterhead Footer Image */}
+          <div className="w-full border-t border-slate-100 mt-6 pt-2">
+            <img
+              src={letterheadFooterImg}
+              alt={`${letterhead} Footer`}
+              className="w-full h-auto object-contain block"
+            />
           </div>
         </div>
       </section>
