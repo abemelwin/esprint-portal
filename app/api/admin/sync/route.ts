@@ -172,10 +172,24 @@ export async function POST(req: NextRequest) {
     }
     results.namesResolved = resolved;
 
+    // ── Remove checks deleted from Supabase ──────────────────────────────────
+    const sbCheckIds = new Set(sbChecks.map((c: any) => c.id as string));
+    const rdsAllChecks = await query<{ id: string }>(`SELECT id FROM ${SCHEMA}.checks`);
+    let deletedCount = 0;
+    for (const r of rdsAllChecks) {
+      if (!sbCheckIds.has(r.id)) {
+        await query(`DELETE FROM ${SCHEMA}.events WHERE check_id = $1`, [r.id]);
+        await query(`DELETE FROM ${SCHEMA}.check_notes WHERE check_id = $1`, [r.id]);
+        await query(`DELETE FROM ${SCHEMA}.checks WHERE id = $1`, [r.id]);
+        deletedCount++;
+      }
+    }
+    results.deleted = deletedCount;
+
     return NextResponse.json({
       ok: true,
       synced: results,
-      message: `Sync complete: +${results.clients} clients, +${results.checks} checks, +${results.events} events, +${results.notes} notes, ${results.namesResolved} names resolved.`,
+      message: `Sync complete: +${results.clients} clients, +${results.checks} checks, +${results.events} events, +${results.notes} notes, ${results.namesResolved} names resolved, ${results.deleted} deleted.`,
     });
   } catch (err) {
     console.error("Sync error:", err);
