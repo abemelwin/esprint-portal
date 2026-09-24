@@ -35,7 +35,7 @@ export function SalesShell({
       />
 
       {/* Main Module Content */}
-      <main className="flex-1 w-full overflow-hidden">
+      <main className="flex-1 w-full overflow-y-auto">
         {children}
       </main>
     </div>
