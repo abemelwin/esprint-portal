@@ -5,6 +5,8 @@ import { fmtPHP, fmtDate, todayISO } from '@/modules/checks/lib/format';
 import { computeCheckStatus, groupSortedEvents } from '@/modules/checks/lib/computeStatus';
 import { exportReconstructExcel } from '@/modules/checks/lib/exportReconstruct';
 import { generateSOA } from '@/modules/checks/lib/exportSOA';
+import ClientAttachmentsPanel from '@/modules/checks/components/ClientAttachmentsPanel';
+import { canCreate } from '@/modules/checks/lib/permissions';
 import type { ServerData } from '@/modules/checks/lib/data';
 import type { UserPerms } from '@/modules/checks/lib/permissions';
 
@@ -652,6 +654,13 @@ export function ReconstructReportClient({ initialData: data, perms, userName }: 
               )}
             </div>
           </div>
+
+          {/* Client attachments */}
+          <ClientAttachmentsPanel
+            clientCode={group.code}
+            clientName={group.name}
+            canUpload={canCreate(perms)}
+          />
         </div>
       ))}
 

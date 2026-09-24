@@ -1,9 +1,8 @@
 'use client';
 /**
- * ClientAttachmentsPanel
- * Upload / list / download / delete files for a client.
+ * ClientAttachmentsPanel — upload / list / download / delete files for a client.
+ * Ported from esprint-check-monitoring. Uses AWS S3 via /api/attachments.
  */
-
 import { useState, useEffect, useRef, useCallback } from 'react';
 
 interface FileEntry {
@@ -37,7 +36,7 @@ function fileIcon(name: string): string {
   return '📎';
 }
 
-export default function ClientAttachmentsPanel({ clientCode, clientName, canUpload }: Props) {
+export default function ClientAttachmentsPanel({ clientCode, canUpload }: Props) {
   const [files,     setFiles]     = useState<FileEntry[]>([]);
   const [loading,   setLoading]   = useState(false);
   const [uploading, setUploading] = useState(false);
@@ -87,12 +86,12 @@ export default function ClientAttachmentsPanel({ clientCode, clientName, canUplo
   }
 
   async function handleDelete(filename: string) {
-    if (!confirm(`Delete "${filename}"?`)) return;
+    if (!confirm(`Delete "${filename.replace(/^\d+_/, '')}"?`)) return;
     setDeleting(filename);
     try {
       const res  = await fetch(
         `/api/attachments/${encodeURIComponent(clientCode)}/${encodeURIComponent(filename)}`,
-        { method: 'DELETE' },
+        { method: 'DELETE' }
       );
       const json = await res.json();
       if (json.ok) setFiles(prev => prev.filter(f => f.name !== filename));
@@ -132,7 +131,6 @@ export default function ClientAttachmentsPanel({ clientCode, clientName, canUplo
 
       {open && (
         <div className="mt-3 space-y-3">
-          {/* Drop zone / Upload area */}
           {canUpload && (
             <div
               onDragOver={e => { e.preventDefault(); setDragOver(true); }}
@@ -152,21 +150,12 @@ export default function ClientAttachmentsPanel({ clientCode, clientName, canUplo
               )}
             </div>
           )}
-          <input
-            ref={fileRef}
-            type="file"
-            className="hidden"
-            onChange={handlePick}
-          />
+          <input ref={fileRef} type="file" className="hidden" onChange={handlePick} />
 
-          {/* Error */}
           {error && (
-            <p className="text-xs text-red-600 bg-red-50 border border-red-200 rounded-lg px-3 py-2">
-              ⚠ {error}
-            </p>
+            <p className="text-xs text-red-600 bg-red-50 border border-red-200 rounded-lg px-3 py-2">⚠ {error}</p>
           )}
 
-          {/* File list */}
           {loading ? (
             <p className="text-xs text-gray-400 italic">Loading…</p>
           ) : files.length === 0 ? (
@@ -184,22 +173,15 @@ export default function ClientAttachmentsPanel({ clientCode, clientName, canUplo
                   </div>
                   <div className="flex items-center gap-2 shrink-0">
                     {f.url && (
-                      <a
-                        href={f.url}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="text-[11px] font-semibold text-blue-600 hover:text-blue-800 transition-colors"
-                      >
+                      <a href={f.url} target="_blank" rel="noopener noreferrer"
+                        className="text-[11px] font-semibold text-blue-600 hover:text-blue-800 transition-colors">
                         Download
                       </a>
                     )}
                     {canUpload && (
-                      <button
-                        type="button"
-                        disabled={deleting === f.name}
+                      <button type="button" disabled={deleting === f.name}
                         onClick={() => handleDelete(f.name)}
-                        className="text-[11px] font-semibold text-red-500 hover:text-red-700 disabled:opacity-40 transition-colors"
-                      >
+                        className="text-[11px] font-semibold text-red-500 hover:text-red-700 disabled:opacity-40 transition-colors">
                         {deleting === f.name ? '…' : 'Delete'}
                       </button>
                     )}
