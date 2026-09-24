@@ -125,6 +125,40 @@ export function ReconstructReportClient({ initialData: data, perms, userName }: 
     }
   }, [userName]);
 
+  const removeRow = useCallback(async (clientCode: string, rowId: string, sRows: ScheduleRowUI[]) => {
+    const row = sRows.find(r => r.id === rowId);
+    const updated = sRows.filter(r => r.id !== rowId);
+    setScheduleMap(prev => ({ ...prev, [clientCode]: updated }));
+    // Save the updated list (without the removed row) to DB
+    if (!rowId.startsWith('new-')) {
+      // Save remaining rows to DB to remove the deleted one
+      setScheduleSaving(prev => ({ ...prev, [clientCode]: true }));
+      try {
+        await fetch('/api/recon-schedule', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            clientCode,
+            rows: updated.map((r, i) => ({
+              id:                  r.id.startsWith('new-') ? undefined : r.id,
+              scheduleDate:        r.scheduleDate || null,
+              monthlyAmortization: parseFloat(r.monthlyAmortization.replace(/,/g, '')) || null,
+              amount:              parseFloat(r.amount.replace(/,/g, '')) || null,
+              paymentDetails:      r.paymentDetails || null,
+              sortOrder:           i,
+              eventId:             r.eventId ?? null,
+              checkId:             r.checkId ?? null,
+            })),
+            updatedBy: userName || 'unknown',
+          }),
+        });
+      } catch { /* silent */ } finally {
+        setScheduleSaving(prev => ({ ...prev, [clientCode]: false }));
+      }
+    }
+    void row; // suppress unused warning
+  }, [userName]);
+
   const allRecon = useMemo(() => {
     if (!data) return [];
     const clientMap = new Map(data.CLIENTS.map(c => [c.code, c]));
@@ -479,7 +513,7 @@ export function ReconstructReportClient({ initialData: data, perms, userName }: 
             <div className="flex-1 min-w-[480px]">
               <div className="relative flex items-center justify-center bg-gray-100 border border-gray-200 rounded-t-lg px-3 py-1.5">
                 <span className="text-xs font-bold text-gray-700">
-                  {(group.replacement.length === 0 && (rightMode[group.code] ?? 'schedule') === 'schedule')
+                  {(group.replacement.length === 0 && (rightMode[group.code] ?? 'payment') === 'schedule')
                     ? 'RECONSTRUCT PAYMENT SCHEDULE'
                     : 'RECONSTRUCT PAYMENT'}
                 </span>
@@ -487,18 +521,18 @@ export function ReconstructReportClient({ initialData: data, perms, userName }: 
                   <button
                     type="button"
                     onClick={() => {
-                      const next = (rightMode[group.code] ?? 'schedule') === 'payment' ? 'schedule' : 'payment';
+                      const next = (rightMode[group.code] ?? 'payment') === 'payment' ? 'schedule' : 'payment';
                       setRightMode(prev => ({ ...prev, [group.code]: next }));
                       if (next === 'schedule') loadSchedule(group.code);
                     }}
                     className="absolute right-2 text-[11px] font-semibold px-2 py-0.5 rounded border border-indigo-300 bg-indigo-50 text-indigo-700 hover:bg-indigo-100 transition-colors"
                   >
-                    {(rightMode[group.code] ?? 'schedule') === 'payment' ? 'Switch to Schedule' : 'Switch to Payment'}
+                    {(rightMode[group.code] ?? 'payment') === 'payment' ? 'Switch to Schedule' : 'Switch to Payment'}
                   </button>
                 )}
               </div>
 
-              {(group.replacement.length > 0 || (rightMode[group.code] ?? 'schedule') === 'payment') ? (
+              {(group.replacement.length > 0 || (rightMode[group.code] ?? 'payment') === 'payment') ? (
                 <div className="overflow-y-auto max-h-[400px] border border-t-0 border-gray-200 rounded-b-lg">
                   <table className="w-full border-collapse">
                     <thead className="sticky top-0">
@@ -596,7 +630,7 @@ export function ReconstructReportClient({ initialData: data, perms, userName }: 
                             const fmtDateDisp = (d: string) =>
                               d ? new Date(d + 'T00:00:00').toLocaleDateString('en-US') : '';
                             return (
-                            <tr key={r.id} className="hover:bg-indigo-50/30">
+                            <tr key={r.id} className="hover:bg-indigo-50/30 group">
                               <td className={td + ' text-center'}>
                                 <input type="checkbox" className="accent-blue-700" />
                               </td>
@@ -653,18 +687,50 @@ export function ReconstructReportClient({ initialData: data, perms, userName }: 
                               {/* Payment details */}
                               <td className={td}>
                                 {r.editing ? (
-                                  <input
-                                    type="text"
-                                    value={r.paymentDetails}
-                                    placeholder="Payment details…"
-                                    onChange={e => updateRow(r.id, 'paymentDetails', e.target.value)}
-                                    onBlur={() => saveSchedule(group.code, sRows)}
-                                    className="w-full border border-gray-200 rounded px-1.5 py-0.5 text-xs bg-white focus:outline-none focus:border-blue-500"
-                                  />
+                                  <div className="flex items-center gap-1">
+                                    <input
+                                      type="text"
+                                      value={r.paymentDetails}
+                                      placeholder="e.g. CASH, BTB-BDO"
+                                      onChange={e => updateRow(r.id, 'paymentDetails', e.target.value)}
+                                      onKeyDown={e => {
+                                        if (e.key === 'Enter') {
+                                          saveSchedule(group.code, sRows);
+                                          setScheduleMap(prev => ({
+                                            ...prev,
+                                            [group.code]: (prev[group.code] ?? []).map(row =>
+                                              row.id === r.id ? { ...row, editing: false } : row
+                                            ),
+                                          }));
+                                        }
+                                      }}
+                                      onBlur={() => saveSchedule(group.code, sRows)}
+                                      className="flex-1 border border-gray-200 rounded px-1.5 py-0.5 text-xs bg-white focus:outline-none focus:border-blue-400 min-w-0"
+                                    />
+                                    <button
+                                      type="button"
+                                      onClick={() => { saveSchedule(group.code, sRows); setScheduleMap(prev => ({ ...prev, [group.code]: (prev[group.code]??[]).map(row => row.id===r.id?{...row,editing:false}:row) })); }}
+                                      className="text-[10px] font-semibold px-2 py-1 rounded bg-blue-600 text-white hover:bg-blue-700 shrink-0"
+                                    >Save</button>
+                                    <button
+                                      type="button"
+                                      onClick={() => removeRow(group.code, r.id, sRows)}
+                                      className="text-red-400 hover:text-red-600 text-xs font-bold shrink-0"
+                                      title="Remove row"
+                                    >×</button>
+                                  </div>
                                 ) : (
-                                  <span onClick={startEdit} className="cursor-pointer block py-0.5">
-                                    {r.paymentDetails || <span className="text-gray-400">DUE</span>}
-                                  </span>
+                                  <div className="flex items-center gap-1">
+                                    <span onClick={startEdit} className="cursor-pointer block py-0.5 flex-1">
+                                      {r.paymentDetails || <span className="text-gray-400">DUE</span>}
+                                    </span>
+                                    <button
+                                      type="button"
+                                      onClick={() => removeRow(group.code, r.id, sRows)}
+                                      className="text-red-300 hover:text-red-500 text-xs font-bold shrink-0 opacity-0 group-hover:opacity-100"
+                                      title="Remove row"
+                                    >×</button>
+                                  </div>
                                 )}
                               </td>
                             </tr>

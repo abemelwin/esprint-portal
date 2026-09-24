@@ -72,12 +72,12 @@ export function PortalNav({
           </span>
           <Link
             href="/dashboard"
-            className="hidden md:flex items-center gap-1 text-xs font-semibold text-slate-500 bg-slate-100 hover:bg-slate-200 border border-slate-200 rounded-md px-2.5 py-1 no-underline ml-1 transition-colors"
+            className="flex items-center gap-1 text-xs font-semibold text-slate-500 bg-slate-100 hover:bg-slate-200 border border-slate-200 rounded-md px-2.5 py-1 no-underline ml-1 transition-colors"
           >
             <svg width="12" height="12" fill="none" stroke="currentColor" strokeWidth="2.5" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" d="M15 19l-7-7 7-7" />
             </svg>
-            Portal Home
+            <span>Portal Home</span>
           </Link>
         </div>
       )}

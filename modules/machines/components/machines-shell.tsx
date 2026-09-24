@@ -1,6 +1,7 @@
 "use client";
 
-import { MachinesTopNav } from "./MachinesTopNav";
+import { PortalNav } from "@/components/portal-nav";
+import { initialsOf } from "@/lib/utils";
 
 interface MachinesShellProps {
   userName: string;
@@ -17,10 +18,11 @@ export function MachinesShell({
 }: MachinesShellProps) {
   return (
     <div className="flex flex-col min-h-screen bg-[#f8fafc]">
-      <MachinesTopNav
+      <PortalNav
         userName={userName}
         userRole={userRole}
-        isAdmin={isAdmin}
+        userInitials={initialsOf(userName)}
+        currentModule="Machine Monitoring"
       />
 
       <main className="flex-1 w-full overflow-y-auto">
