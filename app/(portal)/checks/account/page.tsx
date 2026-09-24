@@ -1,4 +1,5 @@
 "use client";
+"use client";
 /**
  * /account — My Account & Change Password page.
  * Ported from esprint-check-monitoring/app/account/page.tsx.
