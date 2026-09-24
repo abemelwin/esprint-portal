@@ -27,11 +27,11 @@ export function MachinesTopNav({
   }
 
   return (
-    <header className="h-[60px] bg-white border-b border-slate-200 flex items-center justify-between px-4 sm:px-6 sticky top-0 z-40 select-none shadow-2xs">
-      {/* Left: ES Logo + Title + Subtitle */}
+    <header className="h-[60px] bg-white border-b border-slate-200 flex items-center justify-between px-3 sm:px-6 sticky top-0 z-40 select-none shadow-2xs">
+      {/* Left: ES Logo + Title + Subtitle + Portal Home link */}
       <div className="flex items-center gap-3">
         {/* Red Circular ES Logo */}
-        <Link href="/machines" className="shrink-0">
+        <Link href="/dashboard" title="Back to Portal Home" className="shrink-0 hover:opacity-90 transition-opacity">
           <div className="w-10 h-10 rounded-full bg-red-600 flex items-center justify-center text-white shadow-xs">
             <svg width="24" height="24" viewBox="0 0 100 100" fill="none" xmlns="http://www.w3.org/2000/svg">
               <path
@@ -47,16 +47,28 @@ export function MachinesTopNav({
         </Link>
 
         <div>
-          <h1 className="text-base font-extrabold text-slate-900 leading-tight">
-            Machine Monitoring System
-          </h1>
+          <div className="flex items-center gap-2">
+            <Link href="/machines" className="text-base font-extrabold text-slate-900 leading-tight hover:text-blue-600 transition-colors">
+              Machine Monitoring System
+            </Link>
+            <Link
+              href="/dashboard"
+              className="inline-flex items-center gap-1 text-[11px] font-bold text-slate-600 bg-slate-100 hover:bg-slate-200 border border-slate-200 rounded-md px-2 py-0.5 transition-colors"
+              title="Return to Business Operations Portal Home"
+            >
+              <svg width="11" height="11" fill="none" stroke="currentColor" strokeWidth="2.5" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" d="M15 19l-7-7 7-7" />
+              </svg>
+              <span>Portal Home</span>
+            </Link>
+          </div>
           <p className="text-[11px] text-slate-400 font-medium leading-none mt-0.5 hidden sm:block">
             ES Print Group of Companies · inventory · incoming · reservations · deliveries
           </p>
         </div>
       </div>
 
-      {/* Right User & Actions Bar (Matching Screenshot 2) */}
+      {/* Right User & Actions Bar */}
       <div className="flex items-center gap-2 text-xs">
         {/* User Role Badge */}
         <div className="px-3 py-1 bg-slate-100 rounded-full font-semibold text-slate-700 hidden md:flex items-center gap-1.5">
@@ -78,7 +90,7 @@ export function MachinesTopNav({
           </Link>
         )}
 
-        {/* Backup / Export CSV button */}
+        {/* Backup Button */}
         <button
           onClick={onExportCSV}
           className="flex items-center gap-1 px-2.5 py-1 bg-white border border-slate-200 hover:bg-slate-50 rounded-full font-semibold text-slate-700 shadow-2xs transition-colors cursor-pointer"
@@ -100,12 +112,16 @@ export function MachinesTopNav({
           <span>CSV</span>
         </button>
 
-        {/* Portal Home link */}
+        {/* Prominent Portal Home Button */}
         <Link
           href="/dashboard"
-          className="hidden md:inline-flex items-center px-2.5 py-1 bg-white border border-slate-200 hover:bg-slate-50 rounded-full font-semibold text-slate-600 shadow-2xs transition-colors"
+          className="flex items-center gap-1.5 px-3 py-1 bg-slate-100 hover:bg-slate-200 border border-slate-300 rounded-full font-bold text-slate-800 shadow-2xs transition-colors"
+          title="Return to Portal Home"
         >
-          Portal
+          <svg width="12" height="12" fill="none" stroke="currentColor" strokeWidth="2.5" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6" />
+          </svg>
+          <span>Portal Home</span>
         </Link>
 
         {/* Add Machine Button */}
@@ -132,3 +148,4 @@ export function MachinesTopNav({
     </header>
   );
 }
+
