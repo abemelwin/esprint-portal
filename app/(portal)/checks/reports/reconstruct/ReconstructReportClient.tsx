@@ -580,51 +580,96 @@ export function ReconstructReportClient({ initialData: data, perms, userName }: 
                           </tr>
                         </thead>
                         <tbody>
-                          {sorted.map(r => (
+                          {sorted.map(r => {
+                            const startEdit = () => {
+                              if (!r.editing) {
+                                setScheduleMap(prev => ({
+                                  ...prev,
+                                  [group.code]: (prev[group.code] ?? []).map(row => row.id === r.id ? { ...row, editing: true } : row),
+                                }));
+                              }
+                            };
+                            const fmtDisp = (v: string) => {
+                              const n = parseFloat(String(v).replace(/,/g, ''));
+                              return isNaN(n) ? '' : n.toLocaleString('en-PH', { minimumFractionDigits: 2 });
+                            };
+                            const fmtDateDisp = (d: string) =>
+                              d ? new Date(d + 'T00:00:00').toLocaleDateString('en-US') : '';
+                            return (
                             <tr key={r.id} className="hover:bg-indigo-50/30">
                               <td className={td + ' text-center'}>
                                 <input type="checkbox" className="accent-blue-700" />
                               </td>
+                              {/* Date */}
                               <td className={td}>
-                                <input
-                                  type="date"
-                                  value={r.scheduleDate}
-                                  onChange={e => { updateRow(r.id, 'scheduleDate', e.target.value); saveSchedule(group.code, sRows.map(row => row.id === r.id ? { ...row, scheduleDate: e.target.value } : row)); }}
-                                  className="border border-gray-200 rounded px-1.5 py-0.5 text-xs bg-white focus:outline-none focus:border-blue-500 font-mono"
-                                />
+                                {r.editing ? (
+                                  <input
+                                    type="date"
+                                    value={r.scheduleDate}
+                                    autoFocus
+                                    onChange={e => { updateRow(r.id, 'scheduleDate', e.target.value); saveSchedule(group.code, sRows.map(row => row.id === r.id ? { ...row, scheduleDate: e.target.value } : row)); }}
+                                    className="border border-gray-200 rounded px-1.5 py-0.5 text-xs bg-white focus:outline-none focus:border-blue-500 font-mono"
+                                  />
+                                ) : (
+                                  <span onClick={startEdit} className="cursor-pointer font-mono block min-w-[70px] py-0.5">
+                                    {fmtDateDisp(r.scheduleDate) || <span className="text-gray-300">—</span>}
+                                  </span>
+                                )}
                               </td>
+                              {/* Monthly amortization */}
                               <td className={td + ' text-right font-mono font-semibold text-blue-700'}>
-                                <input
-                                  type="text"
-                                  value={r.monthlyAmortization}
-                                  placeholder="0.00"
-                                  onChange={e => updateRow(r.id, 'monthlyAmortization', e.target.value)}
-                                  onBlur={() => saveSchedule(group.code, sRows)}
-                                  className="w-24 text-right border border-gray-200 rounded px-1.5 py-0.5 text-xs bg-white focus:outline-none focus:border-blue-500 font-mono text-blue-700 font-semibold"
-                                />
+                                {r.editing ? (
+                                  <input
+                                    type="text"
+                                    value={r.monthlyAmortization}
+                                    placeholder="0.00"
+                                    onChange={e => updateRow(r.id, 'monthlyAmortization', e.target.value)}
+                                    onBlur={() => saveSchedule(group.code, sRows)}
+                                    className="w-24 text-right border border-gray-200 rounded px-1.5 py-0.5 text-xs bg-white focus:outline-none focus:border-blue-500 font-mono text-blue-700 font-semibold"
+                                  />
+                                ) : (
+                                  <span onClick={startEdit} className="cursor-pointer block py-0.5">
+                                    {fmtDisp(r.monthlyAmortization) || <span className="text-gray-300">—</span>}
+                                  </span>
+                                )}
                               </td>
+                              {/* Amount */}
                               <td className={td + ' text-right font-mono font-semibold text-gray-800'}>
-                                <input
-                                  type="text"
-                                  value={r.amount}
-                                  placeholder="0.00"
-                                  onChange={e => updateRow(r.id, 'amount', e.target.value)}
-                                  onBlur={() => saveSchedule(group.code, sRows)}
-                                  className="w-24 text-right border border-gray-200 rounded px-1.5 py-0.5 text-xs bg-white focus:outline-none focus:border-blue-500 font-mono"
-                                />
+                                {r.editing ? (
+                                  <input
+                                    type="text"
+                                    value={r.amount}
+                                    placeholder="0.00"
+                                    onChange={e => updateRow(r.id, 'amount', e.target.value)}
+                                    onBlur={() => saveSchedule(group.code, sRows)}
+                                    className="w-24 text-right border border-gray-200 rounded px-1.5 py-0.5 text-xs bg-white focus:outline-none focus:border-blue-500 font-mono"
+                                  />
+                                ) : (
+                                  <span onClick={startEdit} className="cursor-pointer block py-0.5">
+                                    {fmtDisp(r.amount) || <span className="text-gray-400">DUE</span>}
+                                  </span>
+                                )}
                               </td>
+                              {/* Payment details */}
                               <td className={td}>
-                                <input
-                                  type="text"
-                                  value={r.paymentDetails}
-                                  placeholder="Payment details…"
-                                  onChange={e => updateRow(r.id, 'paymentDetails', e.target.value)}
-                                  onBlur={() => saveSchedule(group.code, sRows)}
-                                  className="w-full border border-gray-200 rounded px-1.5 py-0.5 text-xs bg-white focus:outline-none focus:border-blue-500"
-                                />
+                                {r.editing ? (
+                                  <input
+                                    type="text"
+                                    value={r.paymentDetails}
+                                    placeholder="Payment details…"
+                                    onChange={e => updateRow(r.id, 'paymentDetails', e.target.value)}
+                                    onBlur={() => saveSchedule(group.code, sRows)}
+                                    className="w-full border border-gray-200 rounded px-1.5 py-0.5 text-xs bg-white focus:outline-none focus:border-blue-500"
+                                  />
+                                ) : (
+                                  <span onClick={startEdit} className="cursor-pointer block py-0.5">
+                                    {r.paymentDetails || <span className="text-gray-400">DUE</span>}
+                                  </span>
+                                )}
                               </td>
                             </tr>
-                          ))}
+                            );
+                          })}
                         </tbody>
                         <tfoot className="sticky bottom-0 bg-gray-50 border-t border-gray-200">
                           <tr>
