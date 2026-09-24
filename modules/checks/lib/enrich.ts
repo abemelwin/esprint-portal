@@ -31,7 +31,9 @@ export interface EnrichedCheck {
 }
 
 function todayISO(): string {
-  return new Date().toISOString().slice(0, 10);
+  // Philippine time (UTC+8) — runs server-side on Amplify (UTC), so shift to PHT.
+  const nowPHT = new Date(Date.now() + 8 * 3600 * 1000);
+  return nowPHT.toISOString().slice(0, 10);
 }
 
 export function enrichChecks(data: AppData): EnrichedCheck[] {

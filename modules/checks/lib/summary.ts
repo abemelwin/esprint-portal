@@ -89,7 +89,11 @@ export interface DashboardSummary {
 }
 
 function todayISO(): string {
-  return new Date().toISOString().slice(0, 10);
+  // Philippine time (UTC+8). This runs server-side on Amplify (UTC), so we must
+  // shift to PHT explicitly — otherwise "today" is a day behind before 8am PHT,
+  // which wrongly keeps yesterday's holds in "Due Today" instead of "Overdue".
+  const nowPHT = new Date(Date.now() + 8 * 3600 * 1000);
+  return nowPHT.toISOString().slice(0, 10);
 }
 
 function isStale(checkDate: string | null): boolean {
