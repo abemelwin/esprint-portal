@@ -41,7 +41,7 @@ function tstr(v) {
 // depends on DB row order (differs RDS vs Supabase). Tie-break so a RETURN is
 // treated as the LATER event vs a same-instant PARTIAL_PAYMENT -> RETURNED wins,
 // matching the orig's observed result.
-const TYPE_ORDER = { PARTIAL_PAYMENT: 0, RETURN: 1 };
+const TYPE_ORDER = { RETURN: 0, PARTIAL_PAYMENT: 1 };
 function compareEvents(a, b) {
   const dateCmp = (a.eventDate ?? '').localeCompare(b.eventDate ?? '');
   if (dateCmp !== 0) return dateCmp;

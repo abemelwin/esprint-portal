@@ -47,10 +47,11 @@ export function compareEvents(a: CheckEvent, b: CheckEvent): number {
   if (recCmp !== 0) return recCmp;
   // Deterministic tie-breaker when eventDate AND recordedAt are identical.
   // Otherwise ordering depends on DB row order (differs between RDS and the
-  // original Supabase source), which flips RETURN-vs-PARTIAL_PAYMENT on the
-  // same instant. Treat RETURN as the later event so the check resolves to
-  // RETURNED (matches the original system's observed result).
-  const order: Record<string, number> = { PARTIAL_PAYMENT: 0, RETURN: 1 };
+  // original Supabase source). The ORIGINAL system's natural fetch order puts
+  // RETURN before PARTIAL_PAYMENT, so PARTIAL_PAYMENT ends up LAST and the
+  // check resolves to PARTIAL. Order RETURN (0) before PARTIAL_PAYMENT (1) to
+  // reproduce that exact result (matches the orig dashboard).
+  const order: Record<string, number> = { RETURN: 0, PARTIAL_PAYMENT: 1 };
   return (order[a.type] ?? 0) - (order[b.type] ?? 0);
 }
 
