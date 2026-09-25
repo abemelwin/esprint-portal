@@ -23,25 +23,27 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ ok: false, error: "No refresh token." }, { status: 401 });
   }
 
-  // Cognito needs the username in the SECRET_HASH when the app client has a
-  // secret. We can read the current (possibly expired) ID token to recover the
-  // email; token expiry doesn't matter for reading claims (we decode, not verify).
-  let email: string | undefined;
+  // Cognito needs the SECRET_HASH when the app client has a secret. For the
+  // REFRESH_TOKEN_AUTH flow the username used to compute SECRET_HASH must be
+  // the user's `sub` (NOT the email). We read it from the current (possibly
+  // expired) ID token — token expiry doesn't matter for reading claims since
+  // we decode, not verify.
+  let username: string | undefined;
   const idToken = req.cookies.get(SESSION_COOKIE)?.value;
   if (idToken) {
     try {
       const parts = idToken.split(".");
       if (parts.length === 3) {
         const payload = JSON.parse(Buffer.from(parts[1], "base64").toString("utf8"));
-        email = payload.email ?? payload["cognito:username"];
+        username = payload["cognito:username"] ?? payload.sub;
       }
     } catch {
-      /* ignore — email stays undefined */
+      /* ignore — username stays undefined */
     }
   }
 
   try {
-    const tokens = await cognitoRefresh(refreshToken, email);
+    const tokens = await cognitoRefresh(refreshToken, username);
     const claims = await verifyToken(tokens.idToken);
     const user = userFromClaims(claims);
 

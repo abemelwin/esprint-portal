@@ -117,11 +117,12 @@ export async function cognitoLogin(
  */
 export async function cognitoRefresh(
   refreshToken: string,
-  email?: string
+  username?: string
 ): Promise<LoginResult> {
-  // SECRET_HASH for refresh uses the username; when we don't have it we can
-  // still send it if a secret is configured and the email is known.
-  const hash = email ? secretHash(email) : undefined;
+  // For REFRESH_TOKEN_AUTH the SECRET_HASH must be computed from the user's
+  // Cognito username (the `cognito:username` claim, i.e. the `sub`), NOT the
+  // email. Passing the wrong value yields NotAuthorizedException.
+  const hash = username ? secretHash(username) : undefined;
   const res = await getCognito().send(
     new InitiateAuthCommand({
       AuthFlow: "REFRESH_TOKEN_AUTH",
