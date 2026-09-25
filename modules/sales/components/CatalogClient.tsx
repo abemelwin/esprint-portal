@@ -32,12 +32,17 @@ function getLinksForCategory(machine: CatalogMachine, category: CategoryKey) {
 
 type Mode = "list" | "detail";
 
-export function CatalogClient() {
+export function CatalogClient({ canManageFiles = false }: { canManageFiles?: boolean }) {
   const [machines,    setMachines]    = useState<CatalogMachine[]>([]);
   const [loading,     setLoading]     = useState(true);
   const [brandFilter, setBrandFilter] = useState("");
   const [mode,        setMode]        = useState<Mode>("list");
   const [selectedId,  setSelectedId]  = useState<string | null>(null);
+  // add-link form state
+  const [addingCat,   setAddingCat]   = useState<string | null>(null);
+  const [newName,     setNewName]     = useState("");
+  const [newUrl,      setNewUrl]      = useState("");
+  const [saving,      setSaving]      = useState(false);
 
   useEffect(() => {
     (async () => {
@@ -65,6 +70,34 @@ export function CatalogClient() {
   function backToList() {
     setMode("list");
     setSelectedId(null);
+  }
+
+  async function refreshMachines() {
+    const res  = await fetch("/api/sales/catalog");
+    const data = await res.json();
+    if (data.machines) setMachines(data.machines);
+  }
+
+  async function handleAddLink(machineId: string, docType: string) {
+    if (!newName.trim() || !newUrl.trim()) return;
+    setSaving(true);
+    try {
+      const res = await fetch(`/api/sales/product-info/${machineId}`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ display_name: newName.trim(), url: newUrl.trim(), document_type: docType }),
+      });
+      if (res.ok) {
+        setNewName(""); setNewUrl(""); setAddingCat(null);
+        await refreshMachines();
+      }
+    } finally { setSaving(false); }
+  }
+
+  async function handleDeleteLink(machineId: string, linkId: string) {
+    if (!confirm("Remove this link?")) return;
+    await fetch(`/api/sales/product-info/${machineId}/${linkId}`, { method: "DELETE" });
+    await refreshMachines();
   }
 
   // ── LIST VIEW ────────────────────────────────────────────────────────────
@@ -168,6 +201,7 @@ export function CatalogClient() {
       <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(320px, 1fr))", gap: 20, marginTop: 16 }}>
         {CATEGORIES.map((cat) => {
           const links = getLinksForCategory(selectedMachine, cat.key);
+          const isAdding = addingCat === cat.key;
           return (
             <div key={cat.key} style={{ background: "#fff", border: "1px solid #e0e0e0", borderRadius: 8, padding: "16px 20px", boxShadow: "0 2px 6px rgba(0,0,0,.04)", display: "flex", flexDirection: "column" }}>
               <h3 style={{ fontSize: "0.82rem", fontWeight: 700, color: "#7f8c8d", letterSpacing: "0.8px", margin: "0 0 12px", paddingBottom: 8, borderBottom: "2px solid #f2f2f2", textTransform: "uppercase" }}>
@@ -179,14 +213,46 @@ export function CatalogClient() {
                   {links.map((link, i) => (
                     <li key={link.id || i} style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "6px 0", borderBottom: "1px dashed #eee", gap: 8 }}>
                       <a href={link.url} target="_blank" rel="noopener noreferrer"
-                        style={{ color: "#2980b9", fontSize: "0.88rem", textDecoration: "none", wordBreak: "break-all" }}>
+                        style={{ color: "#2980b9", fontSize: "0.88rem", textDecoration: "none", wordBreak: "break-all", flex: 1 }}>
                         {link.display_name}
                       </a>
+                      {canManageFiles && link.id && (
+                        <button onClick={() => handleDeleteLink(selectedMachine.id, link.id!)}
+                          style={{ background: "none", border: "none", color: "#c0392b", cursor: "pointer", fontSize: "0.9rem", padding: "0 2px", flexShrink: 0 }}
+                          title="Remove link">✕</button>
+                      )}
                     </li>
                   ))}
                 </ul>
               ) : (
                 <p style={{ color: "#aaa", fontSize: "0.85rem", fontStyle: "italic", margin: "0 0 16px", flex: 1 }}>No files yet.</p>
+              )}
+
+              {/* Add link form */}
+              {canManageFiles && (
+                isAdding ? (
+                  <div style={{ marginTop: "auto", display: "flex", flexDirection: "column", gap: 6 }}>
+                    <input placeholder="Display name" value={newName} onChange={e => setNewName(e.target.value)}
+                      style={{ padding: "5px 8px", border: "1px solid #ccc", borderRadius: 4, fontSize: "0.83rem" }} autoFocus />
+                    <input placeholder="URL (https://…)" value={newUrl} onChange={e => setNewUrl(e.target.value)}
+                      style={{ padding: "5px 8px", border: "1px solid #ccc", borderRadius: 4, fontSize: "0.83rem" }} />
+                    <div style={{ display: "flex", gap: 6 }}>
+                      <button onClick={() => handleAddLink(selectedMachine.id, cat.key)} disabled={saving}
+                        style={{ flex: 1, padding: "5px 0", background: "#c0392b", color: "#fff", border: "none", borderRadius: 4, fontSize: "0.83rem", fontWeight: 700, cursor: "pointer" }}>
+                        {saving ? "Saving…" : "Add"}
+                      </button>
+                      <button onClick={() => { setAddingCat(null); setNewName(""); setNewUrl(""); }}
+                        style={{ padding: "5px 10px", background: "#f5f5f5", border: "1px solid #ccc", borderRadius: 4, fontSize: "0.83rem", cursor: "pointer" }}>
+                        Cancel
+                      </button>
+                    </div>
+                  </div>
+                ) : (
+                  <button onClick={() => { setAddingCat(cat.key); setNewName(""); setNewUrl(""); }}
+                    style={{ marginTop: "auto", alignSelf: "flex-start", padding: "4px 10px", background: "#fff", border: "1px solid #c0392b", color: "#c0392b", borderRadius: 4, fontSize: "0.82rem", fontWeight: 700, cursor: "pointer" }}>
+                    + Add Link
+                  </button>
+                )
               )}
             </div>
           );

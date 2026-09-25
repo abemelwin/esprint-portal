@@ -1,13 +1,7 @@
-import { getCurrentUser } from "@/lib/session";
-import { QuoteBuilderClient } from "@/modules/sales/components/QuoteBuilderClient";
+import { redirect } from "next/navigation";
 
-export default async function SalesPage() {
-  const user = (await getCurrentUser())!;
-
-  return (
-    <QuoteBuilderClient
-      currentUserEmail={user.email}
-      currentUserName={user.fullName}
-    />
-  );
+// /sales redirects to /sales/quote-builder — avoids duplicate route rendering
+// the same QuoteBuilderClient on two URLs.
+export default function SalesPage() {
+  redirect("/sales/quote-builder");
 }

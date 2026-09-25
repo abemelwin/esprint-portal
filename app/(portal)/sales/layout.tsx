@@ -1,6 +1,6 @@
 import { redirect } from "next/navigation";
 import { getCurrentUser } from "@/lib/session";
-import { canAccessModule, isModuleAdmin, isSuperAdmin } from "@/lib/rbac";
+import { canAccessModule, isModuleAdmin, isSuperAdmin, getSalesPermissions } from "@/lib/rbac";
 import { SalesShell } from "@/modules/sales/components/sales-shell";
 
 export default async function SalesLayout({
@@ -13,7 +13,8 @@ export default async function SalesLayout({
     redirect("/dashboard");
   }
 
-  const isAdmin = isSuperAdmin(user) || isModuleAdmin(user, "sales");
+  const perms    = getSalesPermissions(user);
+  const isAdmin  = isSuperAdmin(user) || isModuleAdmin(user, "sales");
   const roleLabel = isSuperAdmin(user)
     ? "Super Admin"
     : user.access.find((a) => a.module === "sales")?.role || "Sales Executive";
@@ -23,6 +24,8 @@ export default async function SalesLayout({
       userName={user.fullName}
       userRole={roleLabel}
       isAdmin={isAdmin}
+      canCreateQuotes={perms.canCreateQuotes}
+      useCalculator={perms.useCalculator}
     >
       {children}
     </SalesShell>

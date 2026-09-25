@@ -211,29 +211,94 @@ export function getMachinePermissions(user: PortalUser): MachinePermissions {
 }
 
 // ─── Sales Portal role groups ────────────────────────────────────
+// Mirrors the orig Vue app's role/permission system exactly.
+// Source: Sales Portal/supabase/migrations/20250101000014_create_role_permissions.sql
+//         + 20250101000015_add_create_quotes_column.sql
+//         + 20250101000018_add_use_calculator_permission.sql
 
-export type SalesRole = "admin" | "salesperson" | "Super Admin" | "Admin";
+export type SalesRole =
+  | "superadmin"
+  | "product_manager"
+  | "sales_admin_manager"
+  | "sales_admin_supervisor"
+  | "sales_admin_assistant"
+  | "area_sales_manager"
+  | "account_executive"
+  | "sales_assistant"
+  | "user"
+  // Legacy / display aliases
+  | "Admin"
+  | "Super Admin";
 
 export interface SalesPermissions {
+  // quote building
+  canCreateQuotes: boolean;
+  useCalculator: boolean;
+  // catalog management
   canManageCatalog: boolean;
+  canUploadCatalog: boolean;
+  // product info / files
+  canManageProductFiles: boolean;
+  // admin
   canViewAllQuotes: boolean;
+  canManageUsers: boolean;
+}
+
+// Role-group helpers (mirrors orig isSalesRole / isSalesAdminRole checks)
+function isSalesGroup(role: string): boolean {
+  return [
+    "superadmin","sales_admin_manager","sales_admin_supervisor","sales_admin_assistant",
+    "area_sales_manager","account_executive","sales_assistant","user",
+    "Admin","Super Admin",
+  ].includes(role);
+}
+function isProductTechGroup(role: string): boolean {
+  return ["product_manager","product_technical_head","product_development_manager","service_manager"].includes(role);
+}
+function isSalesAdminGroup(role: string): boolean {
+  return ["superadmin","sales_admin_manager","sales_admin_supervisor","area_sales_manager","Admin","Super Admin"].includes(role);
 }
 
 export function getSalesPermissions(user: PortalUser): SalesPermissions {
+  // Super admins get everything
   if (isSuperAdmin(user)) {
-    return { canManageCatalog: true, canViewAllQuotes: true };
+    return {
+      canCreateQuotes: true, useCalculator: true,
+      canManageCatalog: true, canUploadCatalog: true,
+      canManageProductFiles: true, canViewAllQuotes: true, canManageUsers: true,
+    };
   }
 
   const access = moduleAccessOf(user, "sales");
   if (!access) {
-    return { canManageCatalog: false, canViewAllQuotes: false };
+    return {
+      canCreateQuotes: false, useCalculator: false,
+      canManageCatalog: false, canUploadCatalog: false,
+      canManageProductFiles: false, canViewAllQuotes: false, canManageUsers: false,
+    };
   }
 
-  if (access.isModuleAdmin || access.role === "admin" || access.role === "Admin" || access.role === "Super Admin") {
-    return { canManageCatalog: true, canViewAllQuotes: true };
+  // Module admin gets everything
+  if (access.isModuleAdmin || access.role === "Admin" || access.role === "Super Admin") {
+    return {
+      canCreateQuotes: true, useCalculator: true,
+      canManageCatalog: true, canUploadCatalog: true,
+      canManageProductFiles: true, canViewAllQuotes: true, canManageUsers: true,
+    };
   }
 
-  return { canManageCatalog: false, canViewAllQuotes: false };
+  const role = access.role ?? "user";
+
+  // Permission resolution: role-group defaults (matches orig fetchPermissions logic)
+  return {
+    canCreateQuotes:     isSalesGroup(role),
+    useCalculator:       true, // default true for all (orig use_calculator default)
+    canManageCatalog:    isSalesGroup(role) || isProductTechGroup(role),
+    canUploadCatalog:    isProductTechGroup(role) || isSalesAdminGroup(role),
+    canManageProductFiles: isSalesGroup(role) || isProductTechGroup(role),
+    canViewAllQuotes:    isSalesAdminGroup(role),
+    canManageUsers:      isSalesAdminGroup(role),
+  };
 }
 
 
