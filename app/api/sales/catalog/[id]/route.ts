@@ -6,7 +6,7 @@ import { NextResponse } from "next/server";
 import { getCurrentUser } from "@/lib/session";
 import { canAccessModule, getSalesPermissions } from "@/lib/rbac";
 import { query } from "@/lib/db";
-import { insertSubTables } from "../route";
+import { insertSubTables } from "@/modules/sales/lib/catalog-db";
 
 const S = "sales_portal";
 

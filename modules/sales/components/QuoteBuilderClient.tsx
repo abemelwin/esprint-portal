@@ -1611,7 +1611,7 @@ export function QuoteBuilderClient({
               {saving ? "SAVING…" : saveSuccess ? "✓ SAVED!" : "💾 SAVE AS PDF"}
             </button>
             <p className="text-[10px] text-[#aaa] text-center mt-1 mb-0">
-              {savedQuoteId ? "Quote saved. In print dialog, set Destination to "Save as PDF"." : "Saves quote then opens print dialog."}
+              {savedQuoteId ? "Quote saved. In print dialog, set Destination to &quot;Save as PDF&quot;." : "Saves quote then opens print dialog."}
             </p>
           </div>
         </div>

@@ -8,6 +8,8 @@ import { canAccessModule, getSalesPermissions } from "@/lib/rbac";
 import { query } from "@/lib/db";
 import type { CatalogMachine } from "@/modules/sales/types";
 
+import { insertSubTables } from "@/modules/sales/lib/catalog-db";
+
 const S = "sales_portal";
 
 export async function GET(req: Request) {
@@ -159,8 +161,8 @@ export async function POST(req: Request) {
   }
 }
 
-/** Shared helper: insert all sub-tables for a machine */
-export async function insertSubTables(
+/** Shared helper: insert all sub-tables for a machine — kept for internal use only */
+async function insertSubTablesInternal(
   machineId: string,
   data: { features: any[]; consumables: any[]; inclusions: any[]; exclusions: any[]; addons: any[] }
 ) {
