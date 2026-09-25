@@ -99,11 +99,25 @@ const BADGE_MAP: Record<string, BadgeConfig> = {
     border: 'border-rose-300/80',
     dot: 'bg-rose-600',
   },
+  'BSP MEMO': {
+    bg: 'bg-orange-50/90',
+    text: 'text-orange-800',
+    border: 'border-orange-200/80',
+    dot: 'bg-orange-500',
+  },
+  'BSP MEMO XX': {
+    bg: 'bg-orange-50/90',
+    text: 'text-orange-800',
+    border: 'border-orange-200/80',
+    dot: 'bg-orange-500',
+  },
 };
 
 const LABEL_MAP: Record<string, string> = {
   'SETTLED (PAID)': 'SETTLED (PAID)',
   'CANCELLED':      'Write-off / Blacklist',
+  'BSP MEMO':       'ALTERATION',
+  'BSP MEMO XX':    'ALTERATION',
 };
 
 interface Props {

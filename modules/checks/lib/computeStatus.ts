@@ -55,11 +55,34 @@ export function compareEvents(a: CheckEvent, b: CheckEvent): number {
   return (order[a.type] ?? 0) - (order[b.type] ?? 0);
 }
 
+/**
+ * Normalize raw status string to a standard CheckStatus.
+ * Handles legacy/imported variations like 'BSP MEMO', 'BSP MEMO XX', 'ALT', etc.
+ */
+export function normalizeStatus(raw: string | null | undefined): CheckStatus {
+  if (!raw) return 'OPEN';
+  const s = raw.trim().toUpperCase();
+  if (s.startsWith('BSP MEMO') || s.startsWith('ALT')) return 'ALTERATION';
+  if (s === 'RECON' || s.startsWith('RECONSTRUCT')) return 'RECONSTRUCT';
+  if (s === 'HOLD' || s === 'HELD') return 'HELD';
+  if (s === 'RETURN' || s === 'RETURNED') return 'RETURNED';
+  if (s === 'CLEAR' || s === 'CLEARED') return 'CLEARED';
+  if (s === 'DEPOSIT' || s === 'DEPOSITED') return 'DEPOSITED';
+  if (s === 'CANCEL' || s === 'CANCELLED') return 'CANCELLED';
+  if (s === 'LEGAL') return 'LEGAL';
+  if (s === 'BAD ACCOUNT' || s === 'BAD_ACCOUNT') return 'BAD ACCOUNT';
+  if (s === 'PARTIAL' || s === 'PARTIAL_PAYMENT') return 'PARTIAL';
+  if (s === 'SETTLED' || s.startsWith('SETTLED')) return 'SETTLED (PAID)';
+  if (s === 'REPLACED' || s === 'REPLACEMENT') return 'REPLACED';
+  return raw as CheckStatus;
+}
+
 export function computeCheckStatus(
   check: Check,
   sortedEvents: CheckEvent[],
 ): { status: CheckStatus; holdCount: number; returnCount: number; totalPaid: number } {
-  let status: CheckStatus = (check.finalStatus as CheckStatus) || 'OPEN';
+  const normFinal = check.finalStatus ? normalizeStatus(check.finalStatus) : null;
+  let status: CheckStatus = normFinal || 'OPEN';
   let holdCount   = 0;
   let returnCount = 0;
   let totalPaid   = 0;
@@ -70,9 +93,8 @@ export function computeCheckStatus(
     if (ev.type === 'PARTIAL_PAYMENT' || ev.type === 'REPLACEMENT' || ev.type === 'SETTLED_PAID') totalPaid += ev.amount ?? 0;
   }
 
-  // Override: if finalStatus exists but last event is a payment/settlement/clear, use event-based status.
-  // This matches the original system exactly — only these three event types may override a finalStatus.
-  if (check.finalStatus && sortedEvents.length > 0) {
+  // Override: if finalStatus exists but last event is a payment/settlement/clear/alteration, use event-based status.
+  if (normFinal && sortedEvents.length > 0) {
     const lastEv = sortedEvents[sortedEvents.length - 1];
     if (lastEv.type === 'SETTLED_PAID') {
       status = 'SETTLED (PAID)';
@@ -80,10 +102,12 @@ export function computeCheckStatus(
       status = (check.originalAmount - totalPaid) <= 0.01 ? 'SETTLED (PAID)' : 'PARTIAL';
     } else if (lastEv.type === 'DEPOSIT_CLEARED') {
       status = 'CLEARED';
+    } else if (lastEv.type === 'ALTERATION') {
+      status = 'ALTERATION';
     }
   }
 
-  if (!check.finalStatus) {
+  if (!normFinal) {
     // If fully paid via replacement/partial, mark settled regardless of later events
     const totalReplaced = sortedEvents
       .filter(e => e.type === 'REPLACEMENT')
@@ -108,7 +132,6 @@ export function computeCheckStatus(
         // Skip this hold request only if there's a DEPOSITED/CLEARED event that happened
         // AFTER the most recent RETURN (meaning the check was actually deposited and cleared,
         // not just deposited then returned again).
-        const evIdx = sortedEvents.indexOf(ev);
         const lastReturnIdx = (() => {
           for (let k = sortedEvents.length - 1; k >= 0; k--) {
             if (sortedEvents[k].type === 'RETURN') return k;

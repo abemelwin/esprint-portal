@@ -8,6 +8,7 @@
 
 import type { AppData, CheckStatus } from "./database.types";
 import { STALE_DAYS } from "./format";
+import { normalizeStatus } from "./computeStatus";
 
 export interface EnrichedCheck {
   id: string;
@@ -44,7 +45,7 @@ export function enrichChecks(data: AppData): EnrichedCheck[] {
 
   return data.CHECKS.map((c) => {
     const m = meta[c.id];
-    const status = (m?.status ?? c.finalStatus ?? "OPEN") as CheckStatus;
+    const status = (m?.status ?? normalizeStatus(c.finalStatus)) as CheckStatus;
     const balance = m?.balance ?? c.originalAmount ?? 0;
     const nextDeposit = m?.nextDeposit ?? null;
     const reason = m?.reason ?? null;

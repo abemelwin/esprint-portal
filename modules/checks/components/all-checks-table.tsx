@@ -31,7 +31,7 @@ import ReconstructBulkModal, { type SelectedCheck } from './ReconstructBulkModal
 import { generateSOA } from '../lib/exportSOA';
 import { fmtPHP, fmtDate, todayISO, STALE_DAYS, PAYMENT_FOR_OPTIONS } from '../lib/format';
 import { canCreate, canSeeCheck, type CheckPerms } from '../lib/permissions';
-import { computeCheckStatus, compareEvents, groupSortedEvents } from '../lib/computeStatus';
+import { computeCheckStatus, compareEvents, groupSortedEvents, normalizeStatus } from '../lib/computeStatus';
 import { useColumnResize } from '../hooks/useColumnResize';
 import { useStickyScrollbar } from '../hooks/useStickyScrollbar';
 import type { AppData, Check } from '../lib/database.types';
@@ -566,7 +566,7 @@ export function AllChecksTable({ initialData, perms, userEmail, userName }: Prop
         if (!c.ae) continue;
         if (allowedBranches && !allowedBranches.has(c.branch)) continue;
         const meta = data.CHECKS_META?.[c.id];
-        const status = meta?.status ?? c.finalStatus ?? 'OPEN';
+        const status = meta?.status ?? normalizeStatus(c.finalStatus);
         if (selectedStatuses.has(status)) aeSet.add(c.ae);
       }
       return (data.AE_LIST ?? []).filter(ae => aeSet.has(ae));
@@ -655,7 +655,7 @@ export function AllChecksTable({ initialData, perms, userEmail, userName }: Prop
           }
         }
       } else {
-        status = (c.finalStatus as string) || 'OPEN';
+        status = normalizeStatus(c.finalStatus);
       }
 
       const aging = c.checkDate
