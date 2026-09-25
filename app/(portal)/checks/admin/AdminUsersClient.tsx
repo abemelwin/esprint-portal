@@ -170,9 +170,9 @@ export function AdminUsersClient({ branches, aeList, subsidiaries, deleteRequest
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ id, action }),
       });
-      const json = await res.json();
-      if (json.ok) {
-        showToast(action === 'approve' ? 'Check deleted' : 'Request rejected', 'success');
+      const json = await res.json().catch(() => ({}));
+      if (res.ok && json.ok) {
+        showToast(action === 'approve' ? 'Request approved' : 'Request rejected', 'success');
         fetchDeleteRequests();
       } else {
         showToast(json.error ?? 'Action failed', 'error');
