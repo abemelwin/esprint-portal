@@ -1,0 +1,15 @@
+import pg from 'pg';
+import fs from 'node:fs';
+import path from 'node:path';
+import { fileURLToPath } from 'node:url';
+const __dirname = path.dirname(fileURLToPath(import.meta.url));
+const env = Object.fromEntries(fs.readFileSync(path.resolve(__dirname,'../.env.local'),'utf8').split('\n').filter(l=>l.includes('=')&&!l.trim().startsWith('#')).map(l=>{const i=l.indexOf('=');return[l.slice(0,i).trim(),l.slice(i+1).trim()]}));
+const c = new pg.Client({connectionString:env.DATABASE_URL,ssl:{rejectUnauthorized:false}});
+await c.connect();
+const t = await c.query("SELECT table_name FROM information_schema.tables WHERE table_schema='sales_portal' ORDER BY 1");
+console.log('Tables:', t.rows.map(r=>r.table_name).join(', '));
+const cols = await c.query("SELECT column_name FROM information_schema.columns WHERE table_schema='sales_portal' AND table_name='machines' ORDER BY ordinal_position");
+console.log('\nmachines columns:', cols.rows.map(r=>r.column_name).join(', '));
+const qcols = await c.query("SELECT column_name FROM information_schema.columns WHERE table_schema='sales_portal' AND table_name='quotes' ORDER BY ordinal_position");
+console.log('\nquotes columns:', qcols.rows.map(r=>r.column_name).join(', '));
+await c.end();

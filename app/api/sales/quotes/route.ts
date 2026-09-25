@@ -1,8 +1,14 @@
+/**
+ * GET  /api/sales/quotes   — list quotes (own quotes, or all if canViewAllQuotes)
+ * POST /api/sales/quotes   — create a new quote + sub-tables
+ */
 import { NextResponse } from "next/server";
 import { getCurrentUser } from "@/lib/session";
 import { canAccessModule, getSalesPermissions } from "@/lib/rbac";
 import { query } from "@/lib/db";
-import type { Quote, QuoteItem } from "@/modules/sales/types";
+import type { Quote } from "@/modules/sales/types";
+
+const S = "sales_portal";
 
 export async function GET(req: Request) {
   const user = await getCurrentUser();
@@ -10,24 +16,21 @@ export async function GET(req: Request) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
-  const perms = getSalesPermissions(user);
+  const perms        = getSalesPermissions(user);
   const { searchParams } = new URL(req.url);
-  const q = searchParams.get("q");
+  const q            = searchParams.get("q");
 
   try {
     let sql = `
-      SELECT 
-        id, quote_number, user_id, user_email, client_name, company_name,
-        contact_number, email, address, deal_type, letterhead,
-        term_months, down_payment_pct, interest_rate_pct, total_amount,
-        monthly_payment, signatory_name, signatory_title, notes, status,
-        created_at, updated_at
-      FROM sales_portal.quotes
+      SELECT id, user_id, user_email, machine_id,
+             client_name, company, quote_date, deal_type, contract_price,
+             letterhead, under_promo, vat_inclusive, created_at, updated_at
+      FROM ${S}.quotes
       WHERE 1=1
     `;
     const params: unknown[] = [];
 
-    // Salespeople only see their own quotes unless admin
+    // Non-admins see only their own quotes (matches orig RLS by user_id)
     if (!perms.canViewAllQuotes) {
       params.push(user.email);
       sql += ` AND user_email = $${params.length}`;
@@ -35,15 +38,15 @@ export async function GET(req: Request) {
 
     if (q) {
       params.push(`%${q}%`);
-      sql += ` AND (quote_number ILIKE $${params.length} OR client_name ILIKE $${params.length} OR company_name ILIKE $${params.length})`;
+      sql += ` AND (client_name ILIKE $${params.length} OR company ILIKE $${params.length})`;
     }
 
-    sql += ` ORDER BY created_at DESC LIMIT 100`;
+    sql += ` ORDER BY created_at DESC LIMIT 200`;
 
     const quotes = await query<Quote>(sql, params);
     return NextResponse.json({ quotes });
   } catch (err) {
-    console.error("Error fetching quotes:", err);
+    console.error("GET /api/sales/quotes error:", err);
     return NextResponse.json({ error: "Internal Server Error" }, { status: 500 });
   }
 }
@@ -57,91 +60,96 @@ export async function POST(req: Request) {
   try {
     const body = await req.json();
     const {
-      client_name,
-      company_name,
-      contact_number,
-      email,
-      address,
-      deal_type = "Cash",
+      machine_id,
+      client_name, company, address, contact, email,
+      quote_date, salutation, opening_line,
+      deal_type, contract_price,
+      vat_inclusive = false,
+      under_promo = false, promo_validity,
+      unit_condition_override,
+      include_delivery = false,
+      include_computer_set = false, computer_set_spec,
+      inclusion_toggles, exclusion_toggles, addon_toggles,
+      warranty_company, warranty_supplier,
+      availability, collection_payment, collection_downpayment, collection_amortization,
+      ae_name, client_conforme, noted_by_name, noted_by_role,
       letterhead = "ES Print Media Inc.",
-      term_months = 0,
-      down_payment_pct = 0,
-      interest_rate_pct = 0,
-      total_amount = 0,
-      monthly_payment = 0,
-      signatory_name,
-      signatory_title,
-      notes,
-      items = [],
+      freebies = [],
+      term_options = [],
+      trade_ins = [],
+      consumable_prices = [],
     } = body;
 
-    if (!client_name) {
-      return NextResponse.json({ error: "Client Name is required" }, { status: 400 });
-    }
-
-    // Generate unique quote number: e.g. Q-YYYYMMDD-XXXX
-    const dateStr = new Date().toISOString().slice(0, 10).replace(/-/g, "");
-    const randomHex = Math.floor(1000 + Math.random() * 9000);
-    const quoteNumber = `QT-${dateStr}-${randomHex}`;
+    // Resolve portal_users.id from email (best-effort)
+    let userId: string | null = null;
+    try {
+      const u = await query<{ id: string }>(
+        `SELECT id FROM public.portal_users WHERE email = $1 LIMIT 1`,
+        [user.email]
+      );
+      userId = u[0]?.id ?? null;
+    } catch { /* ignore */ }
 
     const rows = await query<{ id: string }>(
-      `
-      INSERT INTO sales_portal.quotes (
-        quote_number, user_id, user_email, client_name, company_name,
-        contact_number, email, address, deal_type, letterhead,
-        term_months, down_payment_pct, interest_rate_pct, total_amount,
-        monthly_payment, signatory_name, signatory_title, notes, status
-      ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18, 'Active')
-      RETURNING id
-      `,
+      `INSERT INTO ${S}.quotes
+         (user_id, user_email, machine_id,
+          client_name, company, address, contact, email,
+          quote_date, salutation, opening_line,
+          deal_type, contract_price, vat_inclusive, under_promo, promo_validity,
+          unit_condition_override,
+          include_delivery, include_computer_set, computer_set_spec,
+          inclusion_toggles, exclusion_toggles, addon_toggles,
+          warranty_company, warranty_supplier,
+          availability, collection_payment, collection_downpayment, collection_amortization,
+          ae_name, client_conforme, noted_by_name, noted_by_role,
+          letterhead, freebies)
+       VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15,$16,$17,$18,$19,$20,$21,$22,$23,$24,$25,$26,$27,$28,$29,$30,$31,$32,$33,$34,$35)
+       RETURNING id`,
       [
-        quoteNumber,
-        user.id || null,
-        user.email,
-        client_name,
-        company_name || null,
-        contact_number || null,
-        email || null,
-        address || null,
-        deal_type,
-        letterhead,
-        term_months,
-        down_payment_pct,
-        interest_rate_pct,
-        total_amount,
-        monthly_payment,
-        signatory_name || user.fullName,
-        signatory_title || "Sales Executive",
-        notes || null,
+        userId, user.email, machine_id ?? null,
+        client_name ?? null, company ?? null, address ?? null, contact ?? null, email ?? null,
+        quote_date ?? null, salutation ?? null, opening_line ?? null,
+        deal_type ?? null, contract_price ?? null, vat_inclusive, under_promo, promo_validity ?? null,
+        unit_condition_override ?? null,
+        include_delivery, include_computer_set, computer_set_spec ?? null,
+        inclusion_toggles ? JSON.stringify(inclusion_toggles) : null,
+        exclusion_toggles ? JSON.stringify(exclusion_toggles) : null,
+        addon_toggles     ? JSON.stringify(addon_toggles)     : null,
+        warranty_company ?? null, warranty_supplier ?? null,
+        availability ?? null, collection_payment ?? null, collection_downpayment ?? null, collection_amortization ?? null,
+        ae_name ?? null, client_conforme ?? null, noted_by_name ?? null, noted_by_role ?? null,
+        letterhead, JSON.stringify(freebies),
       ]
     );
 
     const quoteId = rows[0].id;
 
-    if (Array.isArray(items) && items.length > 0) {
-      for (const item of items) {
-        await query(
-          `
-          INSERT INTO sales_portal.quote_items (
-            quote_id, machine_id, machine_name, unit_price, quantity, total_price, details
-          ) VALUES ($1, $2, $3, $4, $5, $6, $7)
-          `,
-          [
-            quoteId,
-            item.machine_id || null,
-            item.machine_name || "Machine Unit",
-            item.unit_price || 0,
-            item.quantity || 1,
-            item.total_price || 0,
-            JSON.stringify(item.details || {}),
-          ]
-        );
-      }
+    // Insert sub-tables
+    for (let i = 0; i < term_options.length; i++) {
+      const t = term_options[i];
+      await query(
+        `INSERT INTO ${S}.quote_term_options (quote_id, down_payment, months, monthly_amortization, sort_order) VALUES ($1,$2,$3,$4,$5)`,
+        [quoteId, t.down_payment ?? 0, t.months, t.monthly_amortization ?? null, i]
+      );
+    }
+    for (let i = 0; i < Math.min(trade_ins.length, 3); i++) {
+      const t = trade_ins[i];
+      await query(
+        `INSERT INTO ${S}.quote_trade_ins (quote_id, description, value, sort_order) VALUES ($1,$2,$3,$4)`,
+        [quoteId, t.description || "", t.value ?? 0, i]
+      );
+    }
+    for (const cp of consumable_prices) {
+      if (!cp.consumable_id) continue;
+      await query(
+        `INSERT INTO ${S}.quote_consumable_prices (quote_id, consumable_id, custom_price) VALUES ($1,$2,$3)`,
+        [quoteId, cp.consumable_id, cp.custom_price ?? 0]
+      );
     }
 
-    return NextResponse.json({ success: true, quoteNumber, quoteId }, { status: 201 });
+    return NextResponse.json({ success: true, id: quoteId }, { status: 201 });
   } catch (err) {
-    console.error("Error creating quote:", err);
+    console.error("POST /api/sales/quotes error:", err);
     return NextResponse.json({ error: "Internal Server Error" }, { status: 500 });
   }
 }
