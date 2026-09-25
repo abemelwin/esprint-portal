@@ -1,6 +1,7 @@
 "use client";
 
-import React, { useState, useEffect, useMemo, useRef } from "react";
+import React, { useState, useEffect, useMemo, useRef, useCallback } from "react";
+import { useRouter, useSearchParams } from "next/navigation";
 import type { CatalogMachine, LetterheadType } from "../types";
 
 interface TermOption {
@@ -21,13 +22,24 @@ interface ToggleableItem {
   description: string;
   enabled: boolean;
   isCustom?: boolean;
+  sortOrder?: number;
 }
 
 interface ConsumablePriceItem {
-  id: string;
+  id: string;           // consumable UUID from catalog (for saving to quote_consumable_prices)
   name: string;
   pkg: string;
   price: number;
+}
+
+// ── numToWords: mirrors orig _numToWords helper (12 → "Twelve (12)") ──────────
+const NUM_WORDS: Record<number, string> = {
+  1: "One", 2: "Two", 3: "Three", 4: "Four", 5: "Five", 6: "Six",
+  7: "Seven", 8: "Eight", 9: "Nine", 10: "Ten", 11: "Eleven", 12: "Twelve",
+  18: "Eighteen", 24: "Twenty-Four", 36: "Thirty-Six", 48: "Forty-Eight", 60: "Sixty",
+};
+function numToWords(n: number): string {
+  return NUM_WORDS[n] ? `${NUM_WORDS[n]} (${n})` : String(n);
 }
 
 export function QuoteBuilderClient({
@@ -37,9 +49,15 @@ export function QuoteBuilderClient({
   currentUserEmail: string;
   currentUserName: string;
 }) {
+  const router = useRouter();
+  const searchParams = useSearchParams();
+  const editId = searchParams.get("id"); // present when editing a saved quote
+
   const [catalog, setCatalog] = useState<CatalogMachine[]>([]);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
+  const [saveSuccess, setSaveSuccess] = useState(false);
+  const [savedQuoteId, setSavedQuoteId] = useState<string | null>(editId);
   const [showValidationBox, setShowValidationBox] = useState(false);
 
   // 1. Letterhead
@@ -218,11 +236,21 @@ export function QuoteBuilderClient({
       setConsumablePrices([]);
     }
 
-    // Warranty
-    setWarrantyMachineDuration(selectedMachine.warranty_machine_duration || "Twelve (12)");
-    setWarrantyPrintheadDuration(selectedMachine.warranty_printhead_duration || "");
-    setServiceFee(selectedMachine.service_fee || 500);
-    setAvailability((selectedMachine as any).availability || "ON STOCK");
+    // Warranty — derive text from machine fields (matches orig _numToWords)
+    const macWarranty = selectedMachine.machine_warranty_months ?? 12;
+    setWarrantyMachineDuration(numToWords(macWarranty));
+    // Printhead warranty: show only when has_printhead or has_laser_tube
+    if (selectedMachine.has_printhead || selectedMachine.has_laser_tube) {
+      const phWarranty = selectedMachine.printhead_warranty?.replace(/[^0-9]/g, "") ?? "";
+      const phNum = parseInt(phWarranty) || 0;
+      setWarrantyPrintheadDuration(phNum > 0 ? numToWords(phNum) : "");
+      setWarrantyPrintheadType(selectedMachine.has_laser_tube ? "laser_tube" : "printhead");
+    } else {
+      setWarrantyPrintheadDuration("");
+      setWarrantyPrintheadType(null);
+    }
+    setServiceFee(selectedMachine.service_fee ?? 500);
+    setAvailability(selectedMachine.availability || "ON STOCK");
   }, [selectedMachine]);
 
   // Trade in sum
@@ -310,11 +338,12 @@ export function QuoteBuilderClient({
     }
   }, [quoteDate]);
 
-  // Warranty lines generator
+  // Warranty lines generator — mirrors QuotePreviewPanel.vue warranty section exactly
   const warrantyLines = useMemo(() => {
     const lines: { text: string; bold: boolean; heading?: boolean }[] = [];
     const modelUpper = (selectedModel || "").toUpperCase();
 
+    // Special case: EPSON SC-T3130X (Authorized service center model)
     if (modelUpper.includes("SC-T3130X")) {
       return [
         { text: "24 months or 10,000 A1 Prints, whichever comes first.", bold: false },
@@ -329,39 +358,67 @@ export function QuoteBuilderClient({
       ];
     }
 
+    // Machine warranty line
     if (warrantyMachineDuration.trim()) {
-      lines.push({
-        text: `${warrantyMachineDuration} months limited warranty on Main unit. Terms and conditions apply.`,
-        bold: false,
-      });
+      const isCrGrDTF = modelUpper.includes("CREONS") || modelUpper.includes("GRANDO") || modelUpper.includes("DTF");
+      const excl = selectedMachine?.exclude_software_concerns !== false;
+      const softwareClause = excl ? " Excluding software related concerns." : "";
+      if (isCrGrDTF) {
+        // CREONS/GRANDO/DTF — excludes print head in the main warranty line
+        lines.push({ text: `${warrantyMachineDuration} months limited warranty on Main unit (excluding print head(s)).${softwareClause} Terms and conditions apply.`, bold: false });
+        lines.push({ text: `Use of parts and inks other than those supplied by ${warrantySupplier || "ESPMI"} will void the warranty.`, bold: true });
+      } else {
+        lines.push({ text: `${warrantyMachineDuration} months limited warranty on Main unit.${softwareClause} Terms and conditions apply.`, bold: false });
+      }
     }
 
+    // DTF models: add Powder Shaker warranty
+    if ((selectedModel || "").toUpperCase().includes("DTF")) {
+      lines.push({ text: "Twelve (12) months limited warranty on Powder Shaker Machine.", bold: false });
+    }
+
+    // Printhead / laser tube warranty
     if (warrantyPrintheadDuration.trim()) {
-      lines.push({
-        text: `${warrantyPrintheadDuration} months limited warranty on Print Head.`,
-        bold: false,
-      });
-      lines.push({
-        text: `Use of parts and inks other than those supplied by ${warrantySupplier || "ESPMI"} will void the warranty.`,
-        bold: true,
-      });
+      const phTypeLabel = warrantyPrintheadType === "laser_tube" ? "Laser Tube" : "Print Head";
+      lines.push({ text: `${warrantyPrintheadDuration} months limited warranty on ${phTypeLabel}.`, bold: false });
+      lines.push({ text: `Use of parts and inks other than those supplied by ${warrantySupplier || "ESPMI"} will void the warranty.`, bold: true });
     }
 
-    lines.push({ text: "No warranty for package inclusions.", bold: false });
+    // IPRESS clam-type (on-site field service note instead of standard service fee)
+    const isIpressClam = modelUpper.includes("IPRESS") && (modelUpper.includes("15X15") || modelUpper.includes("60X90") || modelUpper.includes("CLAM"));
 
-    const formattedFee = formatDisplayCurrency(serviceFee);
-    lines.push({
-      text: `After warranty, a service fee of ${formattedFee} per case will be charged.`,
-      bold: false,
-    });
+    // No warranty for package inclusions
+    if (isIpressClam) {
+      lines.push({ text: "No warranty.", bold: false });
+    } else {
+      lines.push({ text: "No warranty for package inclusions.", bold: false });
+    }
 
+    // Epson T-series (not SC-T3130X — already handled): Epson service center block
+    const isEpsonTSeries = modelUpper.includes("SC-T") && !modelUpper.includes("SC-T3130X");
+    if (isEpsonTSeries) {
+      lines.push({ text: "Authorized Epson Service Centers – Warranty and after-sales support are strictly provided by Epson's accredited service centers.", bold: false });
+      lines.push({ text: "AFTER WARRANTY", bold: true, heading: true });
+      lines.push({ text: "All service and repairs beyond the warranty period shall be directly coordinated by the BUYER with the Authorized Service Center.", bold: false });
+    } else {
+      // Standard service fee line
+      const feeVal = serviceFee != null ? serviceFee * (vatInclusive ? 1.12 : 1) : null;
+      const formattedFee = feeVal != null ? "₱" + feeVal.toLocaleString("en-PH", { minimumFractionDigits: 2, maximumFractionDigits: 2 }) : "—";
+      if (isIpressClam) {
+        lines.push({ text: `If request for On-site Field Service, a service fee of ${formattedFee} per case will be charged.`, bold: false });
+      } else {
+        lines.push({ text: `After warranty, a service fee of ${formattedFee} per case will be charged.`, bold: false });
+      }
+    }
+
+    // Confidentiality line
     lines.push({
       text: `It is an essential consideration of this Agreement that all matters pertaining to the supply by ${warrantyCompany} to the BUYER shall be held in the strictest confidence.`,
       bold: false,
     });
 
     return lines;
-  }, [selectedModel, warrantyMachineDuration, warrantyPrintheadDuration, warrantySupplier, serviceFee, warrantyCompany]);
+  }, [selectedModel, selectedMachine, warrantyMachineDuration, warrantyPrintheadDuration, warrantyPrintheadType, warrantySupplier, serviceFee, warrantyCompany, vatInclusive]);
 
   const letterheadHeaderImg =
     letterhead === "ACS / Alternative" ? "/letterhead/letterhead-acs-1.jpg" : "/letterhead/letterhead-espmi-1.jpg";
@@ -377,13 +434,189 @@ export function QuoteBuilderClient({
     return errs;
   }, [selectedBrand, selectedModel, clientName, contractPrice]);
 
-  function handleSavePdf() {
-    if (validationErrors.length > 0) {
-      setShowValidationBox(true);
-      return;
+  // ── Wire delivery checkbox → move "Delivery…" item between inclusions/exclusions ──
+  useEffect(() => {
+    const DELIVERY_KEYWORD = "delivery";
+    setInclusionItems(prev => {
+      const hasDeliveryIncl = prev.some(x => x.description.toLowerCase().includes(DELIVERY_KEYWORD));
+      if (includeDelivery && !hasDeliveryIncl) {
+        // Move from exclusions to inclusions
+        const deliveryExcl = exclusionItems.find(x => x.description.toLowerCase().includes(DELIVERY_KEYWORD));
+        if (deliveryExcl) {
+          setExclusionItems(ex => ex.map(x => x.description.toLowerCase().includes(DELIVERY_KEYWORD) ? { ...x, enabled: false } : x));
+          return [...prev, { ...deliveryExcl, id: `incl-del-${Date.now()}`, enabled: true }];
+        }
+      } else if (!includeDelivery) {
+        // Remove delivery from inclusions (it lives in exclusions)
+        return prev.filter(x => !x.description.toLowerCase().includes(DELIVERY_KEYWORD) || x.isCustom);
+      }
+      return prev;
+    });
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [includeDelivery]);
+
+  // ── Load existing quote when editing (URL ?id=<quoteId>) ──────────────────
+  useEffect(() => {
+    if (!editId || catalog.length === 0) return;
+    async function loadQuote() {
+      try {
+        const res = await fetch(`/api/sales/quotes/${editId}`);
+        if (!res.ok) return;
+        const { quote } = await res.json();
+        if (!quote) return;
+        // Restore machine selection first
+        if (quote.machine_id) {
+          const m = catalog.find(x => x.id === quote.machine_id);
+          if (m) {
+            setSelectedBrand(m.brand);
+            setSelectedModel(m.model);
+          }
+        }
+        setLetterhead((quote.letterhead || "ES Print Media Inc.") as LetterheadType);
+        setClientName(quote.client_name || "");
+        setCompany(quote.company || "");
+        setAddress(quote.address || "");
+        setContact(quote.contact || "");
+        setEmail(quote.email || "");
+        if (quote.quote_date) setQuoteDate(quote.quote_date.slice(0, 10));
+        if (quote.salutation) setSalutation(quote.salutation);
+        if (quote.opening_line) setOpeningLine(quote.opening_line);
+        if (quote.deal_type) setDealType(quote.deal_type as any);
+        if (quote.contract_price != null) setContractPrice(Number(quote.contract_price));
+        setVatInclusive(!!quote.vat_inclusive);
+        setUnderPromo(!!quote.under_promo);
+        if (quote.promo_validity) setPromoValidity(quote.promo_validity);
+        if (quote.availability) setAvailability(quote.availability);
+        if (quote.collection_payment) setCollectionPayment(quote.collection_payment);
+        if (quote.collection_downpayment) setCollectionDownpayment(quote.collection_downpayment);
+        if (quote.collection_amortization) setCollectionAmortization(quote.collection_amortization);
+        setIncludeDelivery(!!quote.include_delivery);
+        setIncludeComputerSet(!!quote.include_computer_set);
+        if (quote.computer_set_spec) setComputerSetSpec(quote.computer_set_spec);
+        if (quote.ae_name) setAeName(quote.ae_name);
+        if (quote.client_conforme) setClientConforme(quote.client_conforme);
+        if (quote.noted_by_name) setNotedByName(quote.noted_by_name);
+        if (quote.noted_by_role) setNotedByRole(quote.noted_by_role);
+        if (quote.warranty_company) setWarrantyCompany(quote.warranty_company);
+        if (quote.warranty_supplier) setWarrantySupplier(quote.warranty_supplier);
+        if (quote.freebies) setFreebies(Array.isArray(quote.freebies) ? quote.freebies : JSON.parse(quote.freebies || "[]"));
+        // Toggleable items (JSONB arrays)
+        if (Array.isArray(quote.inclusion_toggles)) setInclusionItems(quote.inclusion_toggles);
+        if (Array.isArray(quote.exclusion_toggles)) setExclusionItems(quote.exclusion_toggles);
+        if (Array.isArray(quote.addon_toggles)) setAddonItems(quote.addon_toggles);
+        // Sub-tables
+        if (Array.isArray(quote.trade_ins)) {
+          setTradeIns([
+            quote.trade_ins[0] || { description: "", value: 0 },
+            quote.trade_ins[1] || { description: "", value: 0 },
+            quote.trade_ins[2] || { description: "", value: 0 },
+          ]);
+        }
+        if (Array.isArray(quote.term_options)) {
+          setTermOptions(quote.term_options.map((t: any) => ({
+            dealType: "Installment",
+            contractPrice: t.contract_price ?? null,
+            downPayment: t.down_payment ?? 0,
+            months: t.months ?? 12,
+            monthlyAmortization: t.monthly_amortization ?? null,
+          })));
+        }
+        if (Array.isArray(quote.consumable_prices)) {
+          setConsumablePrices(prev => prev.map(cp => {
+            const saved = quote.consumable_prices.find((s: any) => s.consumable_id === cp.id);
+            return saved ? { ...cp, price: Number(saved.custom_price) } : cp;
+          }));
+        }
+        setSavedQuoteId(editId);
+      } catch (err) {
+        console.error("Failed to load quote:", err);
+      }
     }
+    loadQuote();
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [editId, catalog]);
+
+  // ── Save quote to DB ────────────────────────────────────────────────────────
+  const handleSave = useCallback(async (andPdf = false) => {
+    if (validationErrors.length > 0) { setShowValidationBox(true); return; }
     setShowValidationBox(false);
-    window.print();
+    setSaving(true);
+    try {
+      const payload = {
+        machine_id: selectedMachine?.id ?? null,
+        client_name: clientName, company, address, contact, email,
+        quote_date: quoteDate, salutation, opening_line: openingLine,
+        deal_type: dealType, contract_price: contractPrice,
+        vat_inclusive: vatInclusive, under_promo: underPromo, promo_validity: promoValidity,
+        unit_condition_override: unitCondition !== selectedMachine?.unit_condition ? unitCondition : null,
+        include_delivery: includeDelivery, include_computer_set: includeComputerSet, computer_set_spec: computerSetSpec,
+        inclusion_toggles: inclusionItems,
+        exclusion_toggles: exclusionItems,
+        addon_toggles: addonItems,
+        warranty_company: warrantyCompany, warranty_supplier: warrantySupplier,
+        availability, collection_payment: collectionPayment,
+        collection_downpayment: collectionDownpayment,
+        collection_amortization: collectionAmortization,
+        ae_name: aeName, client_conforme: clientConforme,
+        noted_by_name: notedByName, noted_by_role: notedByRole,
+        letterhead, freebies,
+        term_options: termOptions.map((t, i) => ({
+          down_payment: t.downPayment,
+          months: t.months,
+          monthly_amortization: t.monthlyAmortization,
+          sort_order: i,
+        })),
+        trade_ins: tradeIns.filter(t => t.value > 0 || t.description.trim()).map((t, i) => ({
+          description: t.description,
+          value: t.value,
+          sort_order: i,
+        })),
+        consumable_prices: consumablePrices.filter(c => c.id && !c.id.startsWith("c-")).map(c => ({
+          consumable_id: c.id,
+          custom_price: c.price,
+        })),
+      };
+
+      const url = savedQuoteId
+        ? `/api/sales/quotes/${savedQuoteId}`
+        : "/api/sales/quotes";
+      const method = savedQuoteId ? "PUT" : "POST";
+      const res = await fetch(url, {
+        method,
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(payload),
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || "Save failed");
+
+      const qId = savedQuoteId || data.id;
+      setSavedQuoteId(qId);
+      setSaveSuccess(true);
+      setTimeout(() => setSaveSuccess(false), 3000);
+
+      if (!savedQuoteId) {
+        // Replace URL so back button doesn't re-create
+        router.replace(`/sales/quote-builder?id=${qId}`);
+      }
+      if (andPdf) window.print();
+    } catch (err) {
+      console.error("Save error:", err);
+      alert("Failed to save quote. Please try again.");
+    } finally {
+      setSaving(false);
+    }
+  }, [
+    validationErrors, selectedMachine, clientName, company, address, contact, email,
+    quoteDate, salutation, openingLine, dealType, contractPrice, vatInclusive, underPromo,
+    promoValidity, unitCondition, includeDelivery, includeComputerSet, computerSetSpec,
+    inclusionItems, exclusionItems, addonItems, warrantyCompany, warrantySupplier,
+    availability, collectionPayment, collectionDownpayment, collectionAmortization,
+    aeName, clientConforme, notedByName, notedByRole, letterhead, freebies,
+    termOptions, tradeIns, consumablePrices, savedQuoteId, router,
+  ]);
+
+  function handleSavePdf() {
+    handleSave(true);
   }
 
   return (
@@ -989,6 +1222,36 @@ export function QuoteBuilderClient({
             <p className="text-[10px] text-[#aaa] mt-0.5 mb-1.5">Unchecked = remains under Exclusives (default).</p>
           </div>
 
+          {/* Computer Set (shown when machine has has_computer_set_option or always) */}
+          {selectedMachine && (
+            <div>
+              <div className="flex items-center gap-[6px] py-[3px]">
+                <input
+                  type="checkbox"
+                  id="chk-cs"
+                  checked={includeComputerSet}
+                  onChange={(e) => setIncludeComputerSet(e.target.checked)}
+                  className="w-[14px] h-[14px] accent-[#c0392b] cursor-pointer"
+                />
+                <label htmlFor="chk-cs" className="text-[12px] text-[#333] cursor-pointer font-bold">
+                  Include Computer Set
+                </label>
+              </div>
+              {includeComputerSet && (
+                <div className="mt-1">
+                  <label className="block text-[10px] font-semibold text-[#666] uppercase mb-[2px]">Computer Set Specifications</label>
+                  <input
+                    type="text"
+                    placeholder="e.g., i5 Gen 12, 16GB RAM, 512GB SSD"
+                    value={computerSetSpec}
+                    onChange={(e) => setComputerSetSpec(e.target.value)}
+                    className="w-full px-[7px] py-[5px] border border-[#ddd] rounded-[4px] text-[12px] bg-[#fafafa]"
+                  />
+                </div>
+              )}
+            </div>
+          )}
+
           {/* Consumables - Prices */}
           {consumablePrices.length > 0 && (
             <div>
@@ -1051,9 +1314,35 @@ export function QuoteBuilderClient({
                     <label htmlFor={`incl-${item.id}`} className="text-[12px] text-[#333] cursor-pointer flex-1">
                       {item.description}
                     </label>
+                    {item.isCustom && (
+                      <button type="button" onClick={() => setInclusionItems(inclusionItems.filter(x => x.id !== item.id))}
+                        className="text-[#c0392b] font-bold text-[14px] leading-none cursor-pointer">&times;</button>
+                    )}
                   </div>
                 ))}
               </div>
+              {/* Custom inclusion input */}
+              {showInclusionInput ? (
+                <div className="flex gap-1.5 mt-1">
+                  <input type="text" placeholder="Custom inclusion…" value={newInclusionText}
+                    onChange={e => setNewInclusionText(e.target.value)}
+                    onKeyDown={e => { if (e.key === "Enter" && newInclusionText.trim()) {
+                      setInclusionItems([...inclusionItems, { id: `ci-${Date.now()}`, description: newInclusionText.trim(), enabled: true, isCustom: true }]);
+                      setNewInclusionText(""); setShowInclusionInput(false);
+                    }}}
+                    className="flex-1 px-[7px] py-[4px] border border-[#ddd] rounded text-[12px]" autoFocus />
+                  <button type="button" onClick={() => { if (newInclusionText.trim()) {
+                    setInclusionItems([...inclusionItems, { id: `ci-${Date.now()}`, description: newInclusionText.trim(), enabled: true, isCustom: true }]);
+                    setNewInclusionText(""); setShowInclusionInput(false);
+                  }}} className="p-[4px_8px] bg-[#c0392b] text-white rounded text-[11px] font-bold">Add</button>
+                  <button type="button" onClick={() => setShowInclusionInput(false)} className="p-[4px_8px] border border-[#ddd] rounded text-[11px]">✕</button>
+                </div>
+              ) : (
+                <button type="button" onClick={() => setShowInclusionInput(true)}
+                  className="mt-1.5 text-[11px] text-[#c0392b] border border-[#c0392b] rounded px-[8px] py-[3px] bg-white font-bold cursor-pointer hover:bg-[#fdecea]">
+                  + Add Item
+                </button>
+              )}
             </div>
           )}
 
@@ -1082,9 +1371,35 @@ export function QuoteBuilderClient({
                     <label htmlFor={`excl-${item.id}`} className="text-[12px] text-[#333] cursor-pointer flex-1">
                       {item.description}
                     </label>
+                    {item.isCustom && (
+                      <button type="button" onClick={() => setExclusionItems(exclusionItems.filter(x => x.id !== item.id))}
+                        className="text-[#c0392b] font-bold text-[14px] leading-none cursor-pointer">&times;</button>
+                    )}
                   </div>
                 ))}
               </div>
+              {/* Custom exclusion input */}
+              {showExclusionInput ? (
+                <div className="flex gap-1.5 mt-1">
+                  <input type="text" placeholder="Custom exclusion…" value={newExclusionText}
+                    onChange={e => setNewExclusionText(e.target.value)}
+                    onKeyDown={e => { if (e.key === "Enter" && newExclusionText.trim()) {
+                      setExclusionItems([...exclusionItems, { id: `ce-${Date.now()}`, description: newExclusionText.trim(), enabled: true, isCustom: true }]);
+                      setNewExclusionText(""); setShowExclusionInput(false);
+                    }}}
+                    className="flex-1 px-[7px] py-[4px] border border-[#ddd] rounded text-[12px]" autoFocus />
+                  <button type="button" onClick={() => { if (newExclusionText.trim()) {
+                    setExclusionItems([...exclusionItems, { id: `ce-${Date.now()}`, description: newExclusionText.trim(), enabled: true, isCustom: true }]);
+                    setNewExclusionText(""); setShowExclusionInput(false);
+                  }}} className="p-[4px_8px] bg-[#c0392b] text-white rounded text-[11px] font-bold">Add</button>
+                  <button type="button" onClick={() => setShowExclusionInput(false)} className="p-[4px_8px] border border-[#ddd] rounded text-[11px]">✕</button>
+                </div>
+              ) : (
+                <button type="button" onClick={() => setShowExclusionInput(true)}
+                  className="mt-1.5 text-[11px] text-[#c0392b] border border-[#c0392b] rounded px-[8px] py-[3px] bg-white font-bold cursor-pointer hover:bg-[#fdecea]">
+                  + Add Item
+                </button>
+              )}
             </div>
           )}
 
@@ -1247,27 +1562,56 @@ export function QuoteBuilderClient({
 
             <button
               type="button"
-              onClick={() => {
-                if (validationErrors.length > 0) {
-                  setShowValidationBox(true);
-                  return;
-                }
-                window.location.href = "/sales/closing-docs";
+              onClick={async () => {
+                if (validationErrors.length > 0) { setShowValidationBox(true); return; }
+                // Save first so closing docs can load the quote by ID
+                setSaving(true);
+                try {
+                  const payload = {
+                    machine_id: selectedMachine?.id ?? null,
+                    client_name: clientName, company, address, contact, email,
+                    quote_date: quoteDate, salutation, opening_line: openingLine,
+                    deal_type: dealType, contract_price: contractPrice,
+                    vat_inclusive: vatInclusive, under_promo: underPromo, promo_validity: promoValidity,
+                    unit_condition_override: unitCondition !== selectedMachine?.unit_condition ? unitCondition : null,
+                    include_delivery: includeDelivery, include_computer_set: includeComputerSet, computer_set_spec: computerSetSpec,
+                    inclusion_toggles: inclusionItems, exclusion_toggles: exclusionItems, addon_toggles: addonItems,
+                    warranty_company: warrantyCompany, warranty_supplier: warrantySupplier,
+                    availability, collection_payment: collectionPayment,
+                    collection_downpayment: collectionDownpayment, collection_amortization: collectionAmortization,
+                    ae_name: aeName, client_conforme: clientConforme,
+                    noted_by_name: notedByName, noted_by_role: notedByRole,
+                    letterhead, freebies,
+                    term_options: termOptions.map((t, i) => ({ down_payment: t.downPayment, months: t.months, monthly_amortization: t.monthlyAmortization, sort_order: i })),
+                    trade_ins: tradeIns.filter(t => t.value > 0 || t.description.trim()).map((t, i) => ({ description: t.description, value: t.value, sort_order: i })),
+                    consumable_prices: consumablePrices.filter(c => c.id && !c.id.startsWith("c-")).map(c => ({ consumable_id: c.id, custom_price: c.price })),
+                  };
+                  const url = savedQuoteId ? `/api/sales/quotes/${savedQuoteId}` : "/api/sales/quotes";
+                  const res = await fetch(url, { method: savedQuoteId ? "PUT" : "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(payload) });
+                  const data = await res.json();
+                  if (!res.ok) throw new Error(data.error || "Save failed");
+                  const qId = savedQuoteId || data.id;
+                  setSavedQuoteId(qId);
+                  if (!savedQuoteId) router.replace(`/sales/quote-builder?id=${qId}`);
+                  router.push(`/sales/closing-docs?id=${qId}`);
+                } catch { alert("Failed to save before opening closing docs. Please try again."); }
+                finally { setSaving(false); }
               }}
               className="w-full p-[10px] bg-[#c0392b] hover:bg-[#a93226] text-white rounded-[6px] font-bold text-[13px] tracking-[0.5px] cursor-pointer text-center block border-0 transition-colors shadow-xs mb-2"
             >
-              OPEN CLOSING DOCUMENTS
+              {saving ? "SAVING…" : "OPEN CLOSING DOCUMENTS"}
             </button>
 
             <button
               type="button"
-              onClick={handleSavePdf}
-              className="w-full p-[10px] bg-[#c0392b] hover:bg-[#a93226] text-white rounded-[6px] font-bold text-[13px] tracking-[0.5px] cursor-pointer text-center block border-0 transition-colors shadow-xs"
+              onClick={() => handleSave(true)}
+              disabled={saving}
+              className="w-full p-[10px] bg-[#c0392b] hover:bg-[#a93226] disabled:opacity-60 text-white rounded-[6px] font-bold text-[13px] tracking-[0.5px] cursor-pointer text-center block border-0 transition-colors shadow-xs"
             >
-              💾 SAVE AS PDF
+              {saving ? "SAVING…" : saveSuccess ? "✓ SAVED!" : "💾 SAVE AS PDF"}
             </button>
             <p className="text-[10px] text-[#aaa] text-center mt-1 mb-0">
-              Tip: In the print dialog, set Destination to &quot;Save as PDF&quot;
+              {savedQuoteId ? "Quote saved. In print dialog, set Destination to "Save as PDF"." : "Saves quote then opens print dialog."}
             </p>
           </div>
         </div>
@@ -1505,6 +1849,16 @@ export function QuoteBuilderClient({
                       </div>
                     ))}
                   </div>
+                </div>
+              )}
+
+              {/* COMPUTER SET */}
+              {includeComputerSet && computerSetSpec && (
+                <div className="mb-[3mm]">
+                  <div className="text-[8.5pt] font-bold text-[#c0392b] uppercase my-[3mm_1.5mm] flex items-center gap-1">
+                    Computer Set<span className="flex-1 h-[1px] bg-[#f0f0f0]"></span>
+                  </div>
+                  <p className="text-[8pt] text-[#444] m-0">{computerSetSpec}</p>
                 </div>
               )}
 
