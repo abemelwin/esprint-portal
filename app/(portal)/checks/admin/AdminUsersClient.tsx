@@ -129,6 +129,10 @@ export function AdminUsersClient({ branches, aeList, subsidiaries, deleteRequest
   const [confirm, setConfirm]         = useState<{ title: string; message: string; confirmText?: string; danger?: boolean; onConfirm: () => void } | null>(null);
   const [formError, setFormError]     = useState<string | null>(null);
 
+  const [showDeleteRequests, setShowDeleteRequests] = useState(false);
+  const [deleteRequests, setDeleteRequests] = useState<any[]>([]);
+  const [loadingDR, setLoadingDR] = useState(false);
+
   useEffect(() => {
     setMounted(true);
   }, []);
@@ -144,7 +148,39 @@ export function AdminUsersClient({ branches, aeList, subsidiaries, deleteRequest
     finally { setLoading(false); }
   }, [showToast]);
 
-  useEffect(() => { fetchUsers(); }, [fetchUsers]);
+  const fetchDeleteRequests = useCallback(async () => {
+    setLoadingDR(true);
+    try {
+      const res = await fetch('/api/checks/delete-requests');
+      const json = await res.json();
+      if (json.ok) setDeleteRequests(json.requests ?? []);
+    } catch {}
+    finally { setLoadingDR(false); }
+  }, []);
+
+  useEffect(() => {
+    fetchUsers();
+    fetchDeleteRequests();
+  }, [fetchUsers, fetchDeleteRequests]);
+
+  async function handleDeleteRequestAction(id: string, action: 'approve' | 'reject') {
+    try {
+      const res = await fetch('/api/checks/delete-requests', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ id, action }),
+      });
+      const json = await res.json();
+      if (json.ok) {
+        showToast(action === 'approve' ? 'Check deleted' : 'Request rejected', 'success');
+        fetchDeleteRequests();
+      } else {
+        showToast(json.error ?? 'Action failed', 'error');
+      }
+    } catch {
+      showToast('Network error', 'error');
+    }
+  }
 
   const branchMap = useMemo(() => new Map(branchList.map(b => [b.id, b.name])), [branchList]);
 
@@ -430,12 +466,22 @@ export function AdminUsersClient({ branches, aeList, subsidiaries, deleteRequest
             ✉ Invite User
           </button>
 
-          <Link
-            href="/checks/admin/delete-requests"
-            className={`flex items-center gap-1.5 px-4 py-2.5 rounded-xl text-sm font-bold text-white transition-colors shadow-sm ${deleteRequestCount > 0 ? 'bg-[#dc2626] hover:bg-[#b91c1c]' : 'bg-gray-400 hover:bg-gray-500'}`}
+          <button
+            type="button"
+            onClick={() => { setShowDeleteRequests(true); fetchDeleteRequests(); }}
+            className={`flex items-center gap-1.5 px-4 py-2.5 rounded-xl text-sm font-bold text-white transition-colors shadow-sm cursor-pointer border-0 ${
+              deleteRequests.length > 0 || deleteRequestCount > 0
+                ? 'bg-[#dc2626] hover:bg-[#b91c1c]'
+                : 'bg-gray-400 hover:bg-gray-500'
+            }`}
           >
-            🗑 Delete Requests{deleteRequestCount > 0 ? ` (${deleteRequestCount})` : ''}
-          </Link>
+            🗑 Delete Requests
+            {deleteRequests.length > 0
+              ? ` (${deleteRequests.length})`
+              : deleteRequestCount > 0
+              ? ` (${deleteRequestCount})`
+              : ''}
+          </button>
         </div>
       </div>
 
@@ -965,6 +1011,97 @@ export function AdminUsersClient({ branches, aeList, subsidiaries, deleteRequest
         onConfirm={() => confirm?.onConfirm()}
         onCancel={() => setConfirm(null)}
       />
+
+      {/* ── Delete Requests Modal (exact replica of original) ── */}
+      {showDeleteRequests && mounted && typeof document !== 'undefined' && createPortal(
+        <div
+          style={{ position: 'fixed', inset: 0, zIndex: 99999, background: 'rgba(15,23,42,0.5)', backdropFilter: 'blur(2px)', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 16 }}
+          onClick={() => setShowDeleteRequests(false)}
+        >
+          <div
+            style={{ background: '#fff', borderRadius: 16, boxShadow: '0 20px 60px rgba(0,0,0,0.25)', width: '95vw', maxWidth: 860, maxHeight: '85vh', display: 'flex', flexDirection: 'column', overflow: 'hidden' }}
+            onClick={e => e.stopPropagation()}
+          >
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '18px 24px', borderBottom: '1px solid #f1f5f9', flexShrink: 0 }}>
+              <div>
+                <h2 style={{ margin: 0, fontSize: 16, fontWeight: 700, color: '#111827' }}>
+                  🗑 Delete Requests ({deleteRequests.length})
+                </h2>
+                <p style={{ margin: '4px 0 0', fontSize: 13, color: '#6b7280' }}>
+                  Users are requesting these checks to be deleted. Approve or reject.
+                </p>
+              </div>
+              <button
+                onClick={() => setShowDeleteRequests(false)}
+                style={{ background: '#f1f5f9', border: 'none', borderRadius: '50%', width: 32, height: 32, cursor: 'pointer', fontSize: 18, color: '#6b7280', display: 'flex', alignItems: 'center', justifyContent: 'center' }}
+                aria-label="Close"
+              >
+                ×
+              </button>
+            </div>
+            <div style={{ overflowY: 'auto', overflowX: 'auto', flex: 1 }}>
+              {deleteRequests.length === 0 ? (
+                <p className="text-center text-gray-400 italic text-sm py-16">No pending delete requests</p>
+              ) : (
+                <table className="w-full text-sm border-collapse min-w-[700px]">
+                  <thead>
+                    <tr className="bg-gray-50 border-b border-gray-200 sticky top-0 z-10">
+                      <th className="px-4 py-3 text-left text-xs font-bold text-gray-600 uppercase tracking-wider">Check</th>
+                      <th className="px-4 py-3 text-left text-xs font-bold text-gray-600 uppercase tracking-wider">Requested By</th>
+                      <th className="px-4 py-3 text-left text-xs font-bold text-gray-600 uppercase tracking-wider">Reason</th>
+                      <th className="px-4 py-3 text-left text-xs font-bold text-gray-600 uppercase tracking-wider">Date</th>
+                      <th className="px-4 py-3 text-right text-xs font-bold text-gray-600 uppercase tracking-wider">Actions</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-gray-100">
+                    {deleteRequests.map((dr: any) => {
+                      const apiCheck = dr._check;
+                      const displayName = apiCheck?.clientName ?? dr.clientName ?? (dr.check_id ? dr.check_id.slice(0, 8) + '…' : '—');
+                      const displayBank = apiCheck?.bank ?? dr.bank ?? '';
+                      const displayCheckNo = apiCheck?.checkNo ?? dr.checkNo ?? '';
+                      const displayDate = apiCheck?.checkDate ?? dr.checkDate ?? null;
+                      return (
+                        <tr key={dr.id} className="transition-colors hover:bg-slate-50/80">
+                          <td className="px-4 py-3 text-xs text-gray-800">
+                            <div className="font-bold text-gray-900">{displayName}</div>
+                            <div className="text-gray-500">{displayBank} {displayCheckNo}{displayDate ? ` - ${displayDate}` : ''}</div>
+                          </td>
+                          <td className="px-4 py-3 text-xs text-gray-700 whitespace-nowrap">{dr.requested_by_name}</td>
+                          <td className="px-4 py-3 text-xs text-gray-700 max-w-[220px]">
+                            {dr.reason
+                              ? <span className="text-amber-800 font-medium">{dr.reason}</span>
+                              : <span className="text-gray-300 italic">—</span>}
+                          </td>
+                          <td className="px-4 py-3 text-xs text-gray-500 whitespace-nowrap">
+                            {dr.created_at ? new Date(dr.created_at).toLocaleDateString('en-US', { month: 'numeric', day: 'numeric', year: 'numeric' }) : ''}
+                          </td>
+                          <td className="px-4 py-3 whitespace-nowrap text-right">
+                            <div className="inline-flex items-center justify-end gap-2">
+                              <button
+                                onClick={() => handleDeleteRequestAction(dr.id, 'approve')}
+                                className="inline-flex items-center px-3 py-1 rounded-lg text-xs font-semibold text-white bg-red-600 hover:bg-red-700 transition-colors shadow-sm cursor-pointer border-0"
+                              >
+                                Approve
+                              </button>
+                              <button
+                                onClick={() => handleDeleteRequestAction(dr.id, 'reject')}
+                                className="inline-flex items-center px-3 py-1 rounded-lg text-xs font-semibold text-gray-700 bg-gray-100 hover:bg-gray-200 border border-gray-200 transition-colors cursor-pointer"
+                              >
+                                Reject
+                              </button>
+                            </div>
+                          </td>
+                        </tr>
+                      );
+                    })}
+                  </tbody>
+                </table>
+              )}
+            </div>
+          </div>
+        </div>,
+        document.body
+      )}
     </div>
   );
 }

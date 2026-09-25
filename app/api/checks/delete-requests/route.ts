@@ -16,15 +16,38 @@ export async function GET(_req: NextRequest) {
   if (!guard.ok) return guard.response;
   if (!canDeleteCheck(guard.perms)) return NextResponse.json({ error: "Admin only." }, { status: 403 });
 
-  const rows = await query(
-    `SELECT id, check_id, event_id, target_type, reason,
-            requested_by, requested_by_name, status, created_at
-     FROM ${SCHEMA}.delete_requests
-     WHERE status = 'pending'
-     ORDER BY created_at DESC`
+  const rows = await query<any>(
+    `SELECT dr.id, dr.check_id, dr.event_id, dr.target_type, dr.reason,
+            dr.requested_by, dr.requested_by_name, dr.status, dr.created_at,
+            c.check_no, c.bank, c.client_code, c.check_date,
+            cl.name as client_name
+     FROM ${SCHEMA}.delete_requests dr
+     LEFT JOIN ${SCHEMA}.checks c ON c.id = dr.check_id
+     LEFT JOIN ${SCHEMA}.clients cl ON cl.code = c.client_code
+     WHERE dr.status = 'pending'
+     ORDER BY dr.created_at DESC`
   ).catch(() => []);
 
-  return NextResponse.json({ ok: true, requests: rows });
+  const requests = rows.map((r: any) => ({
+    id:                r.id,
+    check_id:          r.check_id,
+    event_id:          r.event_id,
+    target_type:       r.target_type,
+    reason:            r.reason,
+    requested_by:      r.requested_by,
+    requested_by_name: r.requested_by_name || r.requested_by || '—',
+    status:            r.status,
+    created_at:        r.created_at,
+    _check: {
+      checkNo:    r.check_no ?? '',
+      checkDate:  r.check_date ?? null,
+      bank:       r.bank ?? '',
+      client:     r.client_code ?? '',
+      clientName: r.client_name ?? r.client_code ?? r.check_id,
+    },
+  }));
+
+  return NextResponse.json({ ok: true, requests });
 }
 
 export async function POST(req: NextRequest) {
@@ -33,7 +56,8 @@ export async function POST(req: NextRequest) {
   if (!canDeleteCheck(guard.perms)) return NextResponse.json({ error: "Admin only." }, { status: 403 });
 
   const body = await req.json().catch(() => ({}));
-  const { requestId, action } = body; // action: 'approve' | 'reject'
+  const requestId = body.requestId || body.id;
+  const action = body.action; // action: 'approve' | 'reject'
   if (!requestId || !["approve","reject"].includes(action)) {
     return NextResponse.json({ error: "requestId and action (approve|reject) required." }, { status: 400 });
   }
