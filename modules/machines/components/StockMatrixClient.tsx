@@ -1,51 +1,114 @@
 "use client";
 
 import { useState, useEffect, useMemo } from "react";
-import Link from "next/link";
 import type { Machine, TBAListItem, ReorderPoint } from "../types";
+import { Button } from "../ui/Button";
 
 interface StockRow {
-  key: string;
-  brand: string;
-  model: string;
-  inStock: number;
-  incoming: number;
-  reserved: number;
-  physical: number; // inStock + reserved (on hand)
-  available: number; // inStock
-  tba: number;
-  rp: number;
-  rank: number;
-  label: string;
-  cls: "crit" | "warn" | "ok" | "none";
+  key:       string;
+  brand:     string;
+  model:     string;
+  inStock:   number;
+  incoming:  number;
+  reserved:  number;
+  physical:  number;   // inStock + reserved  (on hand)
+  available: number;   // physical + incoming − reserved  (= inStock + incoming)
+  tba:       number;
+  rp:        number;
+  rank:      number;
+  label:     string;
+  cls:       "crit" | "warn" | "ok" | "none";
+  color:     string;
 }
 
+// ── helpers ────────────────────────────────────────────────────
+function buildRows(
+  machines:   Machine[],
+  tbaList:    TBAListItem[],
+  reorderPts: ReorderPoint[],
+  branchFilter: string,
+): StockRow[] {
+  const g: Record<string, StockRow> = {};
+
+  for (const m of machines) {
+    if (branchFilter && (m.branch ?? "").trim() !== branchFilter) continue;
+    if (m.status === "Delivered") continue;
+
+    const brand = ((m.brand ?? "").trim() || "(no brand)");
+    const model = ((m.model ?? "").trim() || "(no model)");
+    const key   = `${brand}||${model}`;
+    if (!g[key])
+      g[key] = { key, brand, model, inStock: 0, incoming: 0, reserved: 0,
+                 physical: 0, available: 0, tba: 0, rp: 0,
+                 rank: 3, label: "—", cls: "none", color: "var(--text-muted)" };
+    if (m.status === "In Stock")   g[key].inStock++;
+    if (m.status === "Incoming")   g[key].incoming++;
+    if (m.status === "Reserved")   g[key].reserved++;
+  }
+
+  const rpMap: Record<string, number> = {};
+  for (const rp of reorderPts) {
+    rpMap[`${rp.brand.trim()}||${rp.model.trim()}`] = rp.quantity;
+  }
+
+  const tbaCount: Record<string, number> = {};
+  for (const t of tbaList) {
+    const k = `${(t.brand ?? "").trim() || "(no brand)"}||${(t.model ?? "").trim() || "(no model)"}`;
+    tbaCount[k] = (tbaCount[k] ?? 0) + 1;
+  }
+
+  return Object.values(g).map((r) => {
+    r.physical  = r.inStock + r.reserved;
+    // Available Stock = physical + incoming − reserved = inStock + incoming
+    r.available = r.physical + r.incoming - r.reserved;
+    r.tba       = tbaCount[r.key] ?? 0;
+    r.rp        = rpMap[r.key]    ?? 0;
+
+    if (r.rp > 0) {
+      if (r.physical <= r.rp) {
+        if (r.incoming > 0) {
+          r.rank = 1; r.label = `Replenish · ${r.incoming} incoming`;
+          r.cls = "warn"; r.color = "var(--reserved)";
+        } else {
+          r.rank = 0; r.label = "⚠ Reorder now";
+          r.cls = "crit"; r.color = "var(--danger)";
+        }
+      } else {
+        r.rank = 2; r.label = "OK"; r.cls = "ok"; r.color = "var(--stock)";
+      }
+    }
+    return r;
+  });
+}
+
+// ── component ──────────────────────────────────────────────────
 export function StockMatrixClient() {
-  const [machines, setMachines] = useState<Machine[]>([]);
-  const [tbaList, setTbaList] = useState<TBAListItem[]>([]);
-  const [reorderPts, setReorderPts] = useState<ReorderPoint[]>([]);
-  const [loading, setLoading] = useState(true);
+  const [machines,    setMachines]    = useState<Machine[]>([]);
+  const [tbaList,     setTbaList]     = useState<TBAListItem[]>([]);
+  const [reorderPts,  setReorderPts]  = useState<ReorderPoint[]>([]);
+  const [loading,     setLoading]     = useState(true);
+  const [savingRP,    setSavingRP]    = useState(false);
 
   // Filters
-  const [q, setQ] = useState("");
-  const [fBrand, setFBrand] = useState("");
+  const [q,       setQ]       = useState("");
+  const [fBrand,  setFBrand]  = useState("");
   const [fBranch, setFBranch] = useState("");
-  const [rpOnly, setRpOnly] = useState(false);
+  const [rpOnly,  setRpOnly]  = useState(false);
 
   async function loadData() {
     setLoading(true);
     try {
-      const [mRes, tRes, rRes] = await Promise.all([
+      const [mRes, tRes, lRes] = await Promise.all([
         fetch("/api/machines"),
         fetch("/api/machines/tba"),
         fetch("/api/machines/lookups"),
       ]);
       const mData = await mRes.json();
       const tData = await tRes.json();
-      const rData = await rRes.json();
-      if (mData.machines) setMachines(mData.machines);
-      if (tData.tba) setTbaList(tData.tba);
-      if (rData.reorder_points) setReorderPts(rData.reorder_points);
+      const lData = await lRes.json();
+      if (mData.machines)      setMachines(mData.machines);
+      if (tData.tba)           setTbaList(tData.tba);
+      if (lData.reorder_points) setReorderPts(lData.reorder_points);
     } catch (err) {
       console.error(err);
     } finally {
@@ -53,254 +116,254 @@ export function StockMatrixClient() {
     }
   }
 
-  useEffect(() => {
-    loadData();
-  }, []);
+  useEffect(() => { loadData(); }, []);
 
+  // ── set reorder point ──────────────────────────────────────────
+  async function setRP(brand: string, model: string, quantity: number) {
+    setSavingRP(true);
+    try {
+      await fetch("/api/machines/lookups", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ action: "add", type: "reorder_point", brand, model, quantity }),
+      });
+      // Optimistic local update
+      setReorderPts((prev) => {
+        const idx = prev.findIndex((r) => r.brand.trim() === brand.trim() && r.model.trim() === model.trim());
+        if (idx >= 0) {
+          const next = [...prev];
+          next[idx] = { ...next[idx], quantity };
+          return next;
+        }
+        return [...prev, { id: Date.now(), brand, model, quantity }];
+      });
+    } finally {
+      setSavingRP(false);
+    }
+  }
+
+  // ── derived data ───────────────────────────────────────────────
   const allBranches = useMemo(
-    () => [...new Set(machines.map((m) => (m.branch || "").trim()).filter(Boolean))].sort(),
+    () => [...new Set(machines.map((m) => (m.branch ?? "").trim()).filter(Boolean))].sort(),
     [machines]
+  );
+
+  const allRows = useMemo(
+    () => buildRows(machines, tbaList, reorderPts, fBranch),
+    [machines, tbaList, reorderPts, fBranch]
   );
 
   const allBrands = useMemo(
-    () => [...new Set(machines.map((m) => (m.brand || "").trim()).filter(Boolean))].sort(),
-    [machines]
+    () => [...new Set(allRows.map((r) => r.brand))].sort(),
+    [allRows]
   );
 
-  // Compute Matrix rows
-  const allRows = useMemo<StockRow[]>(() => {
-    const map = new Map<string, { brand: string; model: string; inStock: number; incoming: number; reserved: number; tba: number }>();
-
-    for (const m of machines) {
-      if (fBranch && (m.branch || "").trim() !== fBranch) continue;
-      if (m.status === "Delivered") continue;
-
-      const brand = (m.brand || "Unknown").trim().toUpperCase();
-      const model = (m.model || "Unknown").trim().toUpperCase();
-      const key = `${brand}__${model}`;
-
-      if (!map.has(key)) {
-        map.set(key, { brand, model, inStock: 0, incoming: 0, reserved: 0, tba: 0 });
-      }
-      const entry = map.get(key)!;
-      if (m.status === "In Stock") entry.inStock += 1;
-      else if (m.status === "Incoming") entry.incoming += 1;
-      else if (m.status === "Reserved") entry.reserved += 1;
-    }
-
-    for (const t of tbaList) {
-      const brand = (t.brand || "Unknown").trim().toUpperCase();
-      const model = (t.model || "Unknown").trim().toUpperCase();
-      const key = `${brand}__${model}`;
-      if (!map.has(key)) {
-        map.set(key, { brand, model, inStock: 0, incoming: 0, reserved: 0, tba: 0 });
-      }
-      map.get(key)!.tba += 1;
-    }
-
-    const rpMap = new Map<string, number>();
-    for (const rp of reorderPts) {
-      const key = `${rp.brand.trim().toUpperCase()}__${rp.model.trim().toUpperCase()}`;
-      rpMap.set(key, rp.quantity);
-    }
-
-    const rows: StockRow[] = [];
-    for (const [key, val] of map.entries()) {
-      const rp = rpMap.get(key) || 0;
-      const physical = val.inStock + val.reserved;
-      const available = val.inStock;
-
-      let cls: "crit" | "warn" | "ok" | "none" = "none";
-      let label = "Normal";
-      let rank = 3;
-
-      if (rp > 0) {
-        if (available === 0) {
-          cls = "crit";
-          label = "OUT OF STOCK";
-          rank = 0;
-        } else if (available < rp) {
-          cls = "warn";
-          label = `LOW STOCK (<${rp})`;
-          rank = 1;
-        } else {
-          cls = "ok";
-          label = "OPTIMAL";
-          rank = 2;
-        }
-      } else {
-        if (available === 0 && val.incoming > 0) {
-          label = "INCOMING ONLY";
-        } else if (available === 0) {
-          label = "NO STOCK";
-        }
-      }
-
-      rows.push({
-        key,
-        brand: val.brand,
-        model: val.model,
-        inStock: val.inStock,
-        incoming: val.incoming,
-        reserved: val.reserved,
-        physical,
-        available,
-        tba: val.tba,
-        rp,
-        rank,
-        label,
-        cls,
-      });
-    }
-
-    return rows;
-  }, [machines, tbaList, reorderPts, fBranch]);
-
-  const filtered = useMemo(() => {
+  const rows = useMemo(() => {
     let r = allRows.slice();
-    if (q.trim()) {
-      const lq = q.toLowerCase();
-      r = r.filter((x) => x.brand.toLowerCase().includes(lq) || x.model.toLowerCase().includes(lq));
-    }
-    if (fBrand) r = r.filter((x) => x.brand === fBrand);
-    if (rpOnly) r = r.filter((x) => x.cls === "crit" || x.cls === "warn");
+    if (q.trim()) r = r.filter((x) => (x.brand + " " + x.model).toLowerCase().includes(q.toLowerCase()));
+    if (fBrand)   r = r.filter((x) => x.brand === fBrand);
+    if (rpOnly)   r = r.filter((x) => x.cls === "crit" || x.cls === "warn");
     return r.sort((a, b) => a.rank - b.rank || a.brand.localeCompare(b.brand) || a.model.localeCompare(b.model));
   }, [allRows, q, fBrand, rpOnly]);
 
+  const need = allRows.filter((r) => r.cls === "crit" || r.cls === "warn").length;
+  const crit = allRows.filter((r) => r.cls === "crit").length;
+
+  // ── CSV export ─────────────────────────────────────────────────
+  function exportCSV() {
+    const head = ["Brand","Model","In Stock (Physical)","Incoming","Reserved","Available Stock","TBA","Reorder Point","Status"];
+    const lines = [
+      head.join(","),
+      ...rows.map((r) =>
+        [r.brand, r.model, r.physical, r.incoming, r.reserved, r.available, r.tba, r.rp || "", r.label.replace(/[⚠·↗]/g, "").trim()]
+          .map((v) => `"${String(v).replace(/"/g, '""')}"`).join(",")
+      ),
+    ];
+    const a = document.createElement("a");
+    a.href = URL.createObjectURL(new Blob([lines.join("\n")], { type: "text/csv" }));
+    a.download = `ES_StockLevels_${new Date().toISOString().slice(0, 10)}.csv`;
+    a.click();
+  }
+
+  // ── style helpers ──────────────────────────────────────────────
+  const filterSel = (
+    label: string, value: string, onChange: (v: string) => void, opts: string[]
+  ) => (
+    <select
+      className="bg-[var(--surface-1)] border border-[var(--border)] text-[var(--text-primary)] px-3 py-2 rounded-[9px] text-[13px] focus:outline-none focus:border-[var(--accent)]"
+      value={value}
+      onChange={(e) => onChange(e.target.value)}
+    >
+      <option value="">{label}</option>
+      {opts.map((o) => <option key={o} value={o}>{o}</option>)}
+    </select>
+  );
+
+  const thCls =
+    "sticky top-0 bg-[var(--surface-2)] text-left px-3 py-2.5 font-[650] text-[var(--text-secondary)] text-[11px] uppercase tracking-wide whitespace-nowrap border-b border-[var(--border)]";
+  const tdCls =
+    "px-3.5 py-2.5 border-b border-[var(--border)] align-middle text-[12.5px]";
+
+  // ── render ─────────────────────────────────────────────────────
   return (
     <div className="p-4 sm:p-6 space-y-4 max-w-[1800px] mx-auto select-none">
-      {/* 2. Filter Toolbar Row */}
-      <div className="flex flex-wrap items-center justify-between gap-3 text-xs">
-        <div className="flex flex-wrap items-center gap-2">
+      {/* Toolbar */}
+      <div className="flex gap-2.5 flex-wrap items-center mb-3">
+        <input
+          type="search"
+          placeholder="🔍 Search brand or model…"
+          className="bg-[var(--surface-1)] border border-[var(--border)] text-[var(--text-primary)] px-3 py-2 rounded-[9px] text-[13px] min-w-[220px] focus:outline-none focus:border-[var(--accent)]"
+          value={q}
+          onChange={(e) => setQ(e.target.value)}
+        />
+        {filterSel("All brands",   fBrand,  setFBrand,  allBrands)}
+        {filterSel("All branches", fBranch, setFBranch, allBranches)}
+        <label className="inline-flex items-center gap-1.5 text-[13px] text-[var(--text-secondary)] bg-[var(--surface-1)] border border-[var(--border)] px-3 py-2 rounded-[9px] cursor-pointer select-none whitespace-nowrap">
           <input
-            type="search"
-            placeholder="🔍 Search brand, model…"
-            value={q}
-            onChange={(e) => setQ(e.target.value)}
-            className="bg-white border border-slate-200 text-slate-800 text-xs rounded-full px-3.5 py-1.5 min-w-[240px] shadow-2xs focus:outline-none focus:ring-1 focus:ring-blue-500"
+            type="checkbox"
+            checked={rpOnly}
+            onChange={(e) => setRpOnly(e.target.checked)}
+            className="cursor-pointer"
           />
-
-          <select
-            value={fBrand}
-            onChange={(e) => setFBrand(e.target.value)}
-            className="bg-white border border-slate-200 text-slate-700 font-medium text-xs rounded-full px-3 py-1.5 shadow-2xs focus:outline-none cursor-pointer"
-          >
-            <option value="">All brands</option>
-            {allBrands.map((b) => (
-              <option key={b} value={b}>
-                {b}
-              </option>
-            ))}
-          </select>
-
-          <select
-            value={fBranch}
-            onChange={(e) => setFBranch(e.target.value)}
-            className="bg-white border border-slate-200 text-slate-700 font-medium text-xs rounded-full px-3 py-1.5 shadow-2xs focus:outline-none cursor-pointer"
-          >
-            <option value="">All branches</option>
-            {allBranches.map((br) => (
-              <option key={br} value={br}>
-                {br}
-              </option>
-            ))}
-          </select>
-
-          <label className="flex items-center gap-1.5 bg-white border border-slate-200 text-slate-700 font-medium text-xs rounded-full px-3 py-1.5 shadow-2xs cursor-pointer">
-            <input
-              type="checkbox"
-              checked={rpOnly}
-              onChange={(e) => setRpOnly(e.target.checked)}
-              className="rounded accent-red-600"
-            />
-            <span>Reorder alert only</span>
-          </label>
-        </div>
-
-        <div className="text-xs text-slate-400 font-medium shrink-0">
-          {filtered.length} of {allRows.length} models
-        </div>
+          Show only items to reorder
+        </label>
+        <Button onClick={exportCSV}>⬇ CSV</Button>
+        <span className="flex-1" />
+        <span className="text-[12.5px] text-[var(--text-muted)]">
+          {rows.length} brand-models
+        </span>
       </div>
 
-      {/* 3. Stock Matrix Table Container */}
-      <div className="bg-[#f0f9fa] border border-[#d2eaec] rounded-2xl overflow-hidden shadow-xs">
-        {loading ? (
-          <div className="py-16 text-center text-slate-400 text-xs font-semibold">
-            Calculating stock levels...
-          </div>
-        ) : filtered.length === 0 ? (
-          <div className="py-16 text-center text-slate-400 text-xs font-semibold">
-            No machine models matched the filter criteria.
-          </div>
-        ) : (
-          <div className="overflow-x-auto">
-            <table className="w-full text-left border-collapse text-xs">
-              <thead>
-                <tr className="border-b border-[#d2eaec] text-slate-600 font-bold text-[11px] tracking-wider uppercase bg-[#e6f4f5]/80">
-                  <th className="py-3 px-3.5">Brand</th>
-                  <th className="py-3 px-3.5">Model</th>
-                  <th className="py-3 px-3.5 text-center">Physical (On Hand)</th>
-                  <th className="py-3 px-3.5 text-center">In Stock</th>
-                  <th className="py-3 px-3.5 text-center">Incoming</th>
-                  <th className="py-3 px-3.5 text-center">Reserved</th>
-                  <th className="py-3 px-3.5 text-center">Available to Sell</th>
-                  <th className="py-3 px-3.5 text-center">TBA List</th>
-                  <th className="py-3 px-3.5 text-center">Reorder Level</th>
-                  <th className="py-3 px-3.5 text-center">Status</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-[#d8eef0] bg-[#f0f9fa]/50 font-medium text-slate-700 whitespace-nowrap">
-                {filtered.map((r) => (
-                  <tr key={r.key} className="hover:bg-white/70 transition-colors">
-                    <td className="py-2.5 px-3.5 font-bold text-slate-800">{r.brand}</td>
-                    <td className="py-2.5 px-3.5 font-black text-slate-900">{r.model}</td>
-                    <td className="py-2.5 px-3.5 text-center font-bold text-slate-800">{r.physical}</td>
-                    <td className="py-2.5 px-3.5 text-center font-black text-emerald-700">{r.inStock}</td>
-                    <td className="py-2.5 px-3.5 text-center font-bold text-sky-700">{r.incoming}</td>
-                    <td className="py-2.5 px-3.5 text-center font-bold text-amber-700">{r.reserved}</td>
-                    <td className="py-2.5 px-3.5 text-center">
-                      <span className={`inline-block px-2.5 py-0.5 rounded-full font-black text-xs ${
-                        r.available > 0 ? "bg-emerald-100 text-emerald-800" : "bg-rose-100 text-rose-800"
-                      }`}>
-                        {r.available}
-                      </span>
-                    </td>
-                    <td className="py-2.5 px-3.5 text-center font-bold text-purple-700">{r.tba}</td>
-                    <td className="py-2.5 px-3.5 text-center font-mono text-slate-500">{r.rp || "—"}</td>
-                    <td className="py-2.5 px-3.5 text-center">
-                      {r.cls === "crit" && (
-                        <span className="px-2.5 py-0.5 rounded-full text-[11px] font-extrabold bg-rose-100 text-rose-800">
-                          {r.label}
-                        </span>
-                      )}
-                      {r.cls === "warn" && (
-                        <span className="px-2.5 py-0.5 rounded-full text-[11px] font-extrabold bg-amber-100 text-amber-800">
-                          {r.label}
-                        </span>
-                      )}
-                      {r.cls === "ok" && (
-                        <span className="px-2.5 py-0.5 rounded-full text-[11px] font-extrabold bg-emerald-100 text-emerald-800">
-                          {r.label}
-                        </span>
-                      )}
-                      {r.cls === "none" && (
-                        <span className="text-[11px] font-semibold text-slate-400">
-                          {r.label}
-                        </span>
-                      )}
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
+      {/* Reorder note */}
+      <div className="text-[12.5px] text-[var(--text-secondary)] mb-3 flex items-center gap-2 flex-wrap">
+        {need > 0 && (
+          <>
+            <span
+              className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[11px] font-[650]"
+              style={{ background: "rgba(227,73,72,.14)", color: "var(--danger)" }}
+            >
+              ⚠ {need} to replenish
+            </span>
+            {crit} need reorder now
+            {need > crit ? `, ${need - crit} already have stock incoming` : ""}.{" "}
+          </>
         )}
+        <b>In Stock</b> counts units physically on hand (including reserved).{" "}
+        <b>Available Stock</b> = In Stock + Incoming − Reserved.{" "}
+        Set a <b>Reorder Point</b> per brand-model to flag low stock.
       </div>
 
-      {/* Footer */}
-      <footer className="py-6 text-center text-xs text-slate-400 font-medium">
-        ES Machine Monitoring System - ES Print Group of Companies
-      </footer>
+      {/* Table */}
+      <div className="bg-[var(--surface-1)] border border-[var(--border)] rounded-[var(--radius)] shadow-[var(--shadow)] overflow-hidden">
+        <div className="overflow-x-auto" style={{ maxHeight: 640, overflowY: "auto" }}>
+          <table className="w-full border-collapse">
+            <thead>
+              <tr>
+                <th className={`${thCls} text-left`}>Brand</th>
+                <th className={`${thCls} text-left`}>Model</th>
+                <th className={`${thCls} text-center`}>In Stock</th>
+                <th className={`${thCls} text-center`}>Incoming</th>
+                <th className={`${thCls} text-center`}>Reserved</th>
+                <th className={`${thCls} text-center`}>Available Stock</th>
+                <th className={`${thCls} text-center`}>TBA</th>
+                <th className={`${thCls} text-center`}>Reorder Point</th>
+                <th className={thCls}>Status</th>
+              </tr>
+            </thead>
+            <tbody>
+              {loading && (
+                <tr>
+                  <td colSpan={9} className="text-center py-14 text-[var(--text-muted)] text-[13px]">
+                    Loading…
+                  </td>
+                </tr>
+              )}
+              {!loading && rows.length === 0 && (
+                <tr>
+                  <td colSpan={9} className="text-center py-14 text-[var(--text-muted)] text-[13px]">
+                    <svg className="mx-auto mb-3 opacity-30" width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.2" strokeLinecap="round" strokeLinejoin="round">
+                      <path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/>
+                    </svg>
+                    No brand-models to show.
+                  </td>
+                </tr>
+              )}
+              {!loading && rows.map((r) => (
+                <tr key={r.key} className={`rp-${r.cls}`}>
+                  <td className={`${tdCls} font-semibold`}>{r.brand}</td>
+                  <td className={`${tdCls} font-semibold`}>{r.model}</td>
+                  {/* In Stock (physical) */}
+                  <td className={`${tdCls} text-center`}>
+                    <span
+                      className="text-[15px] font-[750] tabular-nums"
+                      style={{
+                        color:
+                          r.cls === "crit" ? "var(--danger)" :
+                          r.cls === "warn" ? "var(--reserved)" :
+                          "var(--text-primary)",
+                      }}
+                    >
+                      {r.physical}
+                    </span>
+                  </td>
+                  <td className={`${tdCls} text-center`}>
+                    {r.incoming || <span className="text-[var(--text-muted)]">0</span>}
+                  </td>
+                  <td className={`${tdCls} text-center`}>
+                    {r.reserved || <span className="text-[var(--text-muted)]">0</span>}
+                  </td>
+                  {/* Available Stock */}
+                  <td className={`${tdCls} text-center`}>
+                    <span
+                      className="text-[15px] font-[750] tabular-nums"
+                      style={{ color: r.available < 0 ? "var(--danger)" : "var(--text-primary)" }}
+                    >
+                      {r.available}
+                    </span>
+                  </td>
+                  {/* TBA */}
+                  <td className={`${tdCls} text-center`}>
+                    {r.tba > 0 ? (
+                      <span className="text-[12.5px] font-bold tabular-nums" style={{ color: "var(--tba)" }}>
+                        {r.tba}
+                      </span>
+                    ) : (
+                      <span className="text-[var(--text-muted)]">0</span>
+                    )}
+                  </td>
+                  {/* Reorder Point — inline editable */}
+                  <td className={`${tdCls} text-center`}>
+                    <input
+                      type="number"
+                      min={0}
+                      className="w-16 bg-[var(--surface-0)] border border-[var(--border)] text-[var(--text-primary)] px-2 py-1.5 rounded-[7px] text-[13px] text-center focus:outline-none focus:border-[var(--accent)]"
+                      defaultValue={r.rp || ""}
+                      placeholder="—"
+                      disabled={savingRP}
+                      onBlur={(e) => {
+                        const n = parseInt(e.target.value, 10);
+                        setRP(r.brand, r.model, isNaN(n) ? 0 : n);
+                      }}
+                    />
+                  </td>
+                  {/* Status label */}
+                  <td className={tdCls}>
+                    <span
+                      className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[11px] font-[650]"
+                      style={{
+                        background: `color-mix(in srgb, ${r.color} 15%, transparent)`,
+                        color: r.color,
+                      }}
+                    >
+                      {r.label}
+                    </span>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      </div>
     </div>
   );
 }

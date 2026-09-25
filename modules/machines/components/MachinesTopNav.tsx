@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { useRouter } from "next/navigation";
+import Image from "next/image";
 
 interface MachinesTopNavProps {
   userName: string;
@@ -34,20 +35,15 @@ export function MachinesTopNav({
     <header className="h-[52px] bg-white border-b border-slate-200 flex items-center justify-between px-3 sm:px-5 sticky top-0 z-40 select-none shadow-sm">
       {/* Left: ES Logo + Title + Subtitle + Portal Home link */}
       <div className="flex items-center gap-2.5">
-        {/* Red Circular ES Logo */}
+        {/* ES Print Logo */}
         <Link href="/dashboard" title="Back to Portal Home" className="shrink-0 hover:opacity-90 transition-opacity">
-          <div className="w-8 h-8 rounded-full bg-red-600 flex items-center justify-center text-white shadow-xs">
-            <svg width="18" height="18" viewBox="0 0 100 100" fill="none" xmlns="http://www.w3.org/2000/svg">
-              <path
-                d="M15 25H48C50 25 51 27 49 29L44 37H23V45H42C44 45 45 47 43 49L38 57H23V65H48C50 65 51 67 49 69L44 77H13C9 77 7 74 7 70V32C7 28 9 25 15 25Z"
-                fill="white"
-              />
-              <path
-                d="M58 34C58 28 62 25 68 25H90C96 25 100 28 100 34V38C100 42 97 45 92 47L75 51C71 52 69 53 69 55V58C69 60 71 62 75 62H90V54H100V66C100 72 96 76 90 76H68C62 76 58 72 58 66V62C58 58 61 55 66 53L83 49C87 48 89 47 89 45V42C89 40 87 38 83 38H58V34Z"
-                fill="white"
-              />
-            </svg>
-          </div>
+          <Image
+            src="/logo.jpg"
+            alt="ES Print Logo"
+            width={36}
+            height={36}
+            className="rounded-full object-cover shadow-sm border border-slate-200"
+          />
         </Link>
 
         <div>

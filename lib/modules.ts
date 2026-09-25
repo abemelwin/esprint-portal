@@ -61,7 +61,7 @@ export const MODULES: Record<ModuleKey, ModuleDef> = {
     name: "Support Scheduler",
     subtitle: "Calendar · KPI · Reports",
     path: "/scheduler",
-    enabled: false, // module temporarily removed — under rework (was using Supabase)
+    enabled: true,
     gradient: "from-amber-600 to-yellow-500",
     icon: "CalendarDays",
   },
