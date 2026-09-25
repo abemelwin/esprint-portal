@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import "./globals.css";
+import NetworkStatusNotifier from "@/components/network-status-notifier";
 
 export const metadata: Metadata = {
   title: "ES Print Media Inc. Portal",
@@ -13,7 +14,11 @@ export default function RootLayout({
 }) {
   return (
     <html lang="en">
-      <body>{children}</body>
+      <body>
+        <NetworkStatusNotifier />
+        {children}
+      </body>
     </html>
   );
 }
+
