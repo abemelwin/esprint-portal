@@ -1,0 +1,786 @@
+[
+  {
+    "user_id": "568fddb8-45f6-4ed7-87a4-daed63224e84",
+    "email": "escgi.allen@gmail.com",
+    "display_name": "Allen Cordova",
+    "role": "account_executive",
+    "is_active": true,
+    "is_sp_member": true
+  },
+  {
+    "user_id": "98bde2b4-90f3-46d8-b458-f14d66bc66b8",
+    "email": "espmi.allysa@gmail.com",
+    "display_name": "Allyssa Nicole Fajardo",
+    "role": "account_executive",
+    "is_active": true,
+    "is_sp_member": true
+  },
+  {
+    "user_id": "9e85cc78-1505-420f-b829-f7ca2d7fc0df",
+    "email": "espii.angelsastre@gmail.com",
+    "display_name": "Angel Joy Sastre",
+    "role": "account_executive",
+    "is_active": true,
+    "is_sp_member": true
+  },
+  {
+    "user_id": "1bbc2c24-a027-43be-9813-f3bccd4fd606",
+    "email": "arlene@esprintmedia.com",
+    "display_name": "Arlene Samillano",
+    "role": "account_executive",
+    "is_active": true,
+    "is_sp_member": true
+  },
+  {
+    "user_id": "2795b87b-a26a-45a6-9f1b-c95982bdb9af",
+    "email": "charlene@esprintmedia.com",
+    "display_name": "Charlene Maglasang",
+    "role": "account_executive",
+    "is_active": true,
+    "is_sp_member": true
+  },
+  {
+    "user_id": "9d08ffec-3d07-4c05-af66-a45a91c12180",
+    "email": "christian@esprintmedia.com",
+    "display_name": "Christian Aguas",
+    "role": "account_executive",
+    "is_active": true,
+    "is_sp_member": true
+  },
+  {
+    "user_id": "b3e9db6e-16c4-4efc-b565-65bfa3c47521",
+    "email": "christina@esprintmedia.com",
+    "display_name": "Christina Dioquino",
+    "role": "account_executive",
+    "is_active": true,
+    "is_sp_member": true
+  },
+  {
+    "user_id": "d2fddfd9-5782-4cc9-9f6f-181a8d01163a",
+    "email": "espmi.christine@gmail.com",
+    "display_name": "Christine Galleon",
+    "role": "account_executive",
+    "is_active": true,
+    "is_sp_member": true
+  },
+  {
+    "user_id": "e06175d1-7f13-4fb3-8789-70f4491c3388",
+    "email": "apsi.cristene@gmail.com",
+    "display_name": "Cristene Marco",
+    "role": "account_executive",
+    "is_active": true,
+    "is_sp_member": true
+  },
+  {
+    "user_id": "82e7de7a-63ad-4f2a-8a60-220fa88a331c",
+    "email": "escgi.cyrilsalvador@gmail.com",
+    "display_name": "Cyril Salvador",
+    "role": "account_executive",
+    "is_active": true,
+    "is_sp_member": true
+  },
+  {
+    "user_id": "329864ce-3bdb-493d-a8ab-093c99f6f2e6",
+    "email": "diannef@esprintmedia.com",
+    "display_name": "Dianne Francisco",
+    "role": "account_executive",
+    "is_active": true,
+    "is_sp_member": true
+  },
+  {
+    "user_id": "afb90d7c-0045-465d-bb7a-695c4d31c7de",
+    "email": "espmi.edzlaririt@gmail.com",
+    "display_name": "Edz Frankie Laririt",
+    "role": "account_executive",
+    "is_active": true,
+    "is_sp_member": true
+  },
+  {
+    "user_id": "ed7e931d-7f99-47aa-8b4b-b9618d86fe32",
+    "email": "eldigrace@esprintmedia.com",
+    "display_name": "Eldigrace Bracoma",
+    "role": "account_executive",
+    "is_active": true,
+    "is_sp_member": true
+  },
+  {
+    "user_id": "90a1cf17-fe31-401c-ab16-12f8777694e1",
+    "email": "espii.elvie@gmail.com",
+    "display_name": "Elvie Arawiran",
+    "role": "account_executive",
+    "is_active": true,
+    "is_sp_member": true
+  },
+  {
+    "user_id": "5cb50c1e-ee6b-41f5-9c1e-f35eb8058e02",
+    "email": "espii.gretchen@gmail.com",
+    "display_name": "Gretchen Tamariong",
+    "role": "account_executive",
+    "is_active": true,
+    "is_sp_member": true
+  },
+  {
+    "user_id": "b2979804-7567-4a20-bfbe-29b9942a6030",
+    "email": "espmi.izelvean@gmail.com",
+    "display_name": "Izel Vean Limbo",
+    "role": "account_executive",
+    "is_active": true,
+    "is_sp_member": true
+  },
+  {
+    "user_id": "8153646c-4109-40bb-82bf-a071b2ca7634",
+    "email": "espii.jealssarita@gmail.com",
+    "display_name": "Jeals Absin Sarita",
+    "role": "account_executive",
+    "is_active": true,
+    "is_sp_member": true
+  },
+  {
+    "user_id": "5d8d7929-3081-4e32-9c00-8f793a1613f2",
+    "email": "apsi.jennymaebantiwel@gmail.com",
+    "display_name": "Jenny Mae D. Bantiwel",
+    "role": "account_executive",
+    "is_active": true,
+    "is_sp_member": true
+  },
+  {
+    "user_id": "e23fa463-bd4d-4636-8735-62c967ecac88",
+    "email": "apsi.leolopez@gmail.com",
+    "display_name": "Jenpol A. Lopez",
+    "role": "account_executive",
+    "is_active": true,
+    "is_sp_member": true
+  },
+  {
+    "user_id": "07759624-90c8-4bb7-a042-4a7ee31aaa10",
+    "email": "espii.joanalayaay@gmail.com",
+    "display_name": "Joan Alaya-Ay",
+    "role": "account_executive",
+    "is_active": true,
+    "is_sp_member": true
+  },
+  {
+    "user_id": "02167c30-3622-4774-8d3b-46b7d22588c6",
+    "email": "jocelyn@esprintmedia.com",
+    "display_name": "Jocelyn Ribo",
+    "role": "account_executive",
+    "is_active": true,
+    "is_sp_member": true
+  },
+  {
+    "user_id": "66d5c447-a85f-474c-9565-6720115176e3",
+    "email": "jodie@esprintmedia.com",
+    "display_name": "Jodie Dalisay",
+    "role": "account_executive",
+    "is_active": true,
+    "is_sp_member": true
+  },
+  {
+    "user_id": "deeaeb1c-99da-4b69-ad85-d3d3a8a8e4ff",
+    "email": "espmi.joie@gmail.com",
+    "display_name": "Joie Arpoceple",
+    "role": "account_executive",
+    "is_active": true,
+    "is_sp_member": true
+  },
+  {
+    "user_id": "155d528b-45e6-4fc1-b012-94b357ca980c",
+    "email": "jomarc@esprintmedia.com",
+    "display_name": "Jomarc Encordia",
+    "role": "account_executive",
+    "is_active": true,
+    "is_sp_member": true
+  },
+  {
+    "user_id": "5c0c6b99-157d-4eb5-975b-536a442b73eb",
+    "email": "apsi.kerengracenim@gmail.com",
+    "display_name": "Keren Grace Nim",
+    "role": "account_executive",
+    "is_active": true,
+    "is_sp_member": true
+  },
+  {
+    "user_id": "9816f052-a3fa-4134-9758-80cd1dbbce6d",
+    "email": "sales05@esprintmedia.com",
+    "display_name": "Kyzia Cheska Jaima",
+    "role": "account_executive",
+    "is_active": true,
+    "is_sp_member": true
+  },
+  {
+    "user_id": "d1a72d5e-dd87-41d3-8e22-eb373878c1ee",
+    "email": "esprint.liezel1916@gmail.com",
+    "display_name": "Liezel Placido",
+    "role": "account_executive",
+    "is_active": true,
+    "is_sp_member": true
+  },
+  {
+    "user_id": "1093d7d5-1b44-427b-ae25-9e2ac95318c6",
+    "email": "apsi.louiesanichole@gmail.com",
+    "display_name": "Louiesa Nichole Santos",
+    "role": "account_executive",
+    "is_active": true,
+    "is_sp_member": true
+  },
+  {
+    "user_id": "45da8e8e-b7ad-4dd7-bbf4-dad26ebe37ff",
+    "email": "espii.lourenzedave@gmail.com",
+    "display_name": "Lourenze Dave Payot",
+    "role": "account_executive",
+    "is_active": true,
+    "is_sp_member": true
+  },
+  {
+    "user_id": "bf119041-6c54-49c9-86db-1e34b5f04b3e",
+    "email": "espii.maribelnantin@gmail.com",
+    "display_name": "Maribel Nantin",
+    "role": "account_executive",
+    "is_active": true,
+    "is_sp_member": true
+  },
+  {
+    "user_id": "e711976b-ffd7-49ad-a767-d89f1c1651da",
+    "email": "esprint.marielliboon@gmail.com",
+    "display_name": "Mariel Libo-On",
+    "role": "account_executive",
+    "is_active": true,
+    "is_sp_member": true
+  },
+  {
+    "user_id": "b2246f60-f48b-455f-a11a-6c84d21a56f1",
+    "email": "marjorie@esprintmedia.com",
+    "display_name": "Marjorie Madula",
+    "role": "account_executive",
+    "is_active": true,
+    "is_sp_member": true
+  },
+  {
+    "user_id": "03116ded-c355-471c-9d12-1b4276eef608",
+    "email": "esprint.markjed@gmail.com",
+    "display_name": "Mark Jed Pare",
+    "role": "account_executive",
+    "is_active": true,
+    "is_sp_member": true
+  },
+  {
+    "user_id": "69e64f19-1250-4e5f-9070-1ea31e0287b3",
+    "email": "esprint.marvin@gmail.com",
+    "display_name": "Marvin Camaria",
+    "role": "account_executive",
+    "is_active": true,
+    "is_sp_member": true
+  },
+  {
+    "user_id": "2b007125-5c3b-40e4-a9d5-2fd6434e87d7",
+    "email": "grace@esprintmedia.com",
+    "display_name": "Mary Grace San Jose",
+    "role": "account_executive",
+    "is_active": true,
+    "is_sp_member": true
+  },
+  {
+    "user_id": "13d5188c-ffe7-4cde-a6c1-b06dd02aaccc",
+    "email": "maryjoy@esprintmedia.com",
+    "display_name": "Mary Joy Justiniani",
+    "role": "account_executive",
+    "is_active": true,
+    "is_sp_member": true
+  },
+  {
+    "user_id": "c090414a-e993-46d9-b14b-ad84033237f3",
+    "email": "espmi.marygrace@gmail.com",
+    "display_name": "Mary Mirana",
+    "role": "account_executive",
+    "is_active": true,
+    "is_sp_member": true
+  },
+  {
+    "user_id": "ebed41d5-3df1-4ddc-aca4-919c8c04991a",
+    "email": "espii.miahmae@gmail.com",
+    "display_name": "Miah Mae Villaroza",
+    "role": "account_executive",
+    "is_active": true,
+    "is_sp_member": true
+  },
+  {
+    "user_id": "891ae057-9bd6-4b91-950f-fed01ecbe84e",
+    "email": "espii.nieljohn@gmail.com",
+    "display_name": "Neil John Pagaran",
+    "role": "account_executive",
+    "is_active": true,
+    "is_sp_member": true
+  },
+  {
+    "user_id": "1d0e7640-9c8d-4144-a234-30a1cb949d0f",
+    "email": "nikka@esprintmedia.com",
+    "display_name": "Nikka Onia",
+    "role": "account_executive",
+    "is_active": true,
+    "is_sp_member": true
+  },
+  {
+    "user_id": "901fd9aa-7ac1-4a6a-a927-d88186dacf7d",
+    "email": "quennie@esprintmedia.com",
+    "display_name": "Quennie Bahian",
+    "role": "account_executive",
+    "is_active": true,
+    "is_sp_member": true
+  },
+  {
+    "user_id": "6e002e40-6507-4d22-9515-1c72a987b0b1",
+    "email": "espii.reahglenne@gmail.com",
+    "display_name": "Reah Glenne Manselao",
+    "role": "account_executive",
+    "is_active": true,
+    "is_sp_member": true
+  },
+  {
+    "user_id": "20443dd4-1657-4ceb-b550-006d13c74b8f",
+    "email": "esprint.renvincent@gmail.com",
+    "display_name": "Ren Vincent Canoy",
+    "role": "account_executive",
+    "is_active": true,
+    "is_sp_member": true
+  },
+  {
+    "user_id": "c2304960-0f0b-4c84-98d7-c1ac219fe1a4",
+    "email": "espii.rhia@gmail.com",
+    "display_name": "Rhia C. Bardoquillo",
+    "role": "account_executive",
+    "is_active": true,
+    "is_sp_member": true
+  },
+  {
+    "user_id": "061f0bb5-1275-4de5-87de-f88944b43666",
+    "email": "espii.richardtabacon@gmail.com",
+    "display_name": "Richard Tabacon",
+    "role": "account_executive",
+    "is_active": true,
+    "is_sp_member": true
+  },
+  {
+    "user_id": "f2042c94-008e-4540-b87e-d5c908880768",
+    "email": "apsi.rizamaepepito@gmail.com",
+    "display_name": "Riza Mae Pepito",
+    "role": "account_executive",
+    "is_active": true,
+    "is_sp_member": true
+  },
+  {
+    "user_id": "b312bef0-35e0-4cb2-af1d-69f61cc198c8",
+    "email": "espii.rizamei@gmail.com",
+    "display_name": "Rizamei Telafer",
+    "role": "account_executive",
+    "is_active": true,
+    "is_sp_member": true
+  },
+  {
+    "user_id": "cd8b19b6-173d-4a73-916a-8a3acec3ea72",
+    "email": "ronnalyn@esprintmedia.com",
+    "display_name": "Ronnalyn Laloy",
+    "role": "account_executive",
+    "is_active": true,
+    "is_sp_member": true
+  },
+  {
+    "user_id": "e9f5564e-d9b7-4a1c-bf23-f41582b52d98",
+    "email": "apsi.rovenie@gmail.com",
+    "display_name": "Ronviel Cabriel",
+    "role": "account_executive",
+    "is_active": true,
+    "is_sp_member": true
+  },
+  {
+    "user_id": "5e876e2c-3dbd-4255-9ac8-09b9d3d1cf68",
+    "email": "rosanna@esprintmedia.com",
+    "display_name": "Rosanna Galope",
+    "role": "account_executive",
+    "is_active": true,
+    "is_sp_member": true
+  },
+  {
+    "user_id": "d76e90ce-7f38-47bf-bf53-1ef5bba591d9",
+    "email": "rubina@esprintmedia.com",
+    "display_name": "Rubina Morano",
+    "role": "account_executive",
+    "is_active": true,
+    "is_sp_member": true
+  },
+  {
+    "user_id": "ab7ebfca-a5bc-4e3a-832d-f719a76819db",
+    "email": "espmi.sethgabriel@gmail.com",
+    "display_name": "Seth Gabriel Ramos",
+    "role": "account_executive",
+    "is_active": true,
+    "is_sp_member": true
+  },
+  {
+    "user_id": "c27d6590-6f2e-4b39-82e0-121e922bfb11",
+    "email": "espii.staniel@gmail.com",
+    "display_name": "Staniel Capilitan",
+    "role": "account_executive",
+    "is_active": true,
+    "is_sp_member": true
+  },
+  {
+    "user_id": "c0567a19-2469-49f9-a25e-caaae6c5a44a",
+    "email": "espii.sunshine@gmail.com",
+    "display_name": "Sunshine De Lantar",
+    "role": "account_executive",
+    "is_active": true,
+    "is_sp_member": true
+  },
+  {
+    "user_id": "9bfcb772-4645-4afb-82fa-e8ea6af89552",
+    "email": "angelica@esprintmedia.com",
+    "display_name": "Angelica Moreno",
+    "role": "area_sales_manager",
+    "is_active": true,
+    "is_sp_member": true
+  },
+  {
+    "user_id": "a5291ad1-e9df-4f36-87db-08dd38dd5b8b",
+    "email": "jayson@esprintmedia.com",
+    "display_name": "Jayson Mabanag",
+    "role": "area_sales_manager",
+    "is_active": true,
+    "is_sp_member": true
+  },
+  {
+    "user_id": "0910d4d5-e512-4672-b580-b6900e600e7a",
+    "email": "kim@esprintmedia.com",
+    "display_name": "Kimberly Lascano",
+    "role": "area_sales_manager",
+    "is_active": true,
+    "is_sp_member": true
+  },
+  {
+    "user_id": "1ca45122-ef77-4868-9452-c24887848dc4",
+    "email": "ness@esprintmedia.com",
+    "display_name": "Ness Deomano",
+    "role": "area_sales_manager",
+    "is_active": true,
+    "is_sp_member": true
+  },
+  {
+    "user_id": "c162db05-3740-4b6e-b18e-8a5ee443cd81",
+    "email": "rona@esprintmedia.com",
+    "display_name": "Ronalyn Ubalde",
+    "role": "area_sales_manager",
+    "is_active": true,
+    "is_sp_member": true
+  },
+  {
+    "user_id": "32590280-0cae-4dee-a32e-596fabf87ee5",
+    "email": "albert@esprintmedia.com",
+    "display_name": "Albert Malalad",
+    "role": "product_development_manager",
+    "is_active": true,
+    "is_sp_member": true
+  },
+  {
+    "user_id": "ebafd9ef-710a-427e-a507-31da8a044050",
+    "email": "armando@esprintmedia.com",
+    "display_name": "Armando Dimailig",
+    "role": "product_development_manager",
+    "is_active": true,
+    "is_sp_member": true
+  },
+  {
+    "user_id": "cab364b5-d3a9-4d10-8c04-da6239e6b8c8",
+    "email": "arnulfo@esprintmedia.com",
+    "display_name": "Arnulfo Alfiscar",
+    "role": "product_development_manager",
+    "is_active": true,
+    "is_sp_member": true
+  },
+  {
+    "user_id": "7dc6b90d-8526-4ff0-b540-927de627bffa",
+    "email": "francis@esprintmedia.com",
+    "display_name": "Francis Amit",
+    "role": "product_development_manager",
+    "is_active": true,
+    "is_sp_member": true
+  },
+  {
+    "user_id": "0011afea-5e58-4951-b014-062a32678d81",
+    "email": "janmark@esprintmedia.com",
+    "display_name": "Janmark Erfe",
+    "role": "product_development_manager",
+    "is_active": true,
+    "is_sp_member": true
+  },
+  {
+    "user_id": "dd82849f-1890-472d-8050-7ba68dfb3af2",
+    "email": "jonjon@esprintmedia.com",
+    "display_name": "Jonjon Galido",
+    "role": "product_development_manager",
+    "is_active": true,
+    "is_sp_member": true
+  },
+  {
+    "user_id": "fe258c41-2d2d-497f-b204-8a6622ec83af",
+    "email": "kimpee@esprintmedia.com",
+    "display_name": "Kimpee Llamado",
+    "role": "product_development_manager",
+    "is_active": true,
+    "is_sp_member": true
+  },
+  {
+    "user_id": "aef750a7-ab38-440a-905c-9bd07f1460e9",
+    "email": "marilyn@acssolutions.ph",
+    "display_name": "Marilyn Micayas",
+    "role": "product_development_manager",
+    "is_active": true,
+    "is_sp_member": true
+  },
+  {
+    "user_id": "e2e796dd-250a-49fe-bbe0-a19a08dbdd06",
+    "email": "mark@esprintmedia.com",
+    "display_name": "Mark Anthony Martin",
+    "role": "product_development_manager",
+    "is_active": true,
+    "is_sp_member": true
+  },
+  {
+    "user_id": "f24cd54f-bf93-49b5-8674-d630a53f503e",
+    "email": "rj@esprintmedia.com",
+    "display_name": "Ron Jerald Masangcay",
+    "role": "product_development_manager",
+    "is_active": true,
+    "is_sp_member": true
+  },
+  {
+    "user_id": "4a34566e-4588-46c5-b820-a896de83b355",
+    "email": "ron@esprintmedia.com",
+    "display_name": "Ronwaldo Mariano",
+    "role": "product_development_manager",
+    "is_active": true,
+    "is_sp_member": true
+  },
+  {
+    "user_id": "3bb2b198-57f0-401b-aaa6-0f65a98a373e",
+    "email": "vin@esprintmedia.com",
+    "display_name": "Vin Christine Jamin",
+    "role": "product_technical_head",
+    "is_active": true,
+    "is_sp_member": true
+  },
+  {
+    "user_id": "14471c1a-cb4f-4bcc-b5e2-b4247f5cad50",
+    "email": "angel@esprintmedia.com",
+    "display_name": "Angel Cimafranca",
+    "role": "sales_admin_assistant",
+    "is_active": true,
+    "is_sp_member": true
+  },
+  {
+    "user_id": "e2961df4-1ba2-4af3-afbe-a062e45ade15",
+    "email": "espmi.ariannesalandanan@gmail.com",
+    "display_name": "Arianne Salandanan",
+    "role": "sales_admin_assistant",
+    "is_active": true,
+    "is_sp_member": true
+  },
+  {
+    "user_id": "40d4de21-a946-41fe-9c49-9ae58ce73db7",
+    "email": "jane@esprintmedia.com",
+    "display_name": "Jane Erniefer Ceniza",
+    "role": "sales_admin_assistant",
+    "is_active": true,
+    "is_sp_member": true
+  },
+  {
+    "user_id": "5a4c2a04-7a38-49a4-b8de-56e179bdfd12",
+    "email": "liezel@esprintmedia.com",
+    "display_name": "Liezel Bermudo",
+    "role": "sales_admin_assistant",
+    "is_active": true,
+    "is_sp_member": true
+  },
+  {
+    "user_id": "64efb38f-e9f2-4904-b062-49ded30a1ea1",
+    "email": "apsi.ellyn@gmail.com",
+    "display_name": "Ma. Ellyn Abello",
+    "role": "sales_admin_assistant",
+    "is_active": true,
+    "is_sp_member": true
+  },
+  {
+    "user_id": "98aa27be-5eef-4d76-a13d-57d9caae166b",
+    "email": "norelyn@esprintmedia.com",
+    "display_name": "Ma. Norelyn Coquilla",
+    "role": "sales_admin_assistant",
+    "is_active": true,
+    "is_sp_member": true
+  },
+  {
+    "user_id": "a9faa63a-8f9c-40f6-91f9-acfeacd400ec",
+    "email": "espii.naryjane@gmail.com",
+    "display_name": "Nary Jane Canalita",
+    "role": "sales_admin_assistant",
+    "is_active": true,
+    "is_sp_member": true
+  },
+  {
+    "user_id": "3a7c47b8-498d-4b7c-840f-bc9f677091ac",
+    "email": "lea@esprintmedia.com",
+    "display_name": "Leonor Tenorio",
+    "role": "sales_admin_manager",
+    "is_active": true,
+    "is_sp_member": true
+  },
+  {
+    "user_id": "f3a7a331-ecfd-4c04-9296-d00abab4e205",
+    "email": "emma@esprintmedia.com",
+    "display_name": "Emmalyn Manallo",
+    "role": "sales_admin_supervisor",
+    "is_active": true,
+    "is_sp_member": true
+  },
+  {
+    "user_id": "1260e91d-4354-45ff-847a-2a99e3b9e9e7",
+    "email": "apsi.alonica@gmail.com",
+    "display_name": "Alonica Dimpal",
+    "role": "sales_assistant",
+    "is_active": true,
+    "is_sp_member": true
+  },
+  {
+    "user_id": "b269f562-456c-4e48-80a8-5f1dbe5465da",
+    "email": "esprint.aprilann@gmail.com",
+    "display_name": "April Ann Palacios",
+    "role": "sales_assistant",
+    "is_active": true,
+    "is_sp_member": true
+  },
+  {
+    "user_id": "700971e1-a9a9-475f-8ff9-240d964d786a",
+    "email": "aschialexislobos2@gmail.com",
+    "display_name": "Aschi Lobos",
+    "role": "sales_assistant",
+    "is_active": true,
+    "is_sp_member": true
+  },
+  {
+    "user_id": "fa4296d9-7c3e-4888-ab73-083dab5cd02f",
+    "email": "apsi.christelanne@gmail.com",
+    "display_name": "Christel Anne Gardose",
+    "role": "sales_assistant",
+    "is_active": true,
+    "is_sp_member": true
+  },
+  {
+    "user_id": "893bc99c-1dca-4bfd-b74b-314957645d46",
+    "email": "apsi.jane@gmail.com",
+    "display_name": "Jane Mascariñas",
+    "role": "sales_assistant",
+    "is_active": true,
+    "is_sp_member": true
+  },
+  {
+    "user_id": "64e7d931-d572-43c9-9c6e-a10792f7ca83",
+    "email": "esprint.joralyn@gmail.com",
+    "display_name": "Joralyn Canlog",
+    "role": "sales_assistant",
+    "is_active": true,
+    "is_sp_member": true
+  },
+  {
+    "user_id": "66ab5387-e927-47aa-a869-39c7795fd3d1",
+    "email": "espii.kiarakris@gmail.com",
+    "display_name": "Kiara Kris Villas",
+    "role": "sales_assistant",
+    "is_active": true,
+    "is_sp_member": true
+  },
+  {
+    "user_id": "622cac15-31e3-430e-a976-0de1156c957a",
+    "email": "esprint.lerma@gmail.com",
+    "display_name": "Lerma Dalugdog",
+    "role": "sales_assistant",
+    "is_active": true,
+    "is_sp_member": true
+  },
+  {
+    "user_id": "7adf8729-384a-474b-9d58-2904e7bd39ee",
+    "email": "espii.maricrisloyola@gmail.com",
+    "display_name": "Maricris Loyola",
+    "role": "sales_assistant",
+    "is_active": true,
+    "is_sp_member": true
+  },
+  {
+    "user_id": "7bcaf0ba-6955-44d3-9b05-8b05ccd16e96",
+    "email": "apsi.riccavanessa@gmail.com",
+    "display_name": "Ricca Vanessa Santillan",
+    "role": "sales_assistant",
+    "is_active": true,
+    "is_sp_member": true
+  },
+  {
+    "user_id": "955ec9e9-69bc-4c8e-a5eb-0efcf0ccb349",
+    "email": "espii.roseley@gmail.com",
+    "display_name": "Roseley Gayacao",
+    "role": "sales_assistant",
+    "is_active": true,
+    "is_sp_member": true
+  },
+  {
+    "user_id": "55cdf404-d943-40d9-b34f-f532271be5d7",
+    "email": "espii.sharmaine@gmail.com",
+    "display_name": "Sharmaine Teves",
+    "role": "sales_assistant",
+    "is_active": true,
+    "is_sp_member": true
+  },
+  {
+    "user_id": "e3f74089-a8ce-48a0-88b6-a40a40c06c0c",
+    "email": "apsi.stephainejene@gmail.com",
+    "display_name": "Stephaine Jene Tabao",
+    "role": "sales_assistant",
+    "is_active": true,
+    "is_sp_member": true
+  },
+  {
+    "user_id": "b6af43da-34c8-4d26-a476-45d096a850cb",
+    "email": "arnold@esprintmedia.com",
+    "display_name": "Arnold Rioja",
+    "role": "service_manager",
+    "is_active": true,
+    "is_sp_member": true
+  },
+  {
+    "user_id": "6c086dfa-2c7a-4faa-acf5-294b83f8855b",
+    "email": "dan@esprintmedia.com",
+    "display_name": "Danilo Carangan",
+    "role": "service_manager",
+    "is_active": true,
+    "is_sp_member": true
+  },
+  {
+    "user_id": "a2755864-cf31-4aef-8d68-d0cb6e1a3fc2",
+    "email": "esprintrickyeina@gmail.com",
+    "display_name": "Ricky Eina",
+    "role": "service_manager",
+    "is_active": true,
+    "is_sp_member": true
+  },
+  {
+    "user_id": "9f1fd413-d712-4099-858d-e24cb3ef4156",
+    "email": "admin@esprintmedia.com",
+    "display_name": "Dev Admin",
+    "role": "superadmin",
+    "is_active": true,
+    "is_sp_member": true
+  },
+  {
+    "user_id": "24250247-0d9d-441b-86c3-8f860154301a",
+    "email": "eileensokua@esprintmedia.com",
+    "display_name": "Eileen Sokua",
+    "role": "superadmin",
+    "is_active": true,
+    "is_sp_member": true
+  }
+]

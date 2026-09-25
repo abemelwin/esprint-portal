@@ -10,7 +10,7 @@ frontend:
         # them at runtime in the Amplify Lambda (SSR) environment. Amplify
         # exposes build-time env vars but does NOT automatically pass them to
         # the server runtime — this bridges that gap.
-        - env | grep -e COGNITO_ -e DATABASE_URL -e DB_SSL -e AUTH_DEV_MODE -e NEXT_PUBLIC_ -e S3_ >> .env.production || true
+        - env | grep -e COGNITO_ -e DATABASE_URL -e DB_SSL -e AUTH_DEV_MODE -e NEXT_PUBLIC_ -e S3_ -e SUPABASE_ -e SYNC_SECRET -e SALES_PORTAL_ >> .env.production || true
         - npm run build
   artifacts:
     baseDirectory: .next
