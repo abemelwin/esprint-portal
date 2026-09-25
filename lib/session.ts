@@ -6,6 +6,7 @@
  * httpOnly cookie. In dev mode it reads a mock user from a cookie.
  */
 
+import { cache } from "react";
 import { cookies } from "next/headers";
 import { verifyToken, userFromClaims, isDevMode, DEV_USERS } from "./auth";
 import type { PortalUser } from "./rbac";
@@ -16,9 +17,9 @@ export const DEV_USER_COOKIE = "esprint_dev_user";
 
 /**
  * Get the logged-in user from the current request, or null.
- * Used by server components and route handlers.
+ * Memoized per-request using React cache() to avoid repeated cookie/JWT parsing.
  */
-export async function getCurrentUser(): Promise<PortalUser | null> {
+export const getCurrentUser = cache(async (): Promise<PortalUser | null> => {
   const jar = await cookies();
 
   // ── Dev mode: cookie holds the mock user's email ──
@@ -39,4 +40,5 @@ export async function getCurrentUser(): Promise<PortalUser | null> {
   } catch {
     return null;
   }
-}
+});
+

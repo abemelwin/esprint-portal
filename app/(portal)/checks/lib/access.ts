@@ -6,6 +6,7 @@
  * data filtering and UI permission checks.
  */
 
+import { cache } from "react";
 import { getCurrentUser } from "@/lib/session";
 import {
   canAccessModule,
@@ -23,8 +24,8 @@ export interface CheckContext {
   aes: string[]; // AE code scope ([] = all)
 }
 
-/** Returns the check context, or null if the user has no access. */
-export async function getCheckContext(): Promise<CheckContext | null> {
+/** Returns the check context, or null if the user has no access. Memoized per request. */
+export const getCheckContext = cache(async (): Promise<CheckContext | null> => {
   const user = await getCurrentUser();
   if (!user) return null;
   if (!canAccessModule(user, "checks")) return null;
@@ -37,4 +38,5 @@ export async function getCheckContext(): Promise<CheckContext | null> {
     branches: access?.branches ?? [],
     aes: access?.aes ?? [],
   };
-}
+});
+

@@ -230,17 +230,27 @@ export async function serverLoad(opts: LoadOptions = {}): Promise<AppData> {
     return _cache.data;
   }
 
-  // Run sequentially (not Promise.all) — the RDS free tier can be slow
-  // to open many simultaneous connections; reusing one pooled connection
-  // at a time is far more reliable.
-  const checks = await readChecks();
-  const events = await readEvents();
-  const clients = await readClients();
-  const branches = await readBranches();
-  const subsidiaries = await readSubsidiaries();
-  const aeList = await readAeList();
-  const banks = await readBanks();
-  const notesCounts = await readNotesCounts();
+  // Run in parallel with Promise.all across the connection pool
+  // to avoid serial network roundtrip latency to RDS.
+  const [
+    checks,
+    events,
+    clients,
+    branches,
+    subsidiaries,
+    aeList,
+    banks,
+    notesCounts,
+  ] = await Promise.all([
+    readChecks(),
+    readEvents(),
+    readClients(),
+    readBranches(),
+    readSubsidiaries(),
+    readAeList(),
+    readBanks(),
+    readNotesCounts(),
+  ]);
 
   const CHECKS_META = computeMeta(checks, events);
 

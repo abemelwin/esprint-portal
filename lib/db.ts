@@ -41,9 +41,9 @@ export function getPool(): Pool {
         process.env.DB_SSL === "false"
           ? false
           : { rejectUnauthorized: false },
-      max: Number(process.env.DB_POOL_MAX ?? 5),
+      max: Number(process.env.DB_POOL_MAX ?? 15),
       idleTimeoutMillis: 30_000,
-      connectionTimeoutMillis: 8_000,
+      connectionTimeoutMillis: 10_000,
       keepAlive: true,
     });
   } else {
@@ -58,9 +58,9 @@ export function getPool(): Pool {
         process.env.DB_SSL === "false"
           ? false
           : { rejectUnauthorized: false },
-      max: Number(process.env.DB_POOL_MAX ?? 10),
+      max: Number(process.env.DB_POOL_MAX ?? 15),
       idleTimeoutMillis: 30_000,
-      connectionTimeoutMillis: 8_000,
+      connectionTimeoutMillis: 10_000,
     });
   }
 
