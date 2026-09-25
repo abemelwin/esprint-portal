@@ -141,16 +141,16 @@ export function buildDashboardSummary(data: AppData): DashboardSummary {
     if (status === "HELD") {
       kpi.held.count++;
       kpi.held.amount += bal;
+      if (m.nextDeposit === today) kpi.dueToday.count++;
+      if (m.nextDeposit && m.nextDeposit < today) {
+        kpi.overdue.count++;
+      }
     } else if (status === "RETURNED") {
       kpi.returned.count++;
       kpi.returned.amount += bal;
     } else if (status === "PARTIAL") {
       kpi.partial.count++;
       kpi.partial.amount += bal;
-    }
-    if (m.nextDeposit === today) kpi.dueToday.count++;
-    if (status === "HELD" && m.nextDeposit && m.nextDeposit < today) {
-      kpi.overdue.count++;
     }
     if (
       !["CLEARED", "REPLACED", "SETTLED (PAID)", "CANCELLED"].includes(status) &&
