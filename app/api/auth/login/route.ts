@@ -19,7 +19,7 @@ import {
   verifyToken,
   NewPasswordRequiredError,
 } from "@/lib/auth";
-import { DEV_USER_COOKIE, SESSION_COOKIE } from "@/lib/session";
+import { DEV_USER_COOKIE, SESSION_COOKIE, REFRESH_COOKIE } from "@/lib/session";
 
 export async function POST(req: NextRequest) {
   const body = await req.json().catch(() => ({}));
@@ -58,13 +58,27 @@ export async function POST(req: NextRequest) {
     const user = userFromClaims(claims);
 
     const res = NextResponse.json({ ok: true, user });
+    // Session cookie holds the ID token. We keep the COOKIE alive for 30 days
+    // (the refresh-token lifetime) even though the JWT inside expires in ~1h;
+    // the client periodically calls /api/auth/refresh to swap in a fresh ID
+    // token before it expires, so users are no longer kicked out after 1 hour.
     res.cookies.set(SESSION_COOKIE, tokens.idToken, {
       httpOnly: true,
       secure: process.env.NODE_ENV === "production",
       sameSite: "lax",
       path: "/",
-      maxAge: tokens.expiresIn, // matches Cognito token lifetime
+      maxAge: 60 * 60 * 24 * 30, // 30 days
     });
+    // Refresh token — used server-side to mint new ID tokens. Never exposed to JS.
+    if (tokens.refreshToken) {
+      res.cookies.set(REFRESH_COOKIE, tokens.refreshToken, {
+        httpOnly: true,
+        secure: process.env.NODE_ENV === "production",
+        sameSite: "lax",
+        path: "/",
+        maxAge: 60 * 60 * 24 * 30, // 30 days (Cognito refresh-token lifetime)
+      });
+    }
     return res;
   } catch (err) {
     // First login for an admin-created user: they must set a new password.

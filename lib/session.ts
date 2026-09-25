@@ -11,6 +11,7 @@ import { verifyToken, userFromClaims, isDevMode, DEV_USERS } from "./auth";
 import type { PortalUser } from "./rbac";
 
 export const SESSION_COOKIE = "esprint_session";
+export const REFRESH_COOKIE = "esprint_refresh";
 export const DEV_USER_COOKIE = "esprint_dev_user";
 
 /**

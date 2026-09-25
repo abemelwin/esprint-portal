@@ -110,6 +110,42 @@ export async function cognitoLogin(
 }
 
 /**
+ * Renew a session using a Cognito refresh token (REFRESH_TOKEN_AUTH).
+ * Returns a fresh ID/access token. Cognito does NOT return a new refresh
+ * token here — the original refresh token stays valid for its full lifetime
+ * (default 30 days), so the caller keeps reusing it.
+ */
+export async function cognitoRefresh(
+  refreshToken: string,
+  email?: string
+): Promise<LoginResult> {
+  // SECRET_HASH for refresh uses the username; when we don't have it we can
+  // still send it if a secret is configured and the email is known.
+  const hash = email ? secretHash(email) : undefined;
+  const res = await getCognito().send(
+    new InitiateAuthCommand({
+      AuthFlow: "REFRESH_TOKEN_AUTH",
+      ClientId: CLIENT_ID,
+      AuthParameters: {
+        REFRESH_TOKEN: refreshToken,
+        ...(hash ? { SECRET_HASH: hash } : {}),
+      },
+    })
+  );
+  const r = res.AuthenticationResult;
+  if (!r?.IdToken) {
+    throw new Error("Refresh failed");
+  }
+  return {
+    idToken: r.IdToken,
+    accessToken: r.AccessToken ?? "",
+    // Cognito reuses the same refresh token; keep the existing one.
+    refreshToken: r.RefreshToken ?? refreshToken,
+    expiresIn: r.ExpiresIn ?? 3600,
+  };
+}
+
+/**
  * Complete a NEW_PASSWORD_REQUIRED challenge (first login for an
  * admin-created user with a temporary password).
  */

@@ -17,7 +17,7 @@ import {
   userFromClaims,
   verifyToken,
 } from "@/lib/auth";
-import { SESSION_COOKIE } from "@/lib/session";
+import { SESSION_COOKIE, REFRESH_COOKIE } from "@/lib/session";
 
 export async function POST(req: NextRequest) {
   if (isDevMode()) {
@@ -50,8 +50,17 @@ export async function POST(req: NextRequest) {
       secure: process.env.NODE_ENV === "production",
       sameSite: "lax",
       path: "/",
-      maxAge: tokens.expiresIn,
+      maxAge: 60 * 60 * 24 * 30, // 30 days (client refreshes the ID token)
     });
+    if (tokens.refreshToken) {
+      res.cookies.set(REFRESH_COOKIE, tokens.refreshToken, {
+        httpOnly: true,
+        secure: process.env.NODE_ENV === "production",
+        sameSite: "lax",
+        path: "/",
+        maxAge: 60 * 60 * 24 * 30,
+      });
+    }
     return res;
   } catch (err) {
     const name = (err as { name?: string })?.name ?? "";
