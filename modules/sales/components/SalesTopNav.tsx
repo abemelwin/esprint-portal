@@ -22,7 +22,6 @@ export function SalesTopNav({
   const isCalc      = pathname.startsWith("/sales/calculator");
   const isCatalog   = pathname.startsWith("/sales/catalog") && !pathname.startsWith("/sales/admin");
   const isEditor    = pathname.startsWith("/sales/admin");
-  const isClosing   = pathname.startsWith("/sales/closing-docs");
 
   return (
     <nav className="h-[40px] bg-white border-b border-slate-200 flex items-center px-3 sm:px-4.5 select-none shadow-xs sticky top-[52px] z-20">
@@ -58,17 +57,6 @@ export function SalesTopNav({
           </Link>
         </li>
 
-        {canCreateQuotes && (
-          <li className="flex shrink-0">
-            <Link href="/sales/closing-docs"
-              className={`flex items-center px-3 py-1 text-[12px] font-bold rounded-[5px] whitespace-nowrap tracking-[0.3px] transition-colors leading-none no-underline ${
-                isClosing ? "text-[#c0392b] bg-[#fff2f0]" : "text-[#666] hover:text-[#c0392b] hover:bg-[#fff2f0]"
-              }`}>
-              Closing Docs
-            </Link>
-          </li>
-        )}
-
         {isAdmin && (
           <li className="flex shrink-0">
             <Link href="/sales/admin"
@@ -76,6 +64,17 @@ export function SalesTopNav({
                 isEditor ? "text-[#c0392b] bg-[#fff2f0]" : "text-[#666] hover:text-[#c0392b] hover:bg-[#fff2f0]"
               }`}>
               Catalog Editor
+            </Link>
+          </li>
+        )}
+
+        {isAdmin && (
+          <li className="flex shrink-0">
+            <Link href="/sales/users"
+              className={`flex items-center px-3 py-1 text-[12px] font-bold rounded-[5px] whitespace-nowrap tracking-[0.3px] transition-colors leading-none no-underline ${
+                pathname.startsWith("/sales/users") ? "text-[#c0392b] bg-[#fff2f0]" : "text-[#666] hover:text-[#c0392b] hover:bg-[#fff2f0]"
+              }`}>
+              Users & Access
             </Link>
           </li>
         )}
