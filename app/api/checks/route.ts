@@ -89,7 +89,7 @@ export async function POST(req: NextRequest) {
     notes: body.notes ?? "",
     finalStatus: body.finalStatus ?? null,
     replacementOf: body.replacementOf ?? null,
-    createdBy: guard.ctx.user.email,
+    createdBy: (guard.ctx.user.fullName && guard.ctx.user.fullName.trim()) || guard.ctx.user.email,
     createdAt: now,
     blacklistReason: body.blacklistReason ?? null,
   };

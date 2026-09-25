@@ -72,7 +72,7 @@ export async function POST(
     reference: body.reference ?? null,
     amount: body.amount != null ? Number(body.amount) : undefined,
     notes: body.notes ?? "",
-    recordedBy: guard.ctx.user.email,
+    recordedBy: (guard.ctx.user.fullName && guard.ctx.user.fullName.trim()) || guard.ctx.user.email,
     recordedAt: now,
   };
 
