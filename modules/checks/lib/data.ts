@@ -142,18 +142,19 @@ function computeMeta(
       }
     }
 
-    // reason — prefer the last RETURN event reason, then fall back to any other
-    // event type that carries a non-empty reason (matches orig)
+    // reason — latest event reason or payment method (matches orig)
     let reason: string | null = null;
-    let fallbackReason: string | null = null;
     for (let j = evs.length - 1; j >= 0; j--) {
       const ev = evs[j];
       if (ev.reason && ev.reason.trim()) {
-        if (ev.type === "RETURN") { reason = ev.reason.trim(); break; }
-        if (!fallbackReason) fallbackReason = ev.reason.trim();
+        reason = ev.reason.trim();
+        break;
+      }
+      if (ev.method && ev.method.trim()) {
+        reason = [ev.method.trim(), ev.reference?.trim()].filter(Boolean).join(" - ");
+        break;
       }
     }
-    if (!reason) reason = fallbackReason;
 
     // payment details from PARTIAL_PAYMENT, SETTLED_PAID, and REPLACEMENT events (matches orig)
     let paymentDetails: string | null = null;

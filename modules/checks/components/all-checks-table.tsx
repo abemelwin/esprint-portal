@@ -640,15 +640,18 @@ export function AllChecksTable({ initialData, perms, userEmail, userName }: Prop
           if ((evs[j].type === 'HOLD_REQUEST' || evs[j].type === 'RECONSTRUCT') && evs[j].moveDate) { nextDeposit = evs[j].moveDate; break; }
           if (evs[j].type === 'RETURN' || evs[j].type === 'DEPOSIT_CLEARED') break;
         }
-        let fb: string | null = null;
+        reason = null;
         for (let j = evs.length - 1; j >= 0; j--) {
           const ev = evs[j];
-          if (ev.reason?.trim()) {
-            if (ev.type === 'RETURN') { reason = ev.reason.trim(); break; }
-            if (!fb) fb = ev.reason.trim();
+          if (ev.reason && ev.reason.trim()) {
+            reason = ev.reason.trim();
+            break;
+          }
+          if (ev.method && ev.method.trim()) {
+            reason = [ev.method.trim(), ev.reference?.trim()].filter(Boolean).join(' - ');
+            break;
           }
         }
-        if (!reason) reason = fb;
         for (let j = evs.length - 1; j >= 0; j--) {
           if (evs[j].type === 'RETURN' && evs[j].notes && evs[j].notes!.trim()) {
             latestUpdate = evs[j].notes!.trim(); break;

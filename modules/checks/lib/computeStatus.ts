@@ -265,8 +265,11 @@ export function buildChecksView(opts: ComputeStatusOptions): CheckViewRow[] {
 
     let reason = '';
     for (let j = evs.length - 1; j >= 0; j--) {
-      if (evs[j].reason) { reason = evs[j].reason!; break; }
-      if (evs[j].method) { reason = evs[j].method!; break; }
+      if (evs[j].reason && evs[j].reason!.trim()) { reason = evs[j].reason!.trim(); break; }
+      if (evs[j].method && evs[j].method!.trim()) {
+        reason = [evs[j].method!.trim(), evs[j].reference?.trim()].filter(Boolean).join(' - ');
+        break;
+      }
     }
 
     let nextDeposit = '';
