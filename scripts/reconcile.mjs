@@ -70,11 +70,11 @@ if(COMMIT){
     await c.query(`INSERT INTO ${S}.checks (id,client_code,branch_id,subsidiary,ae,bank,check_no,check_date,original_amount,payment_for,payment_description,notes,final_status,blacklist_reason,replacement_of,created_by,created_at) VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15,$16,$17) ON CONFLICT (id) DO NOTHING`,
       [x.id,x.client_code,x.branch_id,x.subsidiary??null,x.ae??null,x.bank??null,x.check_no,x.check_date??null,x.original_amount,x.payment_for??null,x.payment_description??'',x.notes??'',x.final_status??null,x.blacklist_reason??null,x.replacement_of??null,x.created_by??null,x.created_at]);
   }
-  for(const id of extraChecks){
-    await c.query(`DELETE FROM ${S}.events WHERE check_id=$1`,[id]);
-    await c.query(`DELETE FROM ${S}.check_notes WHERE check_id=$1`,[id]);
-    await c.query(`DELETE FROM ${S}.checks WHERE id=$1`,[id]);
-  }
+  // NOTE: ADD-ONLY. Deletes are intentionally disabled so this never removes
+  // data created directly in the portal (RDS) that isn't in Supabase. During
+  // the transition, users may be creating checks in the portal; wiping "extra"
+  // rows would destroy that new data. `extraChecks` is reported for visibility
+  // only. Re-enable deletes only if you need a full one-way mirror again.
 }
 
 // ── EVENTS ──
@@ -91,9 +91,7 @@ if(COMMIT){
     await c.query(`INSERT INTO ${S}.events (id,check_id,type,event_date,move_date,reason,method,reference,amount,notes,recorded_by,recorded_at) SELECT $1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12 WHERE EXISTS (SELECT 1 FROM ${S}.checks WHERE id=$2) ON CONFLICT (id) DO NOTHING`,
       [x.id,x.check_id,x.type,x.event_date??null,x.move_date??null,x.reason??null,x.method??null,x.reference??null,x.amount??null,x.notes??'',x.recorded_by??null,x.recorded_at]);
   }
-  for(const id of extraEvents){
-    await c.query(`DELETE FROM ${S}.events WHERE id=$1`,[id]);
-  }
+  // ADD-ONLY: extra events kept (see note above). No deletes.
 }
 
 // ── NOTES ──
@@ -109,9 +107,7 @@ if(COMMIT){
     await c.query(`INSERT INTO ${S}.check_notes (id,check_id,content,created_by,created_by_name,created_at) SELECT $1,$2,$3,$4,$5,$6 WHERE EXISTS (SELECT 1 FROM ${S}.checks WHERE id=$2) ON CONFLICT (id) DO NOTHING`,
       [x.id,x.check_id,x.content,x.created_by??'',x.created_by_name??'',x.created_at]);
   }
-  for(const id of extraNotes){
-    await c.query(`DELETE FROM ${S}.check_notes WHERE id=$1`,[id]);
-  }
+  // ADD-ONLY: extra notes kept (see note above). No deletes.
 }
 
 // ── Resolve UUID names ──

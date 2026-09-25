@@ -191,48 +191,19 @@ export async function POST(req: NextRequest) {
     }
     results.namesResolved = resolved;
 
-    // ── Remove checks deleted from Supabase ──────────────────────────────────
-    const sbCheckIds = new Set(sbChecks.map((c: any) => c.id as string));
-    const rdsAllChecks = await query<{ id: string }>(`SELECT id FROM ${SCHEMA}.checks`);
-    let deletedCount = 0;
-    for (const r of rdsAllChecks) {
-      if (!sbCheckIds.has(r.id)) {
-        await query(`DELETE FROM ${SCHEMA}.events WHERE check_id = $1`, [r.id]);
-        await query(`DELETE FROM ${SCHEMA}.check_notes WHERE check_id = $1`, [r.id]);
-        await query(`DELETE FROM ${SCHEMA}.checks WHERE id = $1`, [r.id]);
-        deletedCount++;
-      }
-    }
-    results.deleted = deletedCount;
-
-    // ── Remove events deleted from Supabase (keeps status counts accurate) ───
-    const sbEventIds = new Set(sbEvents.map((e: any) => e.id as string));
-    const rdsAllEvents = await query<{ id: string }>(`SELECT id FROM ${SCHEMA}.events`);
-    let deletedEvents = 0;
-    for (const r of rdsAllEvents) {
-      if (!sbEventIds.has(r.id)) {
-        await query(`DELETE FROM ${SCHEMA}.events WHERE id = $1`, [r.id]);
-        deletedEvents++;
-      }
-    }
-    results.deletedEvents = deletedEvents;
-
-    // ── Remove notes deleted from Supabase ───────────────────────────────────
-    const sbNoteIds = new Set(sbNotes.map((n: any) => n.id as string));
-    const rdsAllNotes = await query<{ id: string }>(`SELECT id FROM ${SCHEMA}.check_notes`);
-    let deletedNotes = 0;
-    for (const r of rdsAllNotes) {
-      if (!sbNoteIds.has(r.id)) {
-        await query(`DELETE FROM ${SCHEMA}.check_notes WHERE id = $1`, [r.id]);
-        deletedNotes++;
-      }
-    }
-    results.deletedNotes = deletedNotes;
+    // ── ADD-ONLY: deletes are intentionally DISABLED ─────────────────────────
+    // Once users work directly in the portal (RDS), they create checks/events/
+    // notes that don't exist in Supabase. Deleting "extra" rows would wipe that
+    // new portal data on every sync run. So this sync only ADDS new rows from
+    // Supabase and never removes anything from RDS.
+    results.deleted = 0;
+    results.deletedEvents = 0;
+    results.deletedNotes = 0;
 
     return NextResponse.json({
       ok: true,
       synced: results,
-      message: `Sync complete: +${results.clients} clients, +${results.checks} checks, +${results.events} events, +${results.notes} notes, ${results.namesResolved} names resolved, ${results.deleted} deleted.`,
+      message: `Sync complete (add-only): +${results.clients} clients, +${results.checks} checks, +${results.events} events, +${results.notes} notes, ${results.namesResolved} names resolved. Deletes disabled to protect portal-created data.`,
     });
   } catch (err) {
     console.error("Sync error:", err);
