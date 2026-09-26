@@ -23,7 +23,7 @@ function normalizeSalesRole(roleVal?: string, email?: string): string {
     "ron@esprintmedia.com", "janmark@esprintmedia.com", "jonjon@esprintmedia.com",
     "albert@esprintmedia.com", "armando@esprintmedia.com", "arnulfo@esprintmedia.com",
     "francis@esprintmedia.com", "kimpee@esprintmedia.com", "mark@esprintmedia.com",
-    "rj@esprintmedia.com"
+    "rj@esprintmedia.com", "marilyn@acssolutions.ph"
   ].includes(em)) {
     return "product_development_manager";
   }
@@ -35,6 +35,8 @@ function normalizeSalesRole(roleVal?: string, email?: string): string {
   const r = roleVal.toLowerCase().trim().replace(/[\s\-\/]+/g, "_");
   if (r === "superadmin" || r === "super_admin" || r === "admin") return "Admin";
   if (r === "product_technical_head" || r === "product_tech_head" || r === "technical_head") return "product_technical_head";
+  // "product_manager" was stored by the original migration ROLE_MAP for both product_development_manager
+  // and product_technical_head — default to product_development_manager (the more common of the two)
   if (r === "product_development_manager" || r === "product_dev_manager" || r === "product_manager" || r === "pm") return "product_development_manager";
   if (r === "service_manager") return "service_manager";
   if (r === "sales_admin_manager") return "sales_admin_manager";
