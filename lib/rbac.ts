@@ -262,6 +262,11 @@ function isSalesAdminGroup(role: string): boolean {
   return ["superadmin","sales_admin_manager","sales_admin_supervisor","area_sales_manager","Admin","Super Admin"].includes(role);
 }
 
+// Narrower group: only manager + supervisor get catalog edit/upload (NOT area_sales_manager)
+function isCatalogAdminGroup(role: string): boolean {
+  return ["superadmin","sales_admin_manager","sales_admin_supervisor","Admin","Super Admin"].includes(role);
+}
+
 export function getSalesPermissions(user: PortalUser): SalesPermissions {
   // Super admins get everything
   if (isSuperAdmin(user)) {
@@ -292,15 +297,40 @@ export function getSalesPermissions(user: PortalUser): SalesPermissions {
 
   const role = access.role ?? "user";
 
-  // Permission resolution: role-group defaults (matches orig fetchPermissions logic)
+  // ── Exact permission matrix from orig Sales Portal ──────────────────────────
+  // Source: role_permissions seed + permissions.ts fallback logic
+  // sales roles: create_quotes=true, use_calculator=true
+  // product/tech roles: create_quotes=false, use_calculator=true, manage_product_files=true,
+  //                     edit_machine_catalog=true, upload_machine_catalog=true
+  // sales_admin_manager/supervisor: edit_catalog=true, upload_catalog=true
+  // manage_users: ONLY superadmin in orig (manage_users=false for all regular roles)
+
+  const isSales        = isSalesGroup(role);
+  const isProductTech  = isProductTechGroup(role);
+  const isSalesAdmin   = isSalesAdminGroup(role); // manager, supervisor, asm
+  const isCatalogAdmin = isCatalogAdminGroup(role); // manager, supervisor only
+
   return {
-    canCreateQuotes:     isSalesGroup(role),
-    useCalculator:       true, // default true for all (orig use_calculator default)
-    canManageCatalog:    isSalesGroup(role) || isProductTechGroup(role),
-    canUploadCatalog:    isProductTechGroup(role) || isSalesAdminGroup(role),
-    canManageProductFiles: isSalesGroup(role) || isProductTechGroup(role),
-    canViewAllQuotes:    isSalesAdminGroup(role),
-    canManageUsers:      isSalesAdminGroup(role),
+    // create_quotes: true for all sales roles; false for product/tech/service roles
+    canCreateQuotes: isSales,
+
+    // use_calculator: true for everyone (orig default = true, no role sets it false)
+    useCalculator: true,
+
+    // edit_machine_catalog: sales_admin_manager, sales_admin_supervisor + all product/tech
+    canManageCatalog: isCatalogAdmin || isProductTech,
+
+    // upload_machine_catalog: same groups as edit
+    canUploadCatalog: isCatalogAdmin || isProductTech,
+
+    // manage_product_files: ONLY product/tech group (orig: false for all sales roles)
+    canManageProductFiles: isProductTech,
+
+    // canViewAllQuotes: sales admin group (manager, supervisor, asm) can see all quotes
+    canViewAllQuotes: isSalesAdmin,
+
+    // manage_users: false for ALL regular roles in orig (only superadmin = portal super_admin)
+    canManageUsers: false,
   };
 }
 
