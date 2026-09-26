@@ -136,20 +136,19 @@ async function reorganizeSalesFiles() {
     nextToken = res.NextContinuationToken;
   }
 
-  // Group objects and move UUID-based folders
+  // Group objects and move UUID-based folders concurrently in batches
+  const moveTasks: { oldKey: string; newKey: string; linkId?: string; targetFolder: string; fileName: string }[] = [];
+
   for (const obj of allS3Objects) {
     const oldKey = obj.key;
-    // Format: Sales/ProductFiles/<folderOrUUID>/<filename>
     const parts = oldKey.split("/");
-    if (parts.length < 4) continue; // e.g., Sales, ProductFiles, folder, file...
+    if (parts.length < 4) continue;
 
     const currentFolder = parts[2];
     const fileName = parts.slice(3).join("/");
 
-    // Check if currentFolder is a machine UUID
     const machineInfo = machineMap.get(currentFolder);
     if (!machineInfo) {
-      // Already using machine name or unknown machine
       objectsSkipped++;
       continue;
     }
@@ -161,53 +160,67 @@ async function reorganizeSalesFiles() {
     }
 
     const newKey = `Sales/ProductFiles/${targetFolder}/${fileName}`;
+    moveTasks.push({ oldKey, newKey, targetFolder, fileName });
+  }
 
-    try {
-      // 1. Copy object to new named folder
-      const copySource = `${BUCKET}/${encodeURIComponent(oldKey).replace(/%2F/g, "/")}`;
-      await s3get().send(new CopyObjectCommand({
-        Bucket: BUCKET,
-        CopySource: copySource,
-        Key: newKey,
-      }));
-
-      // 2. Delete old UUID object
-      await s3get().send(new DeleteObjectCommand({
-        Bucket: BUCKET,
-        Key: oldKey,
-      }));
-
-      objectsMoved++;
-    } catch (err: any) {
-      errors.push(`Move error for ${oldKey} → ${newKey}: ${err.message}`);
-    }
+  // Process in batches of 20 concurrent operations
+  const BATCH_SIZE = 20;
+  for (let i = 0; i < moveTasks.length; i += BATCH_SIZE) {
+    const batch = moveTasks.slice(i, i + BATCH_SIZE);
+    await Promise.all(
+      batch.map(async (task) => {
+        try {
+          const copySource = `${BUCKET}/${encodeURIComponent(task.oldKey).replace(/%2F/g, "/")}`;
+          await s3get().send(new CopyObjectCommand({
+            Bucket: BUCKET,
+            CopySource: copySource,
+            Key: task.newKey,
+          }));
+          await s3get().send(new DeleteObjectCommand({
+            Bucket: BUCKET,
+            Key: task.oldKey,
+          }));
+          objectsMoved++;
+        } catch (err: any) {
+          errors.push(`Move error for ${task.oldKey}: ${err.message}`);
+        }
+      })
+    );
   }
 
   // Rewrite all product_info_links URLs in database to match new machine folder format
+  const dbBatch: { id: string; newUrl: string }[] = [];
   for (const link of links) {
     if (!link.url || !link.url.includes("Sales/ProductFiles/")) continue;
 
     const machineInfo = machineMap.get(link.machine_id);
     if (!machineInfo) continue;
 
-    // Check if the URL contains the UUID or needs updating to the clean folder
     const targetFolder = machineInfo.folder;
     const oldUuidMarker = `Sales/ProductFiles/${link.machine_id}/`;
-    
+
     if (link.url.includes(oldUuidMarker)) {
       const fileName = link.url.slice(link.url.indexOf(oldUuidMarker) + oldUuidMarker.length);
-      const newUrl = `https://${BUCKET}.s3.${REGION}.amazonaws.com/Sales/ProductFiles/${encodeURIComponent(targetFolder).replace(/%20/g, "+")}/${fileName}`;
-      
-      try {
-        await query(
-          `UPDATE ${S}.product_info_links SET url = $1 WHERE id = $2`,
-          [newUrl, link.id]
-        );
-        linksUpdated++;
-      } catch (err: any) {
-        errors.push(`DB update error for link ${link.id}: ${err.message}`);
-      }
+      const newUrl = `https://${BUCKET}.s3.${REGION}.amazonaws.com/Sales/ProductFiles/${encodeURIComponent(targetFolder)}/${fileName}`;
+      dbBatch.push({ id: link.id, newUrl });
     }
+  }
+
+  for (let i = 0; i < dbBatch.length; i += 50) {
+    const chunk = dbBatch.slice(i, i + 50);
+    await Promise.all(
+      chunk.map(async (item) => {
+        try {
+          await query(
+            `UPDATE ${S}.product_info_links SET url = $1 WHERE id = $2`,
+            [item.newUrl, item.id]
+          );
+          linksUpdated++;
+        } catch (err: any) {
+          errors.push(`DB update error for link ${item.id}: ${err.message}`);
+        }
+      })
+    );
   }
 
   return NextResponse.json({
@@ -215,6 +228,7 @@ async function reorganizeSalesFiles() {
     step: "reorganize-sales",
     totalMachines: machines.length,
     totalS3ObjectsFound: allS3Objects.length,
+    pendingTasks: moveTasks.length,
     objectsMoved,
     objectsSkipped,
     linksUpdated,
