@@ -62,14 +62,18 @@ export function SalesUsersClient({ currentUserId }: { currentUserId: string }) {
       const res  = await fetch("/api/sales/users");
       const data = await res.json();
       if (data.users) {
-        setUsers(data.users.map((u: any) => ({
-          username: u.username,
-          email: u.email,
-          fullName: u.fullName || u.email?.split("@")[0] || "",
-          salesRole: getSalesRole(JSON.parse(u.access || "[]")),
-          enabled: u.enabled !== false,
-          access: JSON.parse(u.access || "[]"),
-        })));
+        setUsers(data.users.map((u: any) => {
+          // u.access is already a parsed ModuleAccess[] from the API — do not JSON.parse it again
+          const access = Array.isArray(u.access) ? u.access : [];
+          return {
+            username: u.username,
+            email: u.email,
+            fullName: u.fullName || u.email?.split("@")[0] || "",
+            salesRole: getSalesRole(access),
+            enabled: u.enabled !== false,
+            access,
+          };
+        }));
       }
     } catch { /* ignore */ }
     finally { setLoading(false); }
@@ -93,7 +97,8 @@ export function SalesUsersClient({ currentUserId }: { currentUserId: string }) {
     const isSales = ["Admin","sales_admin_manager","sales_admin_supervisor","sales_admin_assistant","area_sales_manager","account_executive","sales_assistant"].includes(u.salesRole);
     const isProductTech = ["product_manager","service_manager"].includes(u.salesRole);
     const isSalesAdminMgr = ["Admin","sales_admin_manager","sales_admin_supervisor","area_sales_manager"].includes(u.salesRole);
-    const saved = (u.access.find((a: any) => a.module === "sales") as any)?.perms ?? {};
+    const savedEntry = (Array.isArray(u.access) ? u.access : []).find((a: any) => a.module === "sales") as any;
+    const saved = savedEntry?.perms ?? {};
     setEditPerms({
       canCreateQuotes:     saved.canCreateQuotes     ?? isSales,
       useCalculator:       saved.useCalculator       ?? true,

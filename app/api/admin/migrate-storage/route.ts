@@ -1,34 +1,34 @@
 /**
  * POST /api/admin/migrate-storage
  *
- * One-time storage migration. Two independent steps, controlled by ?step=:
+ * Migration & storage management endpoint:
  *
- *   ?step=checks   → Move existing S3 objects  Clients/*  →  Checks/Clients/*
- *                    (renames the checks-module folder; copy + delete)
+ *   ?step=reorganize-sales  → Reorganize S3 folders from Sales/ProductFiles/<machineId>/
+ *                             to Sales/ProductFiles/<Brand> - <Model>/ and update
+ *                             all sales_portal.product_info_links URLs in RDS.
  *
- *   ?step=sales    → Download all Sales product files from Supabase Storage
- *                    and upload to S3 under  Sales/ProductFiles/<machineId>/<file>,
- *                    then rewrite sales_portal.product_info_links URLs to point at S3.
+ *   ?step=public-sales      → Grant public-read bucket policy to Sales/ProductFiles/*
  *
- * Protected by SYNC_SECRET header. Uses the Amplify compute role for S3 (no keys).
- * DELETE this file after use.
- *
- * Usage:
- *   curl -X POST "https://<portal>/api/admin/migrate-storage?step=checks&secret=sync-esprint-2026"
- *   curl -X POST "https://<portal>/api/admin/migrate-storage?step=sales&secret=sync-esprint-2026"
+ * Protected by SYNC_SECRET header or ?secret= parameter.
+ * Uses the AWS Amplify compute role for S3 operations.
  */
 import { NextRequest, NextResponse } from "next/server";
 import {
-  S3Client, ListObjectsV2Command, CopyObjectCommand,
-  DeleteObjectCommand, PutObjectCommand, HeadObjectCommand,
+  S3Client,
+  ListObjectsV2Command,
+  CopyObjectCommand,
+  DeleteObjectCommand,
+  PutObjectCommand,
+  HeadObjectCommand,
+  GetBucketPolicyCommand,
+  PutBucketPolicyCommand,
 } from "@aws-sdk/client-s3";
 import { query } from "@/lib/db";
+import { sanitizeMachineFolderName } from "@/lib/sales-storage";
 
 const SYNC_SECRET = process.env.SYNC_SECRET ?? "sync-esprint-2026";
 const REGION      = process.env.S3_REGION ?? "ap-southeast-1";
 const BUCKET      = process.env.S3_BUCKET ?? "esprint-portal-attachments";
-const SB_URL      = process.env.SALES_PORTAL_SUPABASE_URL ?? "https://zujxmjnuushqnplakryg.supabase.co";
-const SB_KEY      = process.env.SALES_PORTAL_SERVICE_KEY;
 const S           = "sales_portal";
 
 let _s3: S3Client | null = null;
@@ -43,108 +43,199 @@ export async function POST(req: NextRequest) {
   if (secret !== SYNC_SECRET) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
-  const step = url.searchParams.get("step");
+  const step = url.searchParams.get("step") || "reorganize-sales";
+  const limit = parseInt(url.searchParams.get("limit") || "100", 10);
 
-  if (step === "checks") return migrateChecksFolder();
-  if (step === "sales")  return migrateSalesFiles();
-  return NextResponse.json({ error: "Pass ?step=checks or ?step=sales" }, { status: 400 });
-}
-
-// ── Step 1: rename Clients/ → Checks/Clients/ ─────────────────────────────────
-async function migrateChecksFolder() {
-  let copied = 0, skipped = 0;
-  const errors: string[] = [];
-  let token: string | undefined;
-  do {
-    const list = await s3get().send(new ListObjectsV2Command({
-      Bucket: BUCKET, Prefix: "Clients/", ContinuationToken: token,
-    }));
-    for (const obj of (list.Contents ?? [])) {
-      const oldKey = obj.Key!;
-      if (oldKey.endsWith("/")) { skipped++; continue; }
-      const newKey = "Checks/" + oldKey; // Clients/... → Checks/Clients/...
-      try {
-        // Skip if already migrated
-        try { await s3get().send(new HeadObjectCommand({ Bucket: BUCKET, Key: newKey })); skipped++; continue; } catch {}
-        await s3get().send(new CopyObjectCommand({
-          Bucket: BUCKET, CopySource: `${BUCKET}/${encodeURIComponent(oldKey).replace(/%2F/g, "/")}`, Key: newKey,
-        }));
-        await s3get().send(new DeleteObjectCommand({ Bucket: BUCKET, Key: oldKey }));
-        copied++;
-      } catch (err: any) {
-        errors.push(`${oldKey}: ${err.message}`);
-      }
-    }
-    token = list.NextContinuationToken;
-  } while (token);
-
-  return NextResponse.json({
-    ok: true, step: "checks",
-    message: `Moved ${copied} objects Clients/ → Checks/Clients/, skipped ${skipped}`,
-    errors: errors.length ? errors : undefined,
-  });
-}
-
-// ── Step 2: Supabase product files → S3 Sales/ProductFiles/ ───────────────────
-async function migrateSalesFiles() {
-  if (!SB_KEY) {
-    return NextResponse.json({ error: "SALES_PORTAL_SERVICE_KEY not set" }, { status: 500 });
+  if (step === "reorganize-sales" || step === "organize") {
+    return reorganizeSalesFiles(limit);
   }
-  const H = { apikey: SB_KEY, Authorization: `Bearer ${SB_KEY}` };
+  if (step === "public-sales") {
+    return makeSalesFilesPublic();
+  }
+  return NextResponse.json({ error: "Invalid step. Supported: reorganize-sales, public-sales" }, { status: 400 });
+}
 
-  // Get all product_info_links that point at Supabase storage
-  const links = await query<{ id: string; machine_id: string; url: string; document_type: string }>(
-    `SELECT id, machine_id, url, document_type FROM ${S}.product_info_links
-     WHERE url LIKE '%supabase.co/storage%'`
+// ── Make Sales/ProductFiles/* publicly readable (bucket policy) ───────────────
+async function makeSalesFilesPublic() {
+  let existing: any = { Version: "2012-10-17", Statement: [] };
+  try {
+    const cur = await s3get().send(new GetBucketPolicyCommand({ Bucket: BUCKET }));
+    if (cur.Policy) existing = JSON.parse(cur.Policy);
+  } catch { /* no policy yet */ }
+
+  existing.Statement = (existing.Statement ?? []).filter(
+    (s: any) => s.Sid !== "PublicReadSalesProductFiles"
+  );
+  existing.Statement.push({
+    Sid: "PublicReadSalesProductFiles",
+    Effect: "Allow",
+    Principal: "*",
+    Action: "s3:GetObject",
+    Resource: `arn:aws:s3:::${BUCKET}/Sales/ProductFiles/*`,
+  });
+
+  try {
+    await s3get().send(new PutBucketPolicyCommand({
+      Bucket: BUCKET,
+      Policy: JSON.stringify(existing),
+    }));
+    return NextResponse.json({ ok: true, step: "public-sales", message: "Sales/ProductFiles/* is now publicly readable" });
+  } catch (err: any) {
+    return NextResponse.json({
+      ok: false,
+      error: err.message,
+      hint: "Disable 'Block public access via bucket policies' in S3 console first, then retry.",
+    }, { status: 500 });
+  }
+}
+
+// ── Reorganize S3 folders from UUIDs to Machine Names & rewrite RDS URLs ───────
+async function reorganizeSalesFiles(limit = 100) {
+  const machines = await query<{ id: string; brand: string; model: string; sub_model: string | null }>(
+    `SELECT id, brand, model, sub_model FROM ${S}.machines`
+  );
+  const machineMap = new Map<string, { folder: string; brand: string; model: string }>();
+  for (const m of machines) {
+    machineMap.set(m.id, {
+      folder: sanitizeMachineFolderName(m.brand, m.model, m.sub_model),
+      brand: m.brand,
+      model: m.model,
+    });
+  }
+
+  // Fetch all product_info_links
+  const links = await query<{ id: string; machine_id: string; display_name: string; url: string }>(
+    `SELECT id, machine_id, display_name, url FROM ${S}.product_info_links`
   );
 
-  let migrated = 0, skipped = 0;
+  let objectsMoved = 0;
+  let objectsSkipped = 0;
+  let linksUpdated = 0;
   const errors: string[] = [];
 
+  // List all objects under Sales/ProductFiles/
+  let isTruncated = true;
+  let nextToken: string | undefined = undefined;
+  const allS3Objects: { key: string; size?: number }[] = [];
+
+  while (isTruncated) {
+    const listParams: { Bucket: string; Prefix: string; ContinuationToken?: string } = {
+      Bucket: BUCKET,
+      Prefix: "Sales/ProductFiles/",
+    };
+    if (nextToken) listParams.ContinuationToken = nextToken;
+
+    const res = await s3get().send(new ListObjectsV2Command(listParams));
+    if (res.Contents) {
+      for (const obj of res.Contents) {
+        if (obj.Key && !obj.Key.endsWith("/")) {
+          allS3Objects.push({ key: obj.Key, size: obj.Size });
+        }
+      }
+    }
+    isTruncated = res.IsTruncated ?? false;
+    nextToken = res.NextContinuationToken;
+  }
+
+  // Group objects and move UUID-based folders concurrently in batches
+  const moveTasks: { oldKey: string; newKey: string; linkId?: string; targetFolder: string; fileName: string }[] = [];
+
+  for (const obj of allS3Objects) {
+    const oldKey = obj.key;
+    const parts = oldKey.split("/");
+    if (parts.length < 4) continue;
+
+    const currentFolder = parts[2];
+    const fileName = parts.slice(3).join("/");
+
+    const machineInfo = machineMap.get(currentFolder);
+    if (!machineInfo) {
+      objectsSkipped++;
+      continue;
+    }
+
+    const targetFolder = machineInfo.folder;
+    if (currentFolder === targetFolder) {
+      objectsSkipped++;
+      continue;
+    }
+
+    const newKey = `Sales/ProductFiles/${targetFolder}/${fileName}`;
+    moveTasks.push({ oldKey, newKey, targetFolder, fileName });
+  }
+
+  // Slice by limit for this run
+  const tasksToRun = moveTasks.slice(0, limit);
+
+  // Process in batches of 25 concurrent operations
+  const BATCH_SIZE = 25;
+  for (let i = 0; i < tasksToRun.length; i += BATCH_SIZE) {
+    const batch = tasksToRun.slice(i, i + BATCH_SIZE);
+    await Promise.all(
+      batch.map(async (task) => {
+        try {
+          const copySource = `${BUCKET}/${encodeURIComponent(task.oldKey).replace(/%2F/g, "/")}`;
+          await s3get().send(new CopyObjectCommand({
+            Bucket: BUCKET,
+            CopySource: copySource,
+            Key: task.newKey,
+          }));
+          await s3get().send(new DeleteObjectCommand({
+            Bucket: BUCKET,
+            Key: task.oldKey,
+          }));
+          objectsMoved++;
+        } catch (err: any) {
+          errors.push(`Move error for ${task.oldKey}: ${err.message}`);
+        }
+      })
+    );
+  }
+
+  // Rewrite all product_info_links URLs in database to match new machine folder format
+  const dbBatch: { id: string; newUrl: string }[] = [];
   for (const link of links) {
-    try {
-      // Extract the storage path after /public/product-files/
-      const marker = "/storage/v1/object/public/product-files/";
-      const idx = link.url.indexOf(marker);
-      if (idx === -1) { skipped++; continue; }
-      const encodedPath = link.url.slice(idx + marker.length);
-      const fileName = decodeURIComponent(encodedPath.split("/").pop() ?? "file");
-      const s3Key = `Sales/ProductFiles/${link.machine_id}/${fileName}`;
+    if (!link.url || !link.url.includes("Sales/ProductFiles/")) continue;
 
-      // Skip if already in S3
-      try {
-        await s3get().send(new HeadObjectCommand({ Bucket: BUCKET, Key: s3Key }));
-        // Already there — just update URL
-        await query(`UPDATE ${S}.product_info_links SET url=$1 WHERE id=$2`,
-          [`https://${BUCKET}.s3.${REGION}.amazonaws.com/${s3Key}`, link.id]);
-        skipped++;
-        continue;
-      } catch {}
+    const machineInfo = machineMap.get(link.machine_id);
+    if (!machineInfo) continue;
 
-      // Download from Supabase
-      const fileRes = await fetch(link.url, { headers: H });
-      if (!fileRes.ok) { errors.push(`fetch ${fileName}: ${fileRes.status}`); continue; }
-      const buffer = Buffer.from(await fileRes.arrayBuffer());
-      const contentType = fileRes.headers.get("content-type") ?? "application/octet-stream";
+    const targetFolder = machineInfo.folder;
+    const oldUuidMarker = `Sales/ProductFiles/${link.machine_id}/`;
 
-      // Upload to S3
-      await s3get().send(new PutObjectCommand({
-        Bucket: BUCKET, Key: s3Key, Body: buffer, ContentType: contentType,
-      }));
-
-      // Rewrite URL to S3
-      await query(`UPDATE ${S}.product_info_links SET url=$1 WHERE id=$2`,
-        [`https://${BUCKET}.s3.${REGION}.amazonaws.com/${s3Key}`, link.id]);
-      migrated++;
-    } catch (err: any) {
-      errors.push(`${link.id}: ${err.message}`);
+    if (link.url.includes(oldUuidMarker)) {
+      const fileName = link.url.slice(link.url.indexOf(oldUuidMarker) + oldUuidMarker.length);
+      const newUrl = `https://${BUCKET}.s3.${REGION}.amazonaws.com/Sales/ProductFiles/${encodeURIComponent(targetFolder)}/${fileName}`;
+      dbBatch.push({ id: link.id, newUrl });
     }
   }
 
+  for (let i = 0; i < dbBatch.length; i += 50) {
+    const chunk = dbBatch.slice(i, i + 50);
+    await Promise.all(
+      chunk.map(async (item) => {
+        try {
+          await query(
+            `UPDATE ${S}.product_info_links SET url = $1 WHERE id = $2`,
+            [item.newUrl, item.id]
+          );
+          linksUpdated++;
+        } catch (err: any) {
+          errors.push(`DB update error for link ${item.id}: ${err.message}`);
+        }
+      })
+    );
+  }
+
   return NextResponse.json({
-    ok: true, step: "sales",
-    message: `Migrated ${migrated} files to S3, skipped ${skipped} (already there)`,
-    totalSupabaseLinks: links.length,
+    ok: true,
+    step: "reorganize-sales",
+    totalMachines: machines.length,
+    totalS3ObjectsFound: allS3Objects.length,
+    pendingTasks: moveTasks.length,
+    objectsMoved,
+    objectsSkipped,
+    linksUpdated,
     errors: errors.length ? errors.slice(0, 20) : undefined,
   });
 }

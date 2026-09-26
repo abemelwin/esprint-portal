@@ -89,10 +89,10 @@ export function QuoteBuilderClient({
   const [downPayment, setDownPayment] = useState<number>(0);
   const [months, setMonths] = useState<number>(12);
   const [vatInclusive, setVatInclusive] = useState(false);
-  const [collectionPayment, setCollectionPayment] = useState("Upon confirmation and before delivery");
-  const [collectionDownpayment, setCollectionDownpayment] = useState("Upon confirmation and before delivery");
-  const [collectionAmortization, setCollectionAmortization] = useState("After installation of machine");
-  const [availability, setAvailability] = useState("ON STOCK");
+  const [collectionPayment, setCollectionPayment] = useState("");
+  const [collectionDownpayment, setCollectionDownpayment] = useState("");
+  const [collectionAmortization, setCollectionAmortization] = useState("");
+  const [availability, setAvailability] = useState("");
 
   // Trade-Ins (Always 3 fixed rows in original)
   const [tradeIns, setTradeIns] = useState<TradeInItem[]>([
@@ -132,16 +132,16 @@ export function QuoteBuilderClient({
   // Warranty
   const [warrantyCompany, setWarrantyCompany] = useState("ES Print Media Inc.");
   const [warrantySupplier, setWarrantySupplier] = useState("ESPMI");
-  const [warrantyMachineDuration, setWarrantyMachineDuration] = useState("Twelve (12)");
+  const [warrantyMachineDuration, setWarrantyMachineDuration] = useState("");
   const [warrantyPrintheadDuration, setWarrantyPrintheadDuration] = useState("");
   const [warrantyPrintheadType, setWarrantyPrintheadType] = useState<string | null>(null);
-  const [serviceFee, setServiceFee] = useState<number | null>(500);
+  const [serviceFee, setServiceFee] = useState<number | null>(null);
 
   // Signatories
-  const [aeName, setAeName] = useState(currentUserName || "ACCOUNT EXECUTIVE");
+  const [aeName, setAeName] = useState(currentUserName || "");
   const [clientConforme, setClientConforme] = useState("");
-  const [notedByName, setNotedByName] = useState("Ness Deomano");
-  const [notedByRole, setNotedByRole] = useState("Area Sales Manager");
+  const [notedByName, setNotedByName] = useState("");
+  const [notedByRole, setNotedByRole] = useState("");
 
   // Load catalog on mount
   useEffect(() => {
@@ -191,6 +191,11 @@ export function QuoteBuilderClient({
       setExclusionItems([]);
       setAddonItems([]);
       setConsumablePrices([]);
+      setAvailability("");
+      setWarrantyMachineDuration("");
+      setWarrantyPrintheadDuration("");
+      setWarrantyPrintheadType(null);
+      setServiceFee(null);
       return;
     }
 
@@ -250,7 +255,7 @@ export function QuoteBuilderClient({
       setWarrantyPrintheadType(null);
     }
     setServiceFee(selectedMachine.service_fee ?? 500);
-    setAvailability(selectedMachine.availability || "ON STOCK");
+    setAvailability(selectedMachine.availability || "");
   }, [selectedMachine]);
 
   // Trade in sum
@@ -419,6 +424,29 @@ export function QuoteBuilderClient({
 
     return lines;
   }, [selectedModel, selectedMachine, warrantyMachineDuration, warrantyPrintheadDuration, warrantyPrintheadType, warrantySupplier, serviceFee, warrantyCompany, vatInclusive]);
+
+  // Displayed inclusions & exclusions for preview (mirrors QuotePreviewPanel.vue logic)
+  const displayedInclusions = useMemo(() => {
+    let items = inclusionItems.filter((i) => i.enabled).map((i) => i.description);
+    if (includeDelivery && !items.some((d) => d.toLowerCase().includes("delivery"))) {
+      items = ["Delivery and installation in cities with ESPMI branches", ...items];
+    }
+    if (vatInclusive && !items.some((d) => d.toLowerCase().includes("value added tax") || d.toLowerCase().includes("vat"))) {
+      items = [...items, "12% Value Added Tax (VAT) Included"];
+    }
+    return items;
+  }, [inclusionItems, includeDelivery, vatInclusive]);
+
+  const displayedExclusions = useMemo(() => {
+    let items = exclusionItems.filter((i) => i.enabled).map((i) => i.description);
+    if (includeDelivery) {
+      items = items.filter((d) => !d.toLowerCase().includes("delivery") && !d.toLowerCase().includes("transportation and accommodation"));
+    }
+    if (vatInclusive) {
+      items = items.filter((d) => !d.toLowerCase().includes("value added tax") && !d.toLowerCase().includes("vat"));
+    }
+    return items;
+  }, [exclusionItems, includeDelivery, vatInclusive]);
 
   const letterheadHeaderImg =
     letterhead === "ACS / Alternative" ? "/letterhead/letterhead-acs-1.jpg" : "/letterhead/letterhead-espmi-1.jpg";
@@ -1086,9 +1114,10 @@ export function QuoteBuilderClient({
                 </label>
                 <input
                   type="text"
+                  placeholder="Upon confirmation and before delivery"
                   value={collectionPayment}
                   onChange={(e) => setCollectionPayment(e.target.value)}
-                  className="w-full px-[7px] py-[5px] border border-[#ddd] rounded-[4px] text-[12px] bg-[#fafafa]"
+                  className="w-full px-[7px] py-[5px] border border-[#ddd] rounded-[4px] text-[12px] bg-[#fafafa] focus:bg-white focus:border-[#c0392b] focus:outline-none"
                 />
               </div>
 
@@ -1098,9 +1127,10 @@ export function QuoteBuilderClient({
                 </label>
                 <input
                   type="text"
+                  placeholder="Upon confirmation and before delivery"
                   value={collectionDownpayment}
                   onChange={(e) => setCollectionDownpayment(e.target.value)}
-                  className="w-full px-[7px] py-[5px] border border-[#ddd] rounded-[4px] text-[12px] bg-[#fafafa]"
+                  className="w-full px-[7px] py-[5px] border border-[#ddd] rounded-[4px] text-[12px] bg-[#fafafa] focus:bg-white focus:border-[#c0392b] focus:outline-none"
                 />
               </div>
 
@@ -1110,9 +1140,10 @@ export function QuoteBuilderClient({
                 </label>
                 <input
                   type="text"
+                  placeholder="After installation of machine"
                   value={collectionAmortization}
                   onChange={(e) => setCollectionAmortization(e.target.value)}
-                  className="w-full px-[7px] py-[5px] border border-[#ddd] rounded-[4px] text-[12px] bg-[#fafafa]"
+                  className="w-full px-[7px] py-[5px] border border-[#ddd] rounded-[4px] text-[12px] bg-[#fafafa] focus:bg-white focus:border-[#c0392b] focus:outline-none"
                 />
               </div>
 
@@ -1123,9 +1154,10 @@ export function QuoteBuilderClient({
                 </label>
                 <input
                   type="text"
+                  placeholder="ON STOCK"
                   value={availability}
                   onChange={(e) => setAvailability(e.target.value)}
-                  className="w-full px-[7px] py-[5px] border border-[#ddd] rounded-[4px] text-[12px] bg-[#fafafa]"
+                  className="w-full px-[7px] py-[5px] border border-[#ddd] rounded-[4px] text-[12px] bg-[#fafafa] focus:bg-white focus:border-[#c0392b] focus:outline-none"
                 />
               </div>
 
@@ -1144,20 +1176,25 @@ export function QuoteBuilderClient({
               </div>
 
               {underPromo && (
-                <div className="space-y-1.5 p-2 bg-red-50/50 border border-red-200 rounded">
-                  <label className="block text-[10px] font-semibold text-[#666] uppercase">Freebies</label>
-                  {freebies.map((fb, idx) => (
-                    <div key={idx} className="flex justify-between items-center p-[3px_6px] bg-white border border-[#eee] rounded text-[12px]">
-                      <span>{fb}</span>
-                      <button
-                        type="button"
-                        onClick={() => setFreebies(freebies.filter((_, i) => i !== idx))}
-                        className="text-[#c0392b] font-bold cursor-pointer"
-                      >
-                        &times;
-                      </button>
+                <div className="space-y-1.5 p-2 bg-[#fff8f8] border border-[#f5c6cb] rounded-[4px] mt-1">
+                  <label className="block text-[10px] font-semibold text-[#666] uppercase mb-[2px]">Freebies</label>
+                  {freebies.length > 0 && (
+                    <div className="space-y-1 mb-1">
+                      {freebies.map((fb, idx) => (
+                        <div key={idx} className="flex justify-between items-center p-[3px_6px] bg-white border border-[#eee] rounded-[3px] text-[11px] text-[#333]">
+                          <span>{fb}</span>
+                          <button
+                            type="button"
+                            onClick={() => setFreebies(freebies.filter((_, i) => i !== idx))}
+                            className="text-[#c0392b] font-bold text-[14px] leading-none cursor-pointer hover:text-[#900]"
+                            aria-label={`Remove freebie ${fb}`}
+                          >
+                            &times;
+                          </button>
+                        </div>
+                      ))}
                     </div>
-                  ))}
+                  )}
                   <div className="flex gap-1.5 pt-1">
                     <input
                       type="text"
@@ -1170,7 +1207,7 @@ export function QuoteBuilderClient({
                           setFreebieInput("");
                         }
                       }}
-                      className="flex-1 px-[7px] py-[5px] border border-[#ddd] rounded text-[12px]"
+                      className="flex-1 px-[7px] py-[4px] border border-[#ddd] rounded-[4px] text-[12px] bg-white focus:outline-none focus:border-[#c0392b]"
                     />
                     <button
                       type="button"
@@ -1180,19 +1217,19 @@ export function QuoteBuilderClient({
                           setFreebieInput("");
                         }
                       }}
-                      className="p-[5px_8px] bg-white text-[#c0392b] border border-[#c0392b] rounded text-[11px] font-bold cursor-pointer"
+                      className="px-[8px] py-[4px] bg-white text-[#c0392b] border border-[#c0392b] rounded-[4px] text-[11px] font-bold cursor-pointer hover:bg-[#c0392b] hover:text-white transition-colors"
                     >
-                      + Add
+                      + Add Freebie
                     </button>
                   </div>
-                  <div>
+                  <div className="mt-2">
                     <label className="block text-[10px] font-semibold text-[#666] uppercase mb-[2px]">Promo Validity</label>
                     <input
                       type="text"
                       placeholder="e.g., Valid until Dec 31, 2026"
                       value={promoValidity}
                       onChange={(e) => setPromoValidity(e.target.value)}
-                      className="w-full px-[7px] py-[5px] border border-[#ddd] rounded text-[12px] bg-white"
+                      className="w-full px-[7px] py-[5px] border border-[#ddd] rounded-[4px] text-[12px] bg-white focus:outline-none focus:border-[#c0392b]"
                     />
                   </div>
                 </div>
@@ -1315,32 +1352,73 @@ export function QuoteBuilderClient({
                       {item.description}
                     </label>
                     {item.isCustom && (
-                      <button type="button" onClick={() => setInclusionItems(inclusionItems.filter(x => x.id !== item.id))}
-                        className="text-[#c0392b] font-bold text-[14px] leading-none cursor-pointer">&times;</button>
+                      <button
+                        type="button"
+                        onClick={() => setInclusionItems(inclusionItems.filter((x) => x.id !== item.id))}
+                        className="text-[#c0392b] font-bold text-[14px] leading-none cursor-pointer hover:text-[#900] px-1"
+                        aria-label={`Remove inclusion ${item.description}`}
+                      >
+                        &times;
+                      </button>
                     )}
                   </div>
                 ))}
               </div>
               {/* Custom inclusion input */}
               {showInclusionInput ? (
-                <div className="flex gap-1.5 mt-1">
-                  <input type="text" placeholder="Custom inclusion…" value={newInclusionText}
-                    onChange={e => setNewInclusionText(e.target.value)}
-                    onKeyDown={e => { if (e.key === "Enter" && newInclusionText.trim()) {
-                      setInclusionItems([...inclusionItems, { id: `ci-${Date.now()}`, description: newInclusionText.trim(), enabled: true, isCustom: true }]);
-                      setNewInclusionText(""); setShowInclusionInput(false);
-                    }}}
-                    className="flex-1 px-[7px] py-[4px] border border-[#ddd] rounded text-[12px]" autoFocus />
-                  <button type="button" onClick={() => { if (newInclusionText.trim()) {
-                    setInclusionItems([...inclusionItems, { id: `ci-${Date.now()}`, description: newInclusionText.trim(), enabled: true, isCustom: true }]);
-                    setNewInclusionText(""); setShowInclusionInput(false);
-                  }}} className="p-[4px_8px] bg-[#c0392b] text-white rounded text-[11px] font-bold">Add</button>
-                  <button type="button" onClick={() => setShowInclusionInput(false)} className="p-[4px_8px] border border-[#ddd] rounded text-[11px]">✕</button>
+                <div className="flex gap-1.5 mt-1.5">
+                  <input
+                    type="text"
+                    placeholder="Custom inclusion"
+                    value={newInclusionText}
+                    onChange={(e) => setNewInclusionText(e.target.value)}
+                    onKeyDown={(e) => {
+                      if (e.key === "Enter" && newInclusionText.trim()) {
+                        setInclusionItems([
+                          ...inclusionItems,
+                          { id: `ci-${Date.now()}`, description: newInclusionText.trim(), enabled: true, isCustom: true },
+                        ]);
+                        setNewInclusionText("");
+                        setShowInclusionInput(false);
+                      }
+                    }}
+                    className="flex-1 px-[7px] py-[4px] border border-[#ddd] rounded-[4px] text-[12px] bg-white focus:outline-none focus:border-[#c0392b]"
+                    autoFocus
+                  />
+                  <button
+                    type="button"
+                    onClick={() => {
+                      if (newInclusionText.trim()) {
+                        setInclusionItems([
+                          ...inclusionItems,
+                          { id: `ci-${Date.now()}`, description: newInclusionText.trim(), enabled: true, isCustom: true },
+                        ]);
+                        setNewInclusionText("");
+                        setShowInclusionInput(false);
+                      }
+                    }}
+                    className="px-[8px] py-[4px] bg-[#c0392b] text-white rounded-[4px] text-[11px] font-bold cursor-pointer hover:bg-[#a93226]"
+                  >
+                    Add
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setShowInclusionInput(false);
+                      setNewInclusionText("");
+                    }}
+                    className="px-[8px] py-[4px] bg-[#f5f5f5] text-[#666] border border-[#ddd] rounded-[4px] text-[11px] cursor-pointer hover:bg-[#e0e0e0]"
+                  >
+                    Cancel
+                  </button>
                 </div>
               ) : (
-                <button type="button" onClick={() => setShowInclusionInput(true)}
-                  className="mt-1.5 text-[11px] text-[#c0392b] border border-[#c0392b] rounded px-[8px] py-[3px] bg-white font-bold cursor-pointer hover:bg-[#fdecea]">
-                  + Add Item
+                <button
+                  type="button"
+                  onClick={() => setShowInclusionInput(true)}
+                  className="mt-1.5 px-[8px] py-[3px] bg-white text-[#c0392b] border border-[#c0392b] rounded-[4px] text-[11px] font-bold cursor-pointer hover:bg-[#c0392b] hover:text-white transition-colors"
+                >
+                  + Add Inclusion
                 </button>
               )}
             </div>
@@ -1372,32 +1450,73 @@ export function QuoteBuilderClient({
                       {item.description}
                     </label>
                     {item.isCustom && (
-                      <button type="button" onClick={() => setExclusionItems(exclusionItems.filter(x => x.id !== item.id))}
-                        className="text-[#c0392b] font-bold text-[14px] leading-none cursor-pointer">&times;</button>
+                      <button
+                        type="button"
+                        onClick={() => setExclusionItems(exclusionItems.filter((x) => x.id !== item.id))}
+                        className="text-[#c0392b] font-bold text-[14px] leading-none cursor-pointer hover:text-[#900] px-1"
+                        aria-label={`Remove exclusion ${item.description}`}
+                      >
+                        &times;
+                      </button>
                     )}
                   </div>
                 ))}
               </div>
               {/* Custom exclusion input */}
               {showExclusionInput ? (
-                <div className="flex gap-1.5 mt-1">
-                  <input type="text" placeholder="Custom exclusion…" value={newExclusionText}
-                    onChange={e => setNewExclusionText(e.target.value)}
-                    onKeyDown={e => { if (e.key === "Enter" && newExclusionText.trim()) {
-                      setExclusionItems([...exclusionItems, { id: `ce-${Date.now()}`, description: newExclusionText.trim(), enabled: true, isCustom: true }]);
-                      setNewExclusionText(""); setShowExclusionInput(false);
-                    }}}
-                    className="flex-1 px-[7px] py-[4px] border border-[#ddd] rounded text-[12px]" autoFocus />
-                  <button type="button" onClick={() => { if (newExclusionText.trim()) {
-                    setExclusionItems([...exclusionItems, { id: `ce-${Date.now()}`, description: newExclusionText.trim(), enabled: true, isCustom: true }]);
-                    setNewExclusionText(""); setShowExclusionInput(false);
-                  }}} className="p-[4px_8px] bg-[#c0392b] text-white rounded text-[11px] font-bold">Add</button>
-                  <button type="button" onClick={() => setShowExclusionInput(false)} className="p-[4px_8px] border border-[#ddd] rounded text-[11px]">✕</button>
+                <div className="flex gap-1.5 mt-1.5">
+                  <input
+                    type="text"
+                    placeholder="Custom exclusion"
+                    value={newExclusionText}
+                    onChange={(e) => setNewExclusionText(e.target.value)}
+                    onKeyDown={(e) => {
+                      if (e.key === "Enter" && newExclusionText.trim()) {
+                        setExclusionItems([
+                          ...exclusionItems,
+                          { id: `ce-${Date.now()}`, description: newExclusionText.trim(), enabled: true, isCustom: true },
+                        ]);
+                        setNewExclusionText("");
+                        setShowExclusionInput(false);
+                      }
+                    }}
+                    className="flex-1 px-[7px] py-[4px] border border-[#ddd] rounded-[4px] text-[12px] bg-white focus:outline-none focus:border-[#c0392b]"
+                    autoFocus
+                  />
+                  <button
+                    type="button"
+                    onClick={() => {
+                      if (newExclusionText.trim()) {
+                        setExclusionItems([
+                          ...exclusionItems,
+                          { id: `ce-${Date.now()}`, description: newExclusionText.trim(), enabled: true, isCustom: true },
+                        ]);
+                        setNewExclusionText("");
+                        setShowExclusionInput(false);
+                      }
+                    }}
+                    className="px-[8px] py-[4px] bg-[#c0392b] text-white rounded-[4px] text-[11px] font-bold cursor-pointer hover:bg-[#a93226]"
+                  >
+                    Add
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setShowExclusionInput(false);
+                      setNewExclusionText("");
+                    }}
+                    className="px-[8px] py-[4px] bg-[#f5f5f5] text-[#666] border border-[#ddd] rounded-[4px] text-[11px] cursor-pointer hover:bg-[#e0e0e0]"
+                  >
+                    Cancel
+                  </button>
                 </div>
               ) : (
-                <button type="button" onClick={() => setShowExclusionInput(true)}
-                  className="mt-1.5 text-[11px] text-[#c0392b] border border-[#c0392b] rounded px-[8px] py-[3px] bg-white font-bold cursor-pointer hover:bg-[#fdecea]">
-                  + Add Item
+                <button
+                  type="button"
+                  onClick={() => setShowExclusionInput(true)}
+                  className="mt-1.5 px-[8px] py-[3px] bg-white text-[#c0392b] border border-[#c0392b] rounded-[4px] text-[11px] font-bold cursor-pointer hover:bg-[#c0392b] hover:text-white transition-colors"
+                >
+                  + Add Exclusion
                 </button>
               )}
             </div>
@@ -1761,36 +1880,32 @@ export function QuoteBuilderClient({
                       )}
                     </tbody>
                   </table>
-                  {underPromo && promoValidity && (
-                    <p className="text-right text-[8.5pt] font-bold text-[#c0392b] my-[0_2mm]">
-                      Promo Validity: {promoValidity}
-                    </p>
-                  )}
                 </div>
               )}
 
               {/* COLLECTION ARRANGEMENTS */}
-              {(availability || collectionPayment || collectionDownpayment || collectionAmortization) && (
-                <div className="mb-[3mm]">
-                  <div className="text-[8.5pt] font-bold text-[#c0392b] uppercase my-[3mm_1.5mm] flex items-center gap-1">
-                    Collection Arrangements<span className="flex-1 h-[1px] bg-[#f0f0f0]"></span>
+              {(collectionPayment || collectionDownpayment || collectionAmortization) && (
+                <div className="mb-[2mm]">
+                  <div className="text-[8pt] font-bold text-[#c0392b] uppercase mt-[2mm] mb-0 tracking-[0.4px]">
+                    Collection Arrangements
+                    <span className="block w-full h-[1px] bg-[#c0392b] mt-[1mm] mb-[1.5mm]"></span>
                   </div>
-                  <div className="text-[8pt] space-y-1">
+                  <div className="text-[8pt] text-[#333] p-[3px_8px] bg-[#f9f9f9] border-l-[3px] border-[#c0392b] my-[2mm] leading-[1.6]">
                     {collectionPayment && (
-                      <p className="m-0">
-                        <span className="inline-block w-[110px] font-semibold text-[#555]">Payment:</span>
+                      <p className="m-[0_0_1mm] text-[8pt]">
+                        <span className="inline-block w-[80px] font-semibold text-[#555]">Payment:</span>
                         {formatDisplayCurrency(Math.max(0, contractPrice - tradeInSum))} — {collectionPayment}
                       </p>
                     )}
                     {collectionDownpayment && (
-                      <p className="m-0">
-                        <span className="inline-block w-[110px] font-semibold text-[#555]">Down Payment:</span>
+                      <p className="m-[0_0_1mm] text-[8pt]">
+                        <span className="inline-block w-[80px] font-semibold text-[#555]">Down Payment:</span>
                         {collectionDownpayment}
                       </p>
                     )}
                     {collectionAmortization && (
-                      <p className="m-0">
-                        <span className="inline-block w-[110px] font-semibold text-[#555]">Amortization:</span>
+                      <p className="m-0 text-[8pt]">
+                        <span className="inline-block w-[80px] font-semibold text-[#555]">Amortization:</span>
                         {collectionAmortization}
                       </p>
                     )}
@@ -1800,14 +1915,15 @@ export function QuoteBuilderClient({
 
               {/* FREEBIES */}
               {underPromo && freebies.length > 0 && (
-                <div className="mb-[3mm]">
-                  <div className="text-[8.5pt] font-bold text-[#c0392b] uppercase my-[3mm_1.5mm] flex items-center gap-1">
-                    Freebies<span className="flex-1 h-[1px] bg-[#f0f0f0]"></span>
+                <div className="mb-[2mm]">
+                  <div className="text-[8pt] font-bold text-[#c0392b] uppercase mt-[2mm] mb-0 tracking-[0.4px]">
+                    Freebies
+                    <span className="block w-full h-[1px] bg-[#c0392b] mt-[1mm] mb-[1.5mm]"></span>
                   </div>
-                  <ul className="list-none pl-0 my-[0_2mm] text-[8pt] text-[#444] space-y-0.5">
-                    {freebies.map((fb, idx) => (
-                      <li key={idx} className="flex items-center gap-1">
-                        <span className="text-[#c0392b]">★</span> {fb}
+                  <ul className="list-none pl-0 mb-[2mm] space-y-0 text-[8pt] text-[#444] leading-[1.8]">
+                    {freebies.map((freebie, idx) => (
+                      <li key={idx}>
+                        <span className="text-[#c0392b] mr-[5px]">▪</span> {freebie}
                       </li>
                     ))}
                   </ul>
@@ -1815,56 +1931,86 @@ export function QuoteBuilderClient({
               )}
 
               {/* PACKAGE INCLUSIONS / EXCLUSIONS */}
-              {(inclusionItems.some((x) => x.enabled) || exclusionItems.some((x) => x.enabled)) && (
-                <div className="mb-[3mm]">
-                  <div className="text-[8.5pt] font-bold text-[#c0392b] uppercase my-[3mm_1.5mm] flex items-center gap-1">
-                    Package Inclusions / Exclusions<span className="flex-1 h-[1px] bg-[#f0f0f0]"></span>
+              {(displayedInclusions.length > 0 || displayedExclusions.length > 0) && (
+                <div className="mb-[2mm]">
+                  <div className="text-[8pt] font-bold text-[#c0392b] uppercase mt-[2mm] mb-0 tracking-[0.4px]">
+                    Package Inclusions / Exclusions
+                    <span className="block w-full h-[1px] bg-[#c0392b] mt-[1mm] mb-[1.5mm]"></span>
                   </div>
-                  <div className="grid grid-cols-2 gap-3 text-[7.5pt]">
-                    {inclusionItems.some((x) => x.enabled) && (
+                  <div className="grid grid-cols-2 gap-[3mm] my-[2mm]">
+                    {displayedInclusions.length > 0 && (
                       <div>
-                        <div className="bg-[#555] text-white p-[2px_6px] font-bold uppercase text-[7.5pt]">
+                        <div className="text-[8pt] font-bold uppercase text-white bg-[#c0392b] p-[3px_8px] rounded-t-[2px]">
                           Package Inclusions
                         </div>
-                        <ul className="list-disc pl-[4mm] mt-1 space-y-0.5 text-[#444]">
-                          {inclusionItems
-                            .filter((x) => x.enabled)
-                            .map((inc) => (
-                              <li key={inc.id}>{inc.description}</li>
+                        <div className="border border-[#eee] border-t-0 p-[3px_8px] min-h-[12mm]">
+                          <ul
+                            className="list-disc pl-[14px] m-0"
+                            style={{
+                              columnCount: displayedInclusions.length >= 8 ? 2 : 1,
+                              columnGap: "4mm",
+                            }}
+                          >
+                            {displayedInclusions.map((item, idx) => (
+                              <li key={idx} className="text-[7.5pt] text-[#333] leading-[1.55] break-inside-avoid">
+                                {item}
+                              </li>
                             ))}
-                        </ul>
+                          </ul>
+                        </div>
                       </div>
                     )}
-                    {exclusionItems.some((x) => x.enabled) && (
+                    {displayedExclusions.length > 0 && (
                       <div>
-                        <div className="bg-[#c0392b] text-white p-[2px_6px] font-bold uppercase text-[7.5pt]">
+                        <div className="text-[8pt] font-bold uppercase text-white bg-[#c0392b] p-[3px_8px] rounded-t-[2px]">
                           Exclusive
                         </div>
-                        <ul className="list-disc pl-[4mm] mt-1 space-y-0.5 text-[#444]">
-                          {exclusionItems
-                            .filter((x) => x.enabled)
-                            .map((exc) => (
-                              <li key={exc.id}>{exc.description}</li>
+                        <div className="border border-[#eee] border-t-0 p-[3px_8px] min-h-[12mm]">
+                          <ul className="list-disc pl-[14px] m-0">
+                            {displayedExclusions.map((item, idx) => (
+                              <li key={idx} className="text-[7.5pt] text-[#333] leading-[1.55]">
+                                {item}
+                              </li>
                             ))}
-                        </ul>
+                          </ul>
+                        </div>
                       </div>
                     )}
                   </div>
                 </div>
               )}
 
+              {/* OPTIONAL ADD-ONS */}
+              {addonItems.some((a) => a.enabled) && (
+                <div className="mb-[2mm]">
+                  <div className="text-[8pt] font-bold text-[#c0392b] uppercase mt-[2mm] mb-0 tracking-[0.4px]">
+                    Optional Add-Ons
+                    <span className="block w-full h-[1px] bg-[#c0392b] mt-[1mm] mb-[1.5mm]"></span>
+                  </div>
+                  <div className="space-y-[1px] text-[7.5pt] text-[#444] leading-[1.55]">
+                    {addonItems.map((addon) => (
+                      <div key={addon.id} className="flex items-baseline gap-1 py-[1px]">
+                        <span className="shrink-0 text-[8.5pt]">{addon.enabled ? "☑" : "☐"}</span>
+                        <span>{addon.description}</span>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+
               {/* CONSUMABLES GRID */}
               {consumablePrices.length > 0 && (
-                <div className="mb-[3mm]">
-                  <div className="text-[8.5pt] font-bold text-[#c0392b] uppercase my-[3mm_1.5mm] flex items-center gap-1">
-                    Consumables<span className="flex-1 h-[1px] bg-[#f0f0f0]"></span>
+                <div className="mb-[2mm]">
+                  <div className="text-[8pt] font-bold text-[#c0392b] uppercase mt-[2mm] mb-0 tracking-[0.4px]">
+                    Consumables
+                    <span className="block w-full h-[1px] bg-[#c0392b] mt-[1mm] mb-[1.5mm]"></span>
                   </div>
-                  <div className="grid grid-cols-2 gap-x-4 gap-y-0.5 text-[7.5pt]">
+                  <div className="grid grid-cols-2 gap-x-[3mm] gap-y-0 mb-[2mm]">
                     {consumablePrices.map((c) => (
-                      <div key={c.id} className="flex justify-between border-b border-[#f0f0f0] py-0.5">
-                        <span className="text-[#444] font-medium">{c.name}</span>
-                        <span className="text-[#999]">{c.pkg}</span>
-                        <span className="text-[#c0392b] font-bold">
+                      <div key={c.id} className="flex justify-between p-[1px_3px] border-b border-[#f5f5f5] text-[7.5pt]">
+                        <span className="text-[#333] flex-1 truncate">{c.name}</span>
+                        <span className="text-[#999] text-[7pt] mx-[3px] shrink-0">{c.pkg}</span>
+                        <span className="text-[#c0392b] font-semibold shrink-0">
                           {formatDisplayCurrency(vatInclusive ? c.price * 1.12 : c.price)}
                         </span>
                       </div>
@@ -1875,9 +2021,10 @@ export function QuoteBuilderClient({
 
               {/* COMPUTER SET */}
               {includeComputerSet && computerSetSpec && (
-                <div className="mb-[3mm]">
-                  <div className="text-[8.5pt] font-bold text-[#c0392b] uppercase my-[3mm_1.5mm] flex items-center gap-1">
-                    Computer Set<span className="flex-1 h-[1px] bg-[#f0f0f0]"></span>
+                <div className="mb-[2mm]">
+                  <div className="text-[8pt] font-bold text-[#c0392b] uppercase mt-[2mm] mb-0 tracking-[0.4px]">
+                    Computer Set
+                    <span className="block w-full h-[1px] bg-[#c0392b] mt-[1mm] mb-[1.5mm]"></span>
                   </div>
                   <p className="text-[8pt] text-[#444] m-0">{computerSetSpec}</p>
                 </div>
@@ -1892,70 +2039,70 @@ export function QuoteBuilderClient({
 
               {/* WARRANTY */}
               {warrantyCompany && (
-                <div className="mb-[3mm]">
-                  <div className="text-[8.5pt] font-bold text-[#c0392b] uppercase my-[3mm_1.5mm] flex items-center gap-1">
-                    Warranty<span className="flex-1 h-[1px] bg-[#f0f0f0]"></span>
+                <div className="mb-[2mm]">
+                  <div className="text-[8pt] font-bold text-[#c0392b] uppercase mt-[2mm] mb-0 tracking-[0.4px]">
+                    Warranty
+                    <span className="block w-full h-[1px] bg-[#c0392b] mt-[1mm] mb-[1.5mm]"></span>
                   </div>
-                  <div className="space-y-0.5">
-                    {warrantyLines.map((line, idx) =>
-                      line.heading ? (
-                        <div key={idx} className="text-[8pt] font-bold text-[#c0392b] uppercase mt-1">
+                  {warrantyLines.map((line, idx) =>
+                    line.heading ? (
+                      <div key={idx} className="text-[8pt] font-bold text-[#c0392b] uppercase mt-[2mm]">
+                        {line.text}
+                        <span className="block w-full h-[1px] bg-[#c0392b] mt-[1mm] mb-[1.5mm]"></span>
+                      </div>
+                    ) : (
+                      <ul key={idx} className="list-disc pl-[14px] m-0">
+                        <li
+                          className={`text-[8pt] leading-[1.65] ${
+                            line.bold ? "text-[#c0392b] font-bold" : "text-[#555]"
+                          }`}
+                        >
                           {line.text}
-                        </div>
-                      ) : (
-                        <ul key={idx} className="list-disc pl-[14px] m-0">
-                          <li
-                            className={`text-[8pt] leading-[1.65] ${
-                              line.bold ? "text-[#c0392b] font-bold" : "text-[#555]"
-                            }`}
-                          >
-                            {line.text}
-                          </li>
-                        </ul>
-                      )
-                    )}
-                  </div>
+                        </li>
+                      </ul>
+                    )
+                  )}
                 </div>
               )}
 
               {/* Closing Text & Signatures */}
-              <div className="mt-4 pt-2 border-t border-[#f0f0f0]">
-                <p className="text-[8pt] text-[#444] leading-[1.5] mb-3">
+              <div className="mt-auto pt-[4mm] border-t-2 border-[#e5e7eb] print:break-inside-avoid">
+                <p className="text-[8.5pt] text-[#555] leading-[1.6] mb-[5mm]">
                   Trusting that the above quotation will receive your favorable consideration and assuring you of our best
                   service at all times. Thank you very much.
                 </p>
 
-                <div className="grid grid-cols-2 text-[8pt] text-[#555] mb-8">
+                <div className="grid grid-cols-2 gap-[4mm] mb-[6mm] text-[8.5pt] text-[#555] italic">
                   <span>Very truly yours,</span>
                   <span>Conforme:</span>
                 </div>
 
-                <div className="grid grid-cols-2 gap-8 text-[8pt]">
-                  <div>
-                    <div className="text-[9pt] font-bold text-[#111] uppercase tracking-tight">
-                      {aeName || "ACCOUNT EXECUTIVE"}
+                <div className="grid grid-cols-2 gap-[4mm] text-center mt-[8mm]">
+                  <div className="flex flex-col items-center">
+                    <div className="text-[8pt] text-[#111] font-bold uppercase min-h-[14px]">
+                      {aeName || ""}
                     </div>
-                    <div className="w-full max-w-[220px] h-[1px] bg-[#222] my-1" />
+                    <span className="block w-full max-w-[200px] h-[1px] bg-[#333] my-[2px_3px]"></span>
                     <div className="text-[7.5pt] text-[#555]">Account Executive</div>
-                    <div className="text-[7pt] text-[#888] italic">Signature over Printed Name</div>
+                    <div className="text-[6.5pt] text-[#999] italic">Signature over Printed Name</div>
                   </div>
 
                   <div>
-                    <div className="text-[9pt] font-bold text-[#111] uppercase tracking-tight">
-                      {clientConforme || clientName || "CLIENT"}
+                    <div className="text-[8pt] text-[#111] font-bold uppercase min-h-[14px]">
+                      {clientConforme || clientName || ""}
                     </div>
-                    <div className="w-full max-w-[220px] h-[1px] bg-[#222] my-1" />
+                    <span className="block w-full max-w-[200px] h-[1px] bg-[#333] my-[2px_3px]"></span>
                     <div className="text-[7.5pt] text-[#555]">Client / Authorized Representative</div>
-                    <div className="text-[7pt] text-[#888] italic">Signature over Printed Name</div>
+                    <div className="text-[6.5pt] text-[#999] italic">Signature over Printed Name</div>
                   </div>
                 </div>
 
                 {(notedByName || notedByRole) && (
-                  <div className="mt-4 text-[8pt]">
-                    <div className="text-[7.5pt] text-[#666] mb-0.5">Noted By:</div>
-                    <div className="text-[8.5pt] font-bold text-[#111]">{notedByName}</div>
-                    <div className="w-full max-w-[180px] h-[1px] bg-[#444] my-0.5" />
-                    <div className="text-[7pt] text-[#777]">{notedByRole}</div>
+                  <div className="mt-[4mm] flex flex-col items-start text-[7.5pt]">
+                    <div className="text-[#777] mb-[1px]">Noted By:</div>
+                    <div className="font-bold text-[#111] uppercase">{notedByName || ""}</div>
+                    <span className="block w-[180px] h-[1px] bg-[#333] my-[2px_3px]"></span>
+                    {notedByRole && <div className="text-[#555]">{notedByRole}</div>}
                   </div>
                 )}
               </div>
@@ -1972,6 +2119,35 @@ export function QuoteBuilderClient({
           </footer>
         </div>
       </section>
+
+      {/* Print styles */}
+      <style>{`
+        @media print {
+          @page {
+            size: A4 portrait;
+            margin: 0;
+          }
+          body > *:not(#quote-paper) {
+            display: none !important;
+          }
+          nav, aside, header {
+            display: none !important;
+          }
+          #quote-paper {
+            width: 210mm !important;
+            min-height: 297mm !important;
+            box-shadow: none !important;
+            border-radius: 0 !important;
+            margin: 0 !important;
+            padding: 0 !important;
+          }
+          * {
+            -webkit-print-color-adjust: exact !important;
+            print-color-adjust: exact !important;
+          }
+        }
+      `}</style>
     </div>
   );
 }
+
