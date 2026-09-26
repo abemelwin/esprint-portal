@@ -217,8 +217,9 @@ export function getMachinePermissions(user: PortalUser): MachinePermissions {
 //         + 20250101000018_add_use_calculator_permission.sql
 
 export type SalesRole =
-  | "superadmin"
-  | "product_manager"
+  | "product_technical_head"
+  | "product_development_manager"
+  | "service_manager"
   | "sales_admin_manager"
   | "sales_admin_supervisor"
   | "sales_admin_assistant"
@@ -228,6 +229,8 @@ export type SalesRole =
   | "user"
   // Legacy / display aliases
   | "Admin"
+  | "product_manager"
+  | "superadmin"
   | "Super Admin";
 
 export interface SalesPermissions {

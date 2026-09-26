@@ -3,19 +3,22 @@
 import { useState, useEffect, useMemo, Fragment } from "react";
 
 const ROLES = [
-  { value: "Admin",                  label: "Admin" },
-  { value: "sales_admin_manager",    label: "Sales Admin Manager" },
-  { value: "sales_admin_supervisor", label: "Sales Admin Supervisor" },
-  { value: "sales_admin_assistant",  label: "Sales Admin Assistant" },
-  { value: "area_sales_manager",     label: "Area Sales Manager" },
-  { value: "account_executive",      label: "Account Executive" },
-  { value: "sales_assistant",        label: "Sales Assistant" },
-  { value: "product_manager",        label: "Product Manager / Tech" },
-  { value: "service_manager",        label: "Service Manager" },
+  { value: "Admin",                        label: "Admin" },
+  { value: "product_technical_head",       label: "Product Technical Head" },
+  { value: "product_development_manager",  label: "Product Development Manager" },
+  { value: "service_manager",              label: "Service Manager" },
+  { value: "sales_admin_manager",          label: "Sales Admin Manager" },
+  { value: "sales_admin_supervisor",       label: "Sales Admin Supervisor" },
+  { value: "sales_admin_assistant",        label: "Sales Admin Assistant" },
+  { value: "area_sales_manager",           label: "Area Sales Manager" },
+  { value: "account_executive",            label: "Account Executive" },
+  { value: "sales_assistant",              label: "Sales Assistant" },
+  { value: "user",                         label: "User" },
 ];
 
 function getRoleLabel(roleVal: string): string {
   if (roleVal === "superadmin" || roleVal === "Super Admin" || roleVal === "admin") return "Admin";
+  if (roleVal === "product_manager") return "Product Technical Head";
   const match = ROLES.find((r) => r.value === roleVal);
   if (match) return match.label;
   return roleVal || "Account Executive";
@@ -264,8 +267,8 @@ export function SalesUsersClient({ currentUserId }: { currentUserId: string }) {
     setSavePermsMsg("");
 
     const role = user.salesRole;
-    const isSales = ["superadmin", "Admin", "sales_admin_manager", "sales_admin_supervisor", "sales_admin_assistant", "area_sales_manager", "account_executive", "sales_assistant"].includes(role);
-    const isProductTech = ["product_manager", "service_manager"].includes(role);
+    const isSales = ["superadmin", "Admin", "sales_admin_manager", "sales_admin_supervisor", "sales_admin_assistant", "area_sales_manager", "account_executive", "sales_assistant", "user"].includes(role);
+    const isProductTech = ["product_technical_head", "product_development_manager", "product_manager", "service_manager"].includes(role);
     const isSalesAdminMgr = ["superadmin", "Admin", "sales_admin_manager", "sales_admin_supervisor", "area_sales_manager"].includes(role);
 
     const savedEntry = (Array.isArray(user.access) ? user.access : []).find((a: any) => a.module === "sales") as any;
