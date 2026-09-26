@@ -177,11 +177,26 @@ export function QuoteBuilderClient({
     return Array.from(new Set(catalog.filter((m) => m.brand === selectedBrand).map((m) => m.model))).sort();
   }, [catalog, selectedBrand]);
 
-  // Selected Machine entry
+  // Sub-models for selected Brand + Model (shown when > 1 variant exists)
+  const subModels = useMemo(() => {
+    if (!selectedBrand || !selectedModel) return [];
+    return catalog
+      .filter((m) => m.brand === selectedBrand && m.model === selectedModel && m.sub_model)
+      .map((m) => m.sub_model as string)
+      .sort();
+  }, [catalog, selectedBrand, selectedModel]);
+
+  const showSubModelDropdown = subModels.length > 1;
+
+  // Selected Machine entry — match sub_model when sub-model dropdown is visible
   const selectedMachine = useMemo(() => {
     if (!selectedBrand || !selectedModel) return null;
+    if (showSubModelDropdown) {
+      if (!selectedSubModel) return null; // wait for user to pick variant
+      return catalog.find((m) => m.brand === selectedBrand && m.model === selectedModel && m.sub_model === selectedSubModel) || null;
+    }
     return catalog.find((m) => m.brand === selectedBrand && m.model === selectedModel) || null;
-  }, [catalog, selectedBrand, selectedModel]);
+  }, [catalog, selectedBrand, selectedModel, selectedSubModel, showSubModelDropdown]);
 
   // Handle machine population
   useEffect(() => {
@@ -201,7 +216,8 @@ export function QuoteBuilderClient({
 
     setUnitCondition((selectedMachine.unit_condition as any) || "Brand New");
     setLetterhead(selectedMachine.letterhead || "ES Print Media Inc.");
-    setContractPrice(selectedMachine.srp || 0);
+    // Do NOT pre-fill contract price from SRP — orig leaves it blank on machine select
+    setContractPrice(0);
 
     // Inclusions
     const defaultIncls: ToggleableItem[] = (selectedMachine.inclusions || []).map((inc, i) => ({
@@ -626,7 +642,10 @@ export function QuoteBuilderClient({
         // Replace URL so back button doesn't re-create
         router.replace(`/sales/quote-builder?id=${qId}`);
       }
-      if (andPdf) window.print();
+      // window.print() must be triggered synchronously from a user gesture.
+      // After async/await it's blocked by browsers. Use setTimeout(0) to
+      // re-queue as a fresh task which browsers allow for print dialogs.
+      if (andPdf) setTimeout(() => window.print(), 0);
     } catch (err) {
       console.error("Save error:", err);
       alert("Failed to save quote. Please try again.");
@@ -695,8 +714,8 @@ export function QuoteBuilderClient({
                   value={selectedBrand}
                   onChange={(e) => {
                     setSelectedBrand(e.target.value);
-                    const filtered = catalog.filter((m) => m.brand === e.target.value);
-                    if (filtered.length > 0) setSelectedModel(filtered[0].model);
+                    setSelectedModel(""); // reset — user must pick model (matches orig)
+                    setSelectedSubModel("");
                   }}
                   className="w-full px-[7px] py-[5px] border border-[#ddd] rounded-[4px] text-[12px] bg-[#fafafa] focus:bg-white focus:border-[#c0392b] focus:outline-none"
                 >
@@ -715,7 +734,7 @@ export function QuoteBuilderClient({
                 </label>
                 <select
                   value={selectedModel}
-                  onChange={(e) => setSelectedModel(e.target.value)}
+                  onChange={(e) => { setSelectedModel(e.target.value); setSelectedSubModel(""); }}
                   disabled={!selectedBrand}
                   className="w-full px-[7px] py-[5px] border border-[#ddd] rounded-[4px] text-[12px] bg-[#fafafa] focus:bg-white focus:border-[#c0392b] focus:outline-none disabled:bg-[#f0f0f0] disabled:text-[#aaa]"
                 >
@@ -727,6 +746,25 @@ export function QuoteBuilderClient({
                   ))}
                 </select>
               </div>
+
+              {/* Sub-model / Variant dropdown — shown when model has multiple variants (mirrors orig showSubModelDropdown) */}
+              {showSubModelDropdown && (
+                <div>
+                  <label className="block text-[10px] font-semibold text-[#666] uppercase mb-[2px] tracking-[0.3px]">
+                    Model / Variant
+                  </label>
+                  <select
+                    value={selectedSubModel}
+                    onChange={(e) => setSelectedSubModel(e.target.value)}
+                    className="w-full px-[7px] py-[5px] border border-[#ddd] rounded-[4px] text-[12px] bg-[#fafafa] focus:bg-white focus:border-[#c0392b] focus:outline-none"
+                  >
+                    <option value="" disabled>Select variant</option>
+                    {subModels.map((s) => (
+                      <option key={s} value={s}>{s}</option>
+                    ))}
+                  </select>
+                </div>
+              )}
 
               <div>
                 <label className="block text-[10px] font-semibold text-[#666] uppercase mb-[2px] tracking-[0.3px]">
@@ -2092,17 +2130,17 @@ export function QuoteBuilderClient({
                       {clientConforme || clientName || ""}
                     </div>
                     <span className="block w-full max-w-[200px] h-[1px] bg-[#333] my-[2px_3px]"></span>
-                    <div className="text-[7.5pt] text-[#555]">Client / Authorized Representative</div>
+                    <div className="text-[7.5pt] text-[#555]">Client</div>
                     <div className="text-[6.5pt] text-[#999] italic">Signature over Printed Name</div>
                   </div>
                 </div>
 
                 {(notedByName || notedByRole) && (
-                  <div className="mt-[4mm] flex flex-col items-start text-[7.5pt]">
-                    <div className="text-[#777] mb-[1px]">Noted By:</div>
-                    <div className="font-bold text-[#111] uppercase">{notedByName || ""}</div>
-                    <span className="block w-[180px] h-[1px] bg-[#333] my-[2px_3px]"></span>
-                    {notedByRole && <div className="text-[#555]">{notedByRole}</div>}
+                  <div className="mt-[6mm] pt-[2mm] flex flex-col items-start">
+                    <div className="text-[8pt] text-[#555] mb-[2mm]">Noted By:</div>
+                    <div className="text-[9pt] font-bold text-[#111] min-w-[60mm] mb-[1mm]">{notedByName || ""}</div>
+                    <span className="block w-[50%] h-[1px] bg-[#333] my-[1px]"></span>
+                    {notedByRole && <div className="text-[7.5pt] text-[#555] italic mt-[1mm]">{notedByRole}</div>}
                   </div>
                 )}
               </div>

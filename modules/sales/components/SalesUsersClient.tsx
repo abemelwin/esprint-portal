@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useMemo } from "react";
+import { useState, useEffect, useMemo, Fragment } from "react";
 
 // Mirrors orig UserManagementView.vue roles
 const SALES_ROLES = [
@@ -50,6 +50,7 @@ export function SalesUsersClient({ currentUserId }: { currentUserId: string }) {
   const [editRole,     setEditRole]     = useState("");
   const [saving,       setSaving]       = useState(false);
   const [saveMsg,      setSaveMsg]      = useState("");
+  const [loadError,    setLoadError]    = useState("");
   // Reset password modal
   const [resetTarget,  setResetTarget]  = useState<SalesUser | null>(null);
   const [resetPw,      setResetPw]      = useState("");
@@ -58,9 +59,15 @@ export function SalesUsersClient({ currentUserId }: { currentUserId: string }) {
 
   async function load() {
     setLoading(true);
+    setLoadError("");
     try {
       const res  = await fetch("/api/sales/users");
       const data = await res.json();
+      if (!res.ok) {
+        setLoadError(`API error ${res.status}: ${data.error ?? "Unknown error"}`);
+        setUsers([]);
+        return;
+      }
       if (data.users) {
         setUsers(data.users.map((u: any) => {
           // u.access is already a parsed ModuleAccess[] from the API — do not JSON.parse it again
@@ -75,7 +82,9 @@ export function SalesUsersClient({ currentUserId }: { currentUserId: string }) {
           };
         }));
       }
-    } catch { /* ignore */ }
+    } catch (err: any) {
+      setLoadError(`Network error: ${err.message}`);
+    }
     finally { setLoading(false); }
   }
 
@@ -188,6 +197,9 @@ export function SalesUsersClient({ currentUserId }: { currentUserId: string }) {
       </div>
 
       {/* Table */}
+      {loadError && (
+        <div className="mb-3 px-3 py-2 bg-red-50 border border-red-200 rounded text-[12px] text-red-700">{loadError}</div>
+      )}
       {loading ? (
         <div className="py-12 text-center text-slate-400 text-[13px]">Loading users…</div>
       ) : (
@@ -205,8 +217,8 @@ export function SalesUsersClient({ currentUserId }: { currentUserId: string }) {
                 <tr><td colSpan={3} className="py-8 text-center text-slate-400">No users found.</td></tr>
               )}
               {filtered.map((u, idx) => (
-                <>
-                  <tr key={u.username} className={idx % 2 === 0 ? "bg-white" : "bg-slate-50"}>
+                <Fragment key={u.username}>
+                  <tr className={idx % 2 === 0 ? "bg-white" : "bg-slate-50"}>
                     <td className="p-[8px_12px]">
                       <div className="font-semibold text-slate-800">{u.email}</div>
                       {u.fullName && u.fullName !== u.email && (
@@ -272,7 +284,7 @@ export function SalesUsersClient({ currentUserId }: { currentUserId: string }) {
                       </td>
                     </tr>
                   )}
-                </>
+                </Fragment>
               ))}
             </tbody>
           </table>
