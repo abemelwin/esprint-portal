@@ -1657,7 +1657,7 @@ export function QuoteBuilderClient({
 
               {/* Machine Title + Condition Badge */}
               <div className="text-[11pt] font-bold text-[#c0392b] text-center uppercase tracking-[0.5px] mb-[2mm] border-b border-[#f0f0f0] pb-[1.5mm]">
-                {selectedMachine ? `${selectedMachine.brand} ${selectedMachine.model}` : "NO MACHINE SELECTED"}
+                {selectedMachine ? selectedMachine.model : "NO MACHINE SELECTED"}
                 {selectedMachine && unitCondition && (
                   <span
                     className={`block text-[8pt] font-bold tracking-[1px] mt-[1mm] ${
@@ -1669,17 +1669,35 @@ export function QuoteBuilderClient({
                 )}
               </div>
 
-              {/* Specifications / Features if available */}
-              {selectedMachine && selectedMachine.features && selectedMachine.features.length > 0 && (
-                <div className="mb-[3mm] bg-[#fafafa] p-[2mm_3mm] border border-[#eee] rounded-[2px]">
-                  <div className="text-[8pt] font-bold text-[#555] mb-[1mm]">Product Specifications:</div>
-                  <ul className="list-disc pl-[4mm] m-0 space-y-0.5 text-[7.5pt] text-[#444]">
-                    {selectedMachine.features.map((f, i) => (
-                      <li key={i}>{typeof f === "string" ? f : (f as any).description}</li>
-                    ))}
-                  </ul>
-                </div>
-              )}
+              {/* Product Image + Specifications — 2-col layout when image exists (matches orig) */}
+              {selectedMachine && selectedMachine.features && selectedMachine.features.length > 0 && (() => {
+                const pictureLink = selectedMachine.product_info_links?.find(
+                  (l) => l.document_type === "picture" || l.document_type === "image"
+                );
+                const imgUrl = pictureLink?.url ?? null;
+                return (
+                  <div className={`mb-[3mm] ${imgUrl ? "grid grid-cols-[auto_1fr] gap-[3mm]" : ""}`}>
+                    {imgUrl && (
+                      <div className="w-[38mm] shrink-0">
+                        <img
+                          src={imgUrl}
+                          alt={selectedMachine.model}
+                          className="w-full object-contain rounded-[2px] border border-[#eee]"
+                          onError={(e) => { (e.target as HTMLImageElement).style.display = "none"; }}
+                        />
+                      </div>
+                    )}
+                    <div className="bg-[#fafafa] p-[2mm_3mm] border border-[#eee] rounded-[2px]">
+                      <div className="text-[8pt] font-bold text-[#555] mb-[1mm] uppercase tracking-[0.3px]">Product Specifications:</div>
+                      <ul className="list-disc pl-[4mm] m-0 space-y-0.5 text-[7.5pt] text-[#444]">
+                        {selectedMachine.features.map((f, i) => (
+                          <li key={i}>{typeof f === "string" ? f : (f as any).description}</li>
+                        ))}
+                      </ul>
+                    </div>
+                  </div>
+                );
+              })()}
 
               {/* PRICING TABLE */}
               {contractPrice > 0 && (
