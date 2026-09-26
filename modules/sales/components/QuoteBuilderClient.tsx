@@ -837,9 +837,13 @@ export function QuoteBuilderClient({
                   </label>
                   <input
                     type="tel"
+                    inputMode="tel"
                     placeholder="09XX XXX XXXX"
                     value={contact}
-                    onChange={(e) => setContact(e.target.value)}
+                    onChange={(e) => {
+                      // Strip non-numeric chars except +, space, (, ), - (matches orig)
+                      setContact(e.target.value.replace(/[^0-9+\s\(\)\-]/g, ""));
+                    }}
                     className="w-full px-[7px] py-[5px] border border-[#ddd] rounded-[4px] text-[12px] bg-[#fafafa] focus:bg-white focus:border-[#c0392b] focus:outline-none"
                   />
                 </div>
@@ -2103,7 +2107,7 @@ export function QuoteBuilderClient({
                 </div>
               )}
 
-              {/* Closing Text & Signatures */}
+              {/* Closing Text & Signatories */}
               <div className="mt-auto pt-[4mm] border-t-2 border-[#e5e7eb] print:break-inside-avoid">
                 <p className="text-[8.5pt] text-[#555] leading-[1.6] mb-[5mm]">
                   Trusting that the above quotation will receive your favorable consideration and assuring you of our best
@@ -2117,30 +2121,44 @@ export function QuoteBuilderClient({
 
                 <div className="grid grid-cols-2 gap-[4mm] text-center mt-[8mm]">
                   <div className="flex flex-col items-center">
-                    <div className="text-[8pt] text-[#111] font-bold uppercase min-h-[14px]">
+                    <div className="text-[8pt] text-[#111] italic min-h-[14px] mb-[1mm]">
                       {aeName || ""}
                     </div>
-                    <span className="block w-full max-w-[200px] h-[1px] bg-[#333] my-[2px_3px]"></span>
-                    <div className="text-[7.5pt] text-[#555]">Account Executive</div>
-                    <div className="text-[6.5pt] text-[#999] italic">Signature over Printed Name</div>
+                    <span className="block w-[90%] h-[1px] bg-[#333] mb-[1mm]"></span>
+                    <div className="text-[7.5pt] font-bold text-[#555] uppercase tracking-[0.04em]">
+                      Account Executive
+                    </div>
+                    <div className="text-[7pt] text-[#aaa] italic mt-[1mm]">
+                      Signature over Printed Name
+                    </div>
                   </div>
 
-                  <div>
-                    <div className="text-[8pt] text-[#111] font-bold uppercase min-h-[14px]">
-                      {clientConforme || clientName || ""}
+                  <div className="flex flex-col items-center">
+                    <div className="text-[8pt] text-[#111] italic min-h-[14px] mb-[1mm]">
+                      {clientConforme || ""}
                     </div>
-                    <span className="block w-full max-w-[200px] h-[1px] bg-[#333] my-[2px_3px]"></span>
-                    <div className="text-[7.5pt] text-[#555]">Client</div>
-                    <div className="text-[6.5pt] text-[#999] italic">Signature over Printed Name</div>
+                    <span className="block w-[90%] h-[1px] bg-[#333] mb-[1mm]"></span>
+                    <div className="text-[7.5pt] font-bold text-[#555] uppercase tracking-[0.04em]">
+                      Client
+                    </div>
+                    <div className="text-[7pt] text-[#aaa] italic mt-[1mm]">
+                      Signature over Printed Name
+                    </div>
                   </div>
                 </div>
 
                 {(notedByName || notedByRole) && (
-                  <div className="mt-[6mm] pt-[2mm] flex flex-col items-start">
+                  <div className="mt-[6mm] pt-[2mm]">
                     <div className="text-[8pt] text-[#555] mb-[2mm]">Noted By:</div>
-                    <div className="text-[9pt] font-bold text-[#111] min-w-[60mm] mb-[1mm]">{notedByName || ""}</div>
-                    <span className="block w-[50%] h-[1px] bg-[#333] my-[1px]"></span>
-                    {notedByRole && <div className="text-[7.5pt] text-[#555] italic mt-[1mm]">{notedByRole}</div>}
+                    <div className="text-[9pt] font-bold text-[#111] inline-block min-w-[60mm] mb-[1mm]">
+                      {notedByName || ""}
+                    </div>
+                    <span className="block w-[50%] h-[1px] bg-[#333] mb-[1mm]"></span>
+                    {notedByRole && (
+                      <div className="text-[7.5pt] text-[#555] italic mt-[1mm]">
+                        {notedByRole}
+                      </div>
+                    )}
                   </div>
                 )}
               </div>
