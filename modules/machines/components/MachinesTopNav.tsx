@@ -9,9 +9,6 @@ interface MachinesTopNavProps {
   userRole: string;
   isAdmin: boolean;
   onAddMachine?: () => void;
-  onExportCSV?: () => void;
-  onImport?: () => void;
-  onBackup?: () => void;
 }
 
 export function MachinesTopNav({
@@ -19,9 +16,6 @@ export function MachinesTopNav({
   userRole,
   isAdmin,
   onAddMachine,
-  onExportCSV,
-  onImport,
-  onBackup,
 }: MachinesTopNavProps) {
   const router = useRouter();
 
@@ -32,9 +26,9 @@ export function MachinesTopNav({
   }
 
   return (
-    <header className="h-[52px] bg-white border-b border-slate-200 flex items-center justify-between px-3 sm:px-5 sticky top-0 z-40 select-none shadow-sm">
-      {/* Left: ES Logo + Title + Subtitle + Portal Home link */}
-      <div className="flex items-center gap-2.5">
+    <header className="h-[52px] bg-white border-b border-slate-200 flex items-center justify-between px-3 sm:px-4 sticky top-0 z-40 select-none shadow-xs">
+      {/* Left: ES Logo + ES Print Media Inc. + Subtitle + Chevron > + Module Title + Portal Home link */}
+      <div className="flex items-center gap-2">
         {/* ES Print Logo */}
         <Link href="/dashboard" title="Back to Portal Home" className="shrink-0 hover:opacity-90 transition-opacity">
           <Image
@@ -42,30 +36,40 @@ export function MachinesTopNav({
             alt="ES Print Logo"
             width={36}
             height={36}
-            className="rounded-full object-cover shadow-sm border border-slate-200"
+            className="rounded-full object-cover border border-slate-200"
           />
         </Link>
 
         <div>
-          <div className="flex items-center gap-2">
-            <Link href="/machines" className="text-[13px] font-extrabold text-slate-900 leading-tight hover:text-blue-600 transition-colors">
-              Machine Monitoring System
-            </Link>
-            <Link
-              href="/dashboard"
-              className="inline-flex items-center gap-1 text-[10.5px] font-semibold text-slate-600 bg-slate-100 hover:bg-slate-200 border border-slate-200 rounded px-1.5 py-0.5 transition-colors"
-              title="Return to Business Operations Portal Home"
-            >
-              <svg width="10" height="10" fill="none" stroke="currentColor" strokeWidth="2.5" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" d="M15 19l-7-7 7-7" />
-              </svg>
-              <span>Portal Home</span>
-            </Link>
-          </div>
+          <h1 className="text-[13.5px] font-extrabold text-slate-900 leading-tight">
+            ES Print Media Inc.
+          </h1>
           <p className="text-[10px] text-slate-400 font-medium leading-none mt-0.5 hidden sm:block">
-            ES Print Group of Companies · inventory · incoming · reservations · deliveries
+            Business Operations Portal
           </p>
         </div>
+
+        {/* Chevron Divider > */}
+        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#cbd5e1" strokeWidth="2" className="mx-0.5">
+          <path strokeLinecap="round" strokeLinejoin="round" d="M9 5l7 7-7 7" />
+        </svg>
+
+        {/* Module Title */}
+        <Link href="/machines" className="text-[13.5px] font-bold text-slate-800 hover:text-blue-600 transition-colors">
+          Machine Monitoring System
+        </Link>
+
+        {/* Compact Portal Home Button */}
+        <Link
+          href="/dashboard"
+          className="inline-flex items-center gap-1 text-[11px] font-semibold text-slate-600 bg-slate-100 hover:bg-slate-200 border border-slate-200 rounded px-2 py-0.5 transition-colors ml-1"
+          title="Return to Business Operations Portal Home"
+        >
+          <svg width="10" height="10" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" d="M15 19l-7-7 7-7" />
+          </svg>
+          <span>Portal Home</span>
+        </Link>
       </div>
 
       {/* Right: User + Action Buttons */}
@@ -74,52 +78,6 @@ export function MachinesTopNav({
         <span className="hidden md:block text-[11.5px] font-semibold text-slate-700 mr-1">
           {userName} <span className="font-normal text-slate-400">· {userRole}</span>
         </span>
-
-        {/* Access (admin only) */}
-        {isAdmin && (
-          <Link
-            href="/machines/admin"
-            className="flex items-center gap-1 px-2.5 py-1 bg-white border border-slate-200 hover:bg-slate-50 rounded font-semibold text-slate-700 shadow-2xs transition-colors"
-          >
-            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#2563eb" strokeWidth="2.2">
-              <path strokeLinecap="round" strokeLinejoin="round" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" />
-            </svg>
-            <span>Access</span>
-          </Link>
-        )}
-
-        {/* Import */}
-        <button
-          onClick={onImport}
-          className="flex items-center gap-1 px-2.5 py-1 bg-white border border-slate-200 hover:bg-slate-50 rounded font-semibold text-slate-700 shadow-2xs transition-colors cursor-pointer"
-        >
-          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-            <path strokeLinecap="round" strokeLinejoin="round" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12" />
-          </svg>
-          <span>Import</span>
-        </button>
-
-        {/* Backup */}
-        <button
-          onClick={onBackup}
-          className="flex items-center gap-1 px-2.5 py-1 bg-white border border-slate-200 hover:bg-slate-50 rounded font-semibold text-slate-700 shadow-2xs transition-colors cursor-pointer"
-        >
-          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-            <path strokeLinecap="round" strokeLinejoin="round" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10" />
-          </svg>
-          <span className="hidden sm:inline">Backup</span>
-        </button>
-
-        {/* CSV */}
-        <button
-          onClick={onExportCSV}
-          className="flex items-center gap-1 px-2.5 py-1 bg-white border border-slate-200 hover:bg-slate-50 rounded font-semibold text-slate-700 shadow-2xs transition-colors cursor-pointer"
-        >
-          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-            <path strokeLinecap="round" strokeLinejoin="round" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
-          </svg>
-          <span>CSV</span>
-        </button>
 
         {/* Bell / Notifications */}
         <button

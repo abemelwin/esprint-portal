@@ -3,7 +3,7 @@
 import { useState, useMemo } from "react";
 import type { Staff, Branch, Job } from "../types";
 import { ymd } from "../dates";
-import { ROLES, ROLE_ORDER, TYPES, STATUS } from "../constants";
+import { ROLES, ROLE_ORDER, TYPES, STATUS, DESIGNATED_MANAGERS } from "../constants";
 
 interface Props {
   currentMonth: Date;
@@ -33,7 +33,7 @@ function StaffStatusBadge({ tasks, absence }: { tasks: Job[]; absence: Job[] }) 
       ? (t as any).type_other.trim()
       : TYPES[t.type]?.label ?? t.type;
     const st = STATUS[t.status];
-    if (t.status === "success") {
+    if (t.status === "success" || t.type === "leave" || t.type === "absent") {
       return (
         <div style={{ display: "flex", gap: 4, alignItems: "center", justifyContent: "flex-end" }}>
           <span className={`sch-type-tag ${TYPES[t.type]?.cls ?? ""}`}>{typeLabel}</span>
@@ -48,10 +48,10 @@ function StaffStatusBadge({ tasks, absence }: { tasks: Job[]; absence: Job[] }) 
     );
   }
   // multiple tasks
-  const ongoingCount = tasks.filter(t => t.status === "ongoing").length;
-  const pendingCount = tasks.filter(t => t.status === "pending").length;
-  const failCount    = tasks.filter(t => t.status === "fail").length;
-  const cancelCount  = tasks.filter(t => t.status === "cancel").length;
+  const ongoingCount = tasks.filter(t => t.status === "ongoing" && t.type !== "leave" && t.type !== "absent").length;
+  const pendingCount = tasks.filter(t => t.status === "pending" && t.type !== "leave" && t.type !== "absent").length;
+  const failCount    = tasks.filter(t => t.status === "fail" && t.type !== "leave" && t.type !== "absent").length;
+  const cancelCount  = tasks.filter(t => t.status === "cancel" && t.type !== "leave" && t.type !== "absent").length;
   return (
     <div style={{ display: "flex", gap: 4, alignItems: "center", flexWrap: "wrap", justifyContent: "flex-end" }}>
       {hasAbsence && (
@@ -131,9 +131,19 @@ export function AvailabilityPanel({ currentMonth, staff, branches, jobs }: Props
     });
   }, [staff, term, branchFilter]);
 
+  const normalizedStaff = useMemo(() => {
+    return filtered.map(s => {
+      const sNorm = s.name.toLowerCase();
+      if (sNorm.includes("natan") || sNorm.includes("yumang") || sNorm.includes("sioco") || sNorm.includes("templa")) {
+        return { ...s, role: "senior" as const };
+      }
+      return s;
+    });
+  }, [filtered]);
+
   const grouped = useMemo(() =>
     ROLE_ORDER.reduce<Record<string, Staff[]>>((acc, r) => {
-      acc[r] = filtered.filter(s => {
+      acc[r] = normalizedStaff.filter(s => {
         if (r === "manager")     return s.role === "manager";
         if (r === "bsm")         return s.role === "bsm";
         if (r === "coordinator") return s.role === "coordinator";
@@ -143,9 +153,17 @@ export function AvailabilityPanel({ currentMonth, staff, branches, jobs }: Props
       });
       return acc;
     }, {})
-  , [filtered]);
+  , [normalizedStaff]);
 
   const getBranchLabel = (s: Staff) => {
+    if ((s as any)._displayLabel) return (s as any)._displayLabel;
+    const sNorm = s.name.toLowerCase();
+    if (sNorm.includes("natan") || sNorm.includes("yumang") || sNorm.includes("sioco") || sNorm.includes("templa")) {
+      return "🌐 All Branches (Senior FSE)";
+    }
+    const des = DESIGNATED_MANAGERS.find(m => sNorm.includes(m.nameKey));
+    if (des) return des.label;
+    if (s.role === "coordinator") return "🌐 All Branches (Coordinator)";
     const b = branches.find(br => br.id === s.home_branch_id);
     return b ? `🏢 ${b.name}` : "—";
   };

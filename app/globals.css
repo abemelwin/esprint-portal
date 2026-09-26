@@ -210,6 +210,29 @@ table.report tbody tr:last-child td {
   color: #0f172a;
 }
 
+/* ── Scheduler Dark Mode Overrides ── */
+html[data-theme="dark"],
+html.dark {
+  background-color: #0f172a !important;
+  color: #f8fafc !important;
+}
+
+html[data-theme="dark"] .sch-root,
+html.dark .sch-root {
+  --sch-page:   #0f172a;
+  --sch-s1:     #1e293b;
+  --sch-s2:     #334155;
+  --sch-s3:     #475569;
+  --sch-ink1:   #f8fafc;
+  --sch-ink2:   #cbd5e1;
+  --sch-muted:  #94a3b8;
+  --sch-border: rgba(255,255,255,.12);
+  --sch-grid:   #334155;
+  background:   #0f172a !important;
+  color:        #f8fafc !important;
+}
+
+
 /* KPI cards */
 .sch-kpis { display:grid; grid-template-columns:repeat(auto-fit,minmax(150px,1fr)); gap:12px; margin-bottom:16px; }
 .sch-kpi { background:var(--sch-s1); border:1px solid var(--sch-border); border-radius:var(--sch-r); padding:14px 16px; box-shadow:var(--sch-shadow); position:relative; overflow:hidden; transition:all .2s; cursor:pointer; }
@@ -553,3 +576,22 @@ table.sch-rt td.num,table.sch-rt th.num { text-align:right; }
   border-color: #ef4444;
   transform: translateY(-1px);
 }
+
+/* ── Dark Mode Overrides for Scheduler TopNav & Header ── */
+[data-theme="dark"] body,
+html[data-theme="dark"] body {
+  background-color: #0b0f19 !important;
+  color: #f8fafc !important;
+}
+
+[data-theme="dark"] header.sch-header,
+[data-theme="dark"] .sch-header {
+  background-color: #0f172a !important;
+  border-bottom-color: rgba(255, 255, 255, 0.1) !important;
+}
+
+[data-theme="dark"] .sch-subnav {
+  background-color: #0f172a !important;
+  border-bottom-color: rgba(255, 255, 255, 0.1) !important;
+}
+

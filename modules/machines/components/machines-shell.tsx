@@ -39,12 +39,14 @@ export function MachinesShell({
         userRole={userRole}
         isAdmin={isAdmin}
         onAddMachine={handleAddMachine}
-        onExportCSV={handleExportCSV}
-        onBackup={handleBackup}
-        onImport={handleImport}
       />
 
-      <MachinesSubNav />
+      <MachinesSubNav
+        isAdmin={isAdmin}
+        onImport={handleImport}
+        onBackup={handleBackup}
+        onExportCSV={handleExportCSV}
+      />
 
       <main className="flex-1 w-full overflow-y-auto">
         {children}

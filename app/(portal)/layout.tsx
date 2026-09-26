@@ -17,7 +17,7 @@ export default async function PortalLayout({
   }
 
   return (
-    <div style={{ height: "100vh", width: "100vw", display: "flex", flexDirection: "column", overflow: "hidden", background: "#f1f5f9" }}>
+    <div style={{ height: "100vh", width: "100vw", display: "flex", flexDirection: "column", background: "#f1f5f9" }}>
       <SessionKeepAlive />
       {children}
     </div>

@@ -251,7 +251,7 @@ function StaffRow({ person, tasks, onOpenJob, readOnly }: {
               </span>
               <span className="sch-ovl-cust">{j.customer ?? "—"}</span>
               <div style={{ flex: 1 }} />
-              {j.status !== "success" && (
+              {j.type !== "leave" && j.type !== "absent" && j.status !== "success" && (
                 <span className={`sch-pill ${STATUS[j.status]?.cls ?? ""}`}>
                   {j.status === "pending" && hasMultiple ? "Next" : STATUS[j.status]?.label ?? j.status}
                 </span>

@@ -197,9 +197,11 @@ export function KpiDrillModal({
                         </span>
                       </td>
                       <td className={tdCls}>
-                        <span className={`sch-pill ${STATUS[j.status]?.cls ?? ""}`}>
-                          {STATUS[j.status]?.label ?? j.status}
-                        </span>
+                        {j.type !== "leave" && j.type !== "absent" && (
+                          <span className={`sch-pill ${STATUS[j.status]?.cls ?? ""}`}>
+                            {STATUS[j.status]?.label ?? j.status}
+                          </span>
+                        )}
                       </td>
                     </tr>
                   );

@@ -53,6 +53,30 @@ export const SEED_BRANCHES: Branch[] = [
   { id: 'b20', name: 'ZAM',    note: 'Zamboanga del Sur' },
 ]
 
+export const DESIGNATED_MANAGERS = [
+  // Service Managers / Admins
+  { nameKey: 'rioja',     fullName: 'Arnold Rioja',       role: 'manager',     label: '🌐 All Branches (Admin)' },
+  { nameKey: 'danilo',    fullName: 'Danilo Carangan',    role: 'manager',     label: '🌐 All Branches (Admin)' },
+  { nameKey: 'eina',      fullName: 'Ricky Eina',         role: 'manager',     label: '🏢 MAK · Makati' },
+  { nameKey: 'de chavez', fullName: 'Limwel De Chavez',   role: 'manager',     label: '✏️ ISA, PANG, CAB, CAMSUR' },
+  // Branch Service Managers
+  { nameKey: 'almoite',   fullName: 'Michael Almoite',    role: 'bsm',         label: '🏢 PAL · Palawan' },
+  { nameKey: 'coliflores',fullName: 'Darel Coliflores',   role: 'bsm',         label: '🏢 TAC · Tacloban' },
+  { nameKey: 'calvo',     fullName: 'Jessriel Calvo',     role: 'bsm',         label: '🏢 CEB · Cebu' },
+  { nameKey: 'sacuan',    fullName: 'Gerald Sacuan',      role: 'bsm',         label: '✏️ North Mindanao' },
+  { nameKey: 'genabe',    fullName: 'Martin Genabe',      role: 'bsm',         label: '✏️ South Mindanao' },
+  // Service Coordinators
+  { nameKey: 'venus',     fullName: 'Venus Liloan',       role: 'coordinator', label: '🌐 All Branches (Coordinator)' },
+  { nameKey: 'angelie',   fullName: 'Angelie Tamondong',  role: 'coordinator', label: '🌐 All Branches (Coordinator)' },
+  { nameKey: 'arianne',   fullName: 'Arianne Espinosa',   role: 'coordinator', label: '🌐 All Branches (Coordinator)' },
+  { nameKey: 'philip',    fullName: 'June Philip Garcia', role: 'coordinator', label: '🌐 All Branches (Coordinator)' },
+  // Senior FSEs
+  { nameKey: 'sioco',     fullName: 'John Trent Sioco',   role: 'senior',      label: '🌐 All Branches (Senior FSE)' },
+  { nameKey: 'natan',     fullName: 'Dennis Natan',       role: 'senior',      label: '🌐 All Branches (Senior FSE)' },
+  { nameKey: 'yumang',    fullName: 'Don Alexander Yumang',role: 'senior',     label: '🌐 All Branches (Senior FSE)' },
+  { nameKey: 'templa',    fullName: 'Marvin Jay Templa',  role: 'senior',      label: '🌐 All Branches (Senior FSE)' },
+]
+
 export const SEED_STAFF: Staff[] = [
   { id: 's1',  name: 'Arnold Rioja',           role: 'manager',     home_branch_id: 'b13' },
   { id: 's2',  name: 'Ricky Eina',             role: 'manager',     home_branch_id: 'b13' },
@@ -62,10 +86,15 @@ export const SEED_STAFF: Staff[] = [
   { id: 's6',  name: 'Martin Genabe',          role: 'bsm',         home_branch_id: 'b9'  },
   { id: 's7',  name: 'Venus Liloan',           role: 'coordinator', home_branch_id: 'b13' },
   { id: 's8',  name: 'Angelie Tamondong',      role: 'coordinator', home_branch_id: 'b13' },
-  { id: 's9',  name: 'Juan Dela Cruz',         role: 'senior',      home_branch_id: 'b13', hotline: true },
-  { id: 's10', name: 'Pedro Santos',           role: 'senior',      home_branch_id: 'b8'  },
-  { id: 's11', name: 'Maria Garcia',           role: 'junior',      home_branch_id: 'b7'  },
-  { id: 's12', name: 'Jose Reyes',             role: 'junior',      home_branch_id: 'b13' },
-  { id: 's13', name: 'Ana Flores',             role: 'trainee',     home_branch_id: 'b9'  },
-  { id: 's14', name: 'Carlo Bautista',         role: 'trainee',     home_branch_id: 'b13' },
+  { id: 's9',  name: 'Arianne Espinosa',       role: 'coordinator', home_branch_id: 'b13' },
+  { id: 's10', name: 'June Philip Garcia',     role: 'coordinator', home_branch_id: 'b13' },
+  { id: 's11', name: 'Dennis Natan',           role: 'senior',      home_branch_id: 'b13', hotline: true },
+  { id: 's12', name: 'Don Alexander Yumang',   role: 'senior',      home_branch_id: 'b13', hotline: true },
+  { id: 's13', name: 'John Trent Sioco',       role: 'senior',      home_branch_id: 'b13', hotline: true },
+  { id: 's14', name: 'Marvin Jay Templa',      role: 'senior',      home_branch_id: 'b13' },
+  { id: 's15', name: 'Pedro Santos',           role: 'senior',      home_branch_id: 'b8'  },
+  { id: 's16', name: 'Maria Garcia',           role: 'junior',      home_branch_id: 'b7'  },
+  { id: 's17', name: 'Jose Reyes',             role: 'junior',      home_branch_id: 'b13' },
+  { id: 's18', name: 'Ana Flores',             role: 'trainee',     home_branch_id: 'b9'  },
+  { id: 's19', name: 'Carlo Bautista',         role: 'trainee',     home_branch_id: 'b13' },
 ]

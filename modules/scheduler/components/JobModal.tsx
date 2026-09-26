@@ -254,7 +254,7 @@ export function JobModal({
       customer:    isAbsence ? "" : form.customer.trim(),
       type:        form.type as JobType,
       type_other:  form.type === "others" ? form.type_other.trim() : "",
-      status:      isAbsence ? "pending" : form.status,
+      status:      isAbsence ? "success" : form.status,
       status_note: showStatusNote ? form.status_note.trim() : "",
       // extra fields stored on the object but not in base type
       ...(isAbsence ? {} : {

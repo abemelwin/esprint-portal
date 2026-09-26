@@ -188,7 +188,7 @@ export function ReportsView({ reportMonth, setReportMonth, rFilters, setRFilters
                   <td>{branchById(j.branch_id)?.name ?? "—"}</td>
                   <td>{j.customer ?? ""}</td>
                   <td><span className={`sch-type-tag ${TYPES[j.type]?.cls ?? ""}`}>{TYPES[j.type]?.label ?? j.type}</span></td>
-                  <td><span className={`sch-pill ${STATUS[j.status]?.cls ?? ""}`}>{STATUS[j.status]?.label ?? j.status}</span></td>
+                  <td>{j.type !== "leave" && j.type !== "absent" && <span className={`sch-pill ${STATUS[j.status]?.cls ?? ""}`}>{STATUS[j.status]?.label ?? j.status}</span>}</td>
                   <td style={{ color: "var(--sch-muted)" }}>{j.status_note ?? ""}</td>
                 </tr>
               ))}

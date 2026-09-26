@@ -24,7 +24,9 @@ export interface ModuleDef {
   enabled: boolean;
   /** Tailwind gradient classes for the icon tile */
   gradient: string;
-  /** lucide-react icon name */
+  /** CSS background gradient style */
+  bgStyle: string;
+  /** icon identifier */
   icon: string;
 }
 
@@ -34,8 +36,9 @@ export const MODULES: Record<ModuleKey, ModuleDef> = {
     name: "Check Monitoring",
     subtitle: "Hold & Return Monitoring",
     path: "/checks",
-    enabled: true, // first module being migrated
-    gradient: "from-slate-800 to-slate-900",
+    enabled: true,
+    gradient: "from-blue-600 to-indigo-600",
+    bgStyle: "linear-gradient(135deg, #2563eb, #4f46e5)",
     icon: "CircleCheck",
   },
   hris: {
@@ -45,6 +48,7 @@ export const MODULES: Record<ModuleKey, ModuleDef> = {
     path: "/hris",
     enabled: false,
     gradient: "from-[#0B1E38] to-[#0B4F9C]",
+    bgStyle: "linear-gradient(135deg, #0b1e38, #0b4f9c)",
     icon: "Users",
   },
   machines: {
@@ -54,6 +58,7 @@ export const MODULES: Record<ModuleKey, ModuleDef> = {
     path: "/machines",
     enabled: true,
     gradient: "from-blue-600 to-violet-600",
+    bgStyle: "linear-gradient(135deg, #2563eb, #7c3aed)",
     icon: "Printer",
   },
   scheduler: {
@@ -62,7 +67,8 @@ export const MODULES: Record<ModuleKey, ModuleDef> = {
     subtitle: "Calendar · KPI · Reports",
     path: "/scheduler",
     enabled: true,
-    gradient: "from-amber-600 to-yellow-500",
+    gradient: "from-amber-600 to-orange-600",
+    bgStyle: "linear-gradient(135deg, #d97706, #ea580c)",
     icon: "CalendarDays",
   },
   sales: {
@@ -71,7 +77,8 @@ export const MODULES: Record<ModuleKey, ModuleDef> = {
     subtitle: "Quote Builder · Catalog · Closing Docs",
     path: "/sales",
     enabled: true,
-    gradient: "from-red-700 to-red-500",
+    gradient: "from-rose-600 to-red-600",
+    bgStyle: "linear-gradient(135deg, #e11d48, #dc2626)",
     icon: "Receipt",
   },
   support: {
@@ -80,7 +87,8 @@ export const MODULES: Record<ModuleKey, ModuleDef> = {
     subtitle: "Live Chats · Service Requests · KB",
     path: "/support",
     enabled: false,
-    gradient: "from-blue-700 to-indigo-600",
+    gradient: "from-cyan-600 to-blue-600",
+    bgStyle: "linear-gradient(135deg, #0891b2, #2563eb)",
     icon: "MessageSquare",
   },
 };
