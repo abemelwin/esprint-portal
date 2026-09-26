@@ -68,7 +68,7 @@ export function SchedulerClient({
   const effectiveView = view === "overview" && !canViewOverview ? "calendar" : view;
 
   return (
-    <div className="sch-root flex flex-col min-h-screen">
+    <div className="sch-root" style={{ display: "flex", flexDirection: "column", minHeight: "100%" }}>
       <SchedulerTopNav
         view={view}
         setView={v => setView(v as "calendar" | "reports" | "overview")}

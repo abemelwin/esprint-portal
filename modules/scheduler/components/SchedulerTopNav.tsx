@@ -2,7 +2,6 @@
 
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import Image from "next/image";
 
 interface Props {
   view: string;
@@ -26,8 +25,7 @@ export function SchedulerTopNav({
 
   function toggleTheme() {
     const html = document.documentElement;
-    const current = html.getAttribute("data-theme");
-    html.setAttribute("data-theme", current === "dark" ? "light" : "dark");
+    html.setAttribute("data-theme", html.getAttribute("data-theme") === "dark" ? "light" : "dark");
   }
 
   return (
@@ -38,38 +36,51 @@ export function SchedulerTopNav({
         alignItems: "center",
         gap: 8,
         padding: "10px 18px",
-        background: "color-mix(in srgb, var(--sch-s1) 85%, transparent)",
-        backdropFilter: "blur(16px)",
-        WebkitBackdropFilter: "blur(16px)",
-        borderBottom: "1px solid var(--sch-border)",
+        background: "#fff",
+        borderBottom: "1px solid rgba(15,23,42,.08)",
         boxShadow: "0 1px 2px rgba(15,23,42,.05)",
         overflowX: "auto",
+        flexWrap: "nowrap",
       }}
     >
       {/* Brand */}
       <div style={{ display: "flex", alignItems: "center", gap: 12, flexShrink: 0 }}>
-        <Link href="/dashboard" title="Back to Portal Home" style={{ flexShrink: 0 }}>
-          <Image
+        <Link href="/dashboard" title="Back to Portal Home">
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img
             src="/logo.jpg"
             alt="ES Print Logo"
             width={40}
             height={40}
-            style={{ borderRadius: "50%", objectFit: "cover", border: "1.5px solid var(--sch-border)", boxShadow: "0 2px 8px rgba(0,0,0,.18)" }}
+            style={{
+              width: 40,
+              height: 40,
+              borderRadius: "50%",
+              objectFit: "cover",
+              border: "1.5px solid rgba(15,23,42,.1)",
+              boxShadow: "0 2px 8px rgba(0,0,0,.18)",
+              display: "block",
+            }}
           />
         </Link>
         <div>
           <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-            <h1 style={{ margin: 0, fontSize: 15, fontWeight: 700, color: "var(--sch-ink1)" }}>
+            <h1 style={{ margin: 0, fontSize: 15, fontWeight: 700, color: "#0f172a", letterSpacing: "-0.01em" }}>
               Support Team Scheduler
             </h1>
             <Link
               href="/dashboard"
-              style={{ fontSize: 10.5, fontWeight: 600, color: "var(--sch-muted)", background: "var(--sch-s2)", border: "1px solid var(--sch-border)", borderRadius: 4, padding: "2px 7px", textDecoration: "none" }}
+              style={{
+                fontSize: 10.5, fontWeight: 600, color: "#64748b",
+                background: "#f1f5f9", border: "1px solid #e2e8f0",
+                borderRadius: 4, padding: "2px 7px", textDecoration: "none",
+                display: "inline-flex", alignItems: "center", gap: 3,
+              }}
             >
               ← Portal Home
             </Link>
           </div>
-          <div style={{ fontSize: 11.5, color: "var(--sch-muted)", marginTop: 1, fontWeight: 500 }}>
+          <div style={{ fontSize: 11.5, color: "#64748b", marginTop: 1, fontWeight: 500 }}>
             ES Print Group of Companies · Field Service
           </div>
         </div>
@@ -92,31 +103,29 @@ export function SchedulerTopNav({
 
       <div style={{ flex: 1 }} />
 
-      {/* Right controls */}
+      {/* Right */}
       <div style={{ display: "flex", alignItems: "center", gap: 6, flexShrink: 0 }}>
-        {/* Theme toggle */}
         <button
           type="button"
-          className="sch-btn ghost"
-          style={{ padding: "6px 8px" }}
+          style={{
+            background: "transparent", border: "1px solid #e2e8f0",
+            borderRadius: 8, padding: "6px 8px", cursor: "pointer", fontSize: 15,
+          }}
           title="Toggle light/dark"
           onClick={toggleTheme}
         >🌓</button>
 
-        {/* User chip */}
         <div className="sch-user-chip">
           <span className="urole">{userRole}</span>
           <span className="uname">{userName}</span>
         </div>
 
-        {/* Sign out */}
         <button
           type="button"
           className="sch-btn-signout"
           onClick={handleLogout}
-          title="Sign out"
         >
-          ⏻ <span className="hidden sm:inline">Sign out</span>
+          ⏻ Sign out
         </button>
       </div>
     </header>

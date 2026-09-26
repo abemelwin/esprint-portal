@@ -205,9 +205,9 @@ table.report tbody tr:last-child td {
   --sch-r: 10px;
   --sch-shadow: 0 1px 3px rgba(15,23,42,.06),0 1px 2px -1px rgba(15,23,42,.06);
   --sch-shadow-md:0 4px 12px -2px rgba(15,23,42,.07);
-  background: var(--sch-page);
+  background: #f8fafc;
   font-family: 'Inter', system-ui, sans-serif;
-  color: var(--sch-ink1);
+  color: #0f172a;
 }
 
 /* KPI cards */
@@ -530,14 +530,14 @@ table.sch-rt td.num,table.sch-rt th.num { text-align:right; }
 .sch-confirm-desc  { margin:0; font-size:13px; color:var(--sch-muted); line-height:1.45; }
 .sch-confirm-foot  { padding:14px 20px; background:var(--sch-s2); border-top:1px solid var(--sch-border); display:flex; gap:10px; justify-content:flex-end; }
 
-/* Scheduler sign-out button */
+/* ── Scheduler sign-out button */
 .sch-btn-signout {
   font-family: inherit;
   font-size: 11.5px;
   font-weight: 600;
-  border: 1px solid color-mix(in srgb, var(--sch-fail, #ef4444) 25%, var(--sch-border));
-  background: color-mix(in srgb, var(--sch-fail, #ef4444) 8%, var(--sch-s1));
-  color: var(--sch-fail, #ef4444);
+  border: 1px solid rgba(239,68,68,.3);
+  background: rgba(239,68,68,.08);
+  color: #ef4444;
   padding: 5px 10px;
   border-radius: 8px;
   cursor: pointer;
@@ -549,7 +549,7 @@ table.sch-rt td.num,table.sch-rt th.num { text-align:right; }
   flex-shrink: 0;
 }
 .sch-btn-signout:hover {
-  background: color-mix(in srgb, var(--sch-fail, #ef4444) 18%, var(--sch-s1));
-  border-color: var(--sch-fail, #ef4444);
+  background: rgba(239,68,68,.18);
+  border-color: #ef4444;
   transform: translateY(-1px);
 }
