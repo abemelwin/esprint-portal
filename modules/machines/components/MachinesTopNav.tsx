@@ -90,14 +90,6 @@ export function MachinesTopNav({
           </svg>
         </button>
 
-        {/* + Add Machine */}
-        <button
-          onClick={onAddMachine}
-          className="flex items-center gap-1 px-3 py-1 bg-blue-600 hover:bg-blue-700 text-white font-bold rounded shadow-xs transition-all active:scale-95 cursor-pointer"
-        >
-          <span>+ Add Machine</span>
-        </button>
-
         {/* Logout */}
         <button
           onClick={handleLogout}

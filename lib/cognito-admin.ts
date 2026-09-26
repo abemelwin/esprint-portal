@@ -33,17 +33,12 @@ const POOL_ID = process.env.COGNITO_USER_POOL_ID;
 let client: CognitoIdentityProviderClient | null = null;
 function getAdminClient(): CognitoIdentityProviderClient {
   if (client) return client;
-  // In production (Amplify SSR compute), rely on the attached compute role via
-  // the default provider chain. Only use explicit static keys for LOCAL dev,
-  // gated behind AWS_USE_STATIC_KEYS=true so stale/invalid AWS_* env vars that
-  // may linger in the Amplify runtime never override the compute role.
-  const useStatic =
-    process.env.AWS_USE_STATIC_KEYS === "true" &&
-    process.env.AWS_ACCESS_KEY_ID &&
-    process.env.AWS_SECRET_ACCESS_KEY;
+  const hasStaticKeys = Boolean(
+    process.env.AWS_ACCESS_KEY_ID && process.env.AWS_SECRET_ACCESS_KEY
+  );
   client = new CognitoIdentityProviderClient({
-    region: REGION,
-    ...(useStatic
+    region: REGION || "ap-southeast-1",
+    ...(hasStaticKeys
       ? {
           credentials: {
             accessKeyId: process.env.AWS_ACCESS_KEY_ID!,

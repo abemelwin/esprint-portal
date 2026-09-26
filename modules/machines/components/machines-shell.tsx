@@ -38,11 +38,11 @@ export function MachinesShell({
         userName={userName}
         userRole={userRole}
         isAdmin={isAdmin}
-        onAddMachine={handleAddMachine}
       />
 
       <MachinesSubNav
         isAdmin={isAdmin}
+        onAddMachine={handleAddMachine}
         onImport={handleImport}
         onBackup={handleBackup}
         onExportCSV={handleExportCSV}

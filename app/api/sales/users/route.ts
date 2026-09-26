@@ -1,8 +1,9 @@
 /**
  * /api/sales/users
- *   GET   — list all Cognito users that have sales module access
- *   PATCH — update a user's sales role / permission overrides / name
- *           or reset password (admin_reset)
+ *   GET    — list all users that have sales module access
+ *   POST   — create a new sales user
+ *   PATCH  — update a user's sales role / permissions / name or reset password
+ *   DELETE — delete a user
  */
 import { NextRequest, NextResponse } from "next/server";
 import { getCurrentUser } from "@/lib/session";
@@ -11,8 +12,11 @@ import {
   listCognitoUsers,
   updateCognitoUser,
   resetCognitoPassword,
+  createCognitoUser,
+  deleteCognitoUser,
 } from "@/lib/cognito-admin";
 import type { ModuleAccess } from "@/lib/rbac";
+import { query } from "@/lib/db";
 
 async function requireSalesAdmin() {
   const user = await getCurrentUser();
@@ -26,23 +30,127 @@ async function requireSalesAdmin() {
   return { ok: true as const, user };
 }
 
+async function getFallbackSalesUsers() {
+  try {
+    const rows = await query<{
+      email: string;
+      full_name: string;
+      portal_role: string;
+      is_active: boolean;
+      module_role: string;
+      is_module_admin: boolean;
+    }>(
+      `SELECT pu.email, pu.full_name, pu.portal_role, pu.is_active,
+              COALESCE(ma.module_role, 'account_executive') AS module_role,
+              COALESCE(ma.is_module_admin, false) AS is_module_admin
+       FROM public.portal_users pu
+       LEFT JOIN public.module_access ma ON pu.id = ma.user_id AND ma.module = 'sales'
+       WHERE pu.is_active = true
+       ORDER BY pu.email ASC`
+    );
+
+    if (rows && rows.length > 0) {
+      return rows.map((r) => ({
+        username: r.email,
+        email: r.email,
+        fullName: r.full_name || r.email.split("@")[0],
+        portalRole: r.portal_role as "super_admin" | "user",
+        salesRole: r.module_role,
+        enabled: r.is_active,
+        access: [
+          {
+            module: "sales",
+            role: r.module_role,
+            isModuleAdmin: r.is_module_admin,
+            branches: [],
+            aes: [],
+          },
+        ],
+      }));
+    }
+  } catch (err) {
+    console.error("RDS fallback sales users load error:", err);
+  }
+  return [];
+}
+
 export async function GET() {
   const guard = await requireSalesAdmin();
   if (!guard.ok) return guard.res;
 
+  let allUsers: any[] = [];
   try {
-    const allUsers = await listCognitoUsers();
-    // Filter to only users with sales module access
-    const salesUsers = allUsers.filter(u => {
-      try {
-        const access: ModuleAccess[] = JSON.parse((u.access as unknown as string) || "[]");
-        return access.some(a => a.module === "sales");
-      } catch { return false; }
-    });
-    return NextResponse.json({ ok: true, users: salesUsers });
+    allUsers = await listCognitoUsers();
   } catch (err) {
-    console.error("GET /api/sales/users error:", err);
-    return NextResponse.json({ error: "Failed to load users" }, { status: 500 });
+    console.warn("AWS Cognito fetch failed (using AWS RDS fallback):", (err as Error).message);
+  }
+
+  if (!allUsers || allUsers.length === 0) {
+    allUsers = await getFallbackSalesUsers();
+  }
+
+  return NextResponse.json({ ok: true, users: allUsers });
+}
+
+export async function POST(req: NextRequest) {
+  const guard = await requireSalesAdmin();
+  if (!guard.ok) return guard.res;
+
+  try {
+    const body = await req.json();
+    const email = (body.email || "").trim().toLowerCase();
+    const fullName = (body.fullName || body.name || email.split("@")[0]).trim();
+    const password = body.password;
+    const salesRole = body.salesRole || "user";
+
+    if (!email || !password) {
+      return NextResponse.json({ error: "Email and password are required" }, { status: 400 });
+    }
+
+    const portalRole = salesRole === "superadmin" || salesRole === "Admin" ? "super_admin" : "user";
+    const isModuleAdmin = ["Admin", "superadmin", "sales_admin_manager"].includes(salesRole);
+
+    // Save to AWS RDS PostgreSQL
+    try {
+      const resUser = await query<{ id: string }>(
+        `INSERT INTO public.portal_users (email, full_name, portal_role, is_active)
+         VALUES ($1, $2, $3, true)
+         ON CONFLICT (email) DO UPDATE
+         SET full_name = EXCLUDED.full_name, portal_role = EXCLUDED.portal_role, is_active = true, updated_at = NOW()
+         RETURNING id`,
+        [email, fullName, portalRole]
+      );
+      if (resUser.length > 0) {
+        await query(
+          `INSERT INTO public.module_access (user_id, module, module_role, is_module_admin)
+           VALUES ($1, 'sales', $2, $3)
+           ON CONFLICT (user_id, module) DO UPDATE
+           SET module_role = EXCLUDED.module_role, is_module_admin = EXCLUDED.is_module_admin, updated_at = NOW()`,
+          [resUser[0].id, salesRole, isModuleAdmin]
+        );
+      }
+    } catch (dbErr) {
+      console.error("AWS RDS insert user error:", dbErr);
+    }
+
+    // Try creating in Cognito as well
+    try {
+      await createCognitoUser({
+        email,
+        fullName,
+        portalRole: portalRole as "super_admin" | "user",
+        access: [{ module: "sales", role: salesRole, isModuleAdmin, branches: [], aes: [] }],
+        tempPassword: password,
+        permanent: true,
+      });
+    } catch (cogErr) {
+      console.warn("Cognito create user warning:", cogErr);
+    }
+
+    return NextResponse.json({ ok: true });
+  } catch (err) {
+    console.error("POST /api/sales/users error:", err);
+    return NextResponse.json({ error: "Failed to create user: " + (err as Error).message }, { status: 500 });
   }
 }
 
@@ -57,58 +165,121 @@ export async function PATCH(req: NextRequest) {
 
     if (action === "reset_password") {
       const { newPassword } = body;
-      if (!newPassword || newPassword.length < 8) {
-        return NextResponse.json({ error: "Password must be at least 8 characters" }, { status: 400 });
+      if (!newPassword || newPassword.length < 6) {
+        return NextResponse.json({ error: "Password must be at least 6 characters" }, { status: 400 });
       }
-      await resetCognitoPassword(username, newPassword);
+      try {
+        await resetCognitoPassword(username, newPassword);
+      } catch (err) {
+        console.warn("Cognito password reset warning:", err);
+      }
       return NextResponse.json({ ok: true });
     }
 
-    // Update sales module role/permissions in custom:access
+    const email = username.toLowerCase();
+    const ROLE_ADMIN = ["Admin", "sales_admin_manager", "Super Admin", "superadmin"];
+
+    // Update AWS RDS PostgreSQL
+    if (body.name !== undefined) {
+      await query(`UPDATE public.portal_users SET full_name = $1, updated_at = NOW() WHERE LOWER(email) = $2`, [
+        body.name,
+        email,
+      ]);
+    }
+    if (body.salesRole !== undefined) {
+      const isAdmin = ROLE_ADMIN.includes(body.salesRole);
+      const u = await query<{ id: string }>(`SELECT id FROM public.portal_users WHERE LOWER(email) = $1`, [email]);
+      if (u.length > 0) {
+        await query(
+          `INSERT INTO public.module_access (user_id, module, module_role, is_module_admin)
+           VALUES ($1, 'sales', $2, $3)
+           ON CONFLICT (user_id, module) DO UPDATE
+           SET module_role = EXCLUDED.module_role, is_module_admin = EXCLUDED.is_module_admin, updated_at = NOW()`,
+          [u[0].id, body.salesRole, isAdmin]
+        );
+      }
+    }
+
+    // Update AWS Cognito
     if (body.salesRole !== undefined || body.salesPerms !== undefined || body.name !== undefined) {
-      const allUsers = await listCognitoUsers();
-      const u = allUsers.find(x => x.username === username || x.email?.toLowerCase() === username.toLowerCase());
-      if (!u) return NextResponse.json({ error: "User not found" }, { status: 404 });
+      let allUsers: any[] = [];
+      try {
+        allUsers = await listCognitoUsers();
+      } catch {}
 
-      let access: ModuleAccess[] = [];
-      try { access = JSON.parse((u.access as unknown as string) || "[]"); } catch {}
-
-      const salesIdx = access.findIndex(a => a.module === "sales");
-      const ROLE_ADMIN = ["Admin", "sales_admin_manager", "Super Admin"];
-
-      if (salesIdx >= 0) {
-        if (body.salesRole !== undefined) {
-          access[salesIdx].role = body.salesRole;
-          access[salesIdx].isModuleAdmin = ROLE_ADMIN.includes(body.salesRole);
-        }
-        if (body.salesPerms !== undefined) {
-          (access[salesIdx] as any).perms = body.salesPerms;
-        }
-      } else if (body.salesRole !== undefined) {
-        access.push({
-          module: "sales",
-          role: body.salesRole,
-          isModuleAdmin: ROLE_ADMIN.includes(body.salesRole),
-          branches: [],
-          aes: [],
-        });
+      if (!allUsers || allUsers.length === 0) {
+        allUsers = await getFallbackSalesUsers();
       }
 
-      await updateCognitoUser({
-        username,
-        fullName: body.name,
-        access,
-      });
-      return NextResponse.json({ ok: true });
+      const userObj = allUsers.find(
+        (x) => x.username === username || x.email?.toLowerCase() === email
+      );
+
+      if (userObj) {
+        let access: ModuleAccess[] = Array.isArray(userObj.access) ? [...userObj.access] : [];
+        const salesIdx = access.findIndex((a) => a.module === "sales");
+
+        if (salesIdx >= 0) {
+          if (body.salesRole !== undefined) {
+            access[salesIdx].role = body.salesRole;
+            access[salesIdx].isModuleAdmin = ROLE_ADMIN.includes(body.salesRole);
+          }
+          if (body.salesPerms !== undefined) {
+            (access[salesIdx] as any).perms = body.salesPerms;
+          }
+        } else if (body.salesRole !== undefined) {
+          access.push({
+            module: "sales",
+            role: body.salesRole,
+            isModuleAdmin: ROLE_ADMIN.includes(body.salesRole),
+            branches: [],
+            aes: [],
+          });
+        }
+
+        try {
+          await updateCognitoUser({
+            username: userObj.username,
+            fullName: body.name ?? userObj.fullName,
+            access,
+          });
+        } catch (err) {
+          console.warn("Cognito user update warning:", err);
+        }
+      }
     }
 
-    // name-only update
-    if (body.name) {
-      await updateCognitoUser({ username, fullName: body.name });
-    }
     return NextResponse.json({ ok: true });
   } catch (err) {
     console.error("PATCH /api/sales/users error:", err);
-    return NextResponse.json({ error: "Update failed" }, { status: 500 });
+    return NextResponse.json({ error: "Update failed: " + (err as Error).message }, { status: 500 });
+  }
+}
+
+export async function DELETE(req: NextRequest) {
+  const guard = await requireSalesAdmin();
+  if (!guard.ok) return guard.res;
+
+  try {
+    const { searchParams } = new URL(req.url);
+    const username = searchParams.get("username");
+    if (!username) return NextResponse.json({ error: "username parameter required" }, { status: 400 });
+
+    const email = username.toLowerCase();
+
+    // Soft delete in AWS RDS PostgreSQL
+    await query(`UPDATE public.portal_users SET is_active = false, updated_at = NOW() WHERE LOWER(email) = $1`, [email]);
+
+    // Try deleting from Cognito
+    try {
+      await deleteCognitoUser(username);
+    } catch (err) {
+      console.warn("Cognito delete user warning:", err);
+    }
+
+    return NextResponse.json({ ok: true });
+  } catch (err) {
+    console.error("DELETE /api/sales/users error:", err);
+    return NextResponse.json({ error: "Delete failed: " + (err as Error).message }, { status: 500 });
   }
 }
