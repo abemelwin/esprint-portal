@@ -15,9 +15,10 @@ export default async function SalesLayout({
 
   const perms    = getSalesPermissions(user);
   const isAdmin  = isSuperAdmin(user) || isModuleAdmin(user, "sales");
-  const roleLabel = isSuperAdmin(user)
-    ? "Super Admin"
-    : user.access.find((a) => a.module === "sales")?.role || "Sales Executive";
+  const rawRole  = user.access.find((a) => a.module === "sales")?.role;
+  const roleLabel = isAdmin || rawRole === "superadmin" || rawRole === "Super Admin" || rawRole === "Admin"
+    ? "Admin"
+    : rawRole || "Sales Executive";
 
   return (
     <SalesShell

@@ -107,8 +107,9 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: "Email and password are required" }, { status: 400 });
     }
 
-    const portalRole = salesRole === "superadmin" || salesRole === "Admin" ? "super_admin" : "user";
-    const isModuleAdmin = ["Admin", "superadmin", "sales_admin_manager"].includes(salesRole);
+    const normalizedSalesRole = salesRole === "superadmin" || salesRole === "Super Admin" ? "Admin" : salesRole;
+    const portalRole = "user";
+    const isModuleAdmin = ["Admin", "sales_admin_manager"].includes(normalizedSalesRole);
 
     // Save to AWS RDS PostgreSQL
     try {
@@ -116,7 +117,7 @@ export async function POST(req: NextRequest) {
         `INSERT INTO public.portal_users (email, full_name, portal_role, is_active)
          VALUES ($1, $2, $3, true)
          ON CONFLICT (email) DO UPDATE
-         SET full_name = EXCLUDED.full_name, portal_role = EXCLUDED.portal_role, is_active = true, updated_at = NOW()
+         SET full_name = EXCLUDED.full_name, is_active = true, updated_at = NOW()
          RETURNING id`,
         [email, fullName, portalRole]
       );
@@ -126,7 +127,7 @@ export async function POST(req: NextRequest) {
            VALUES ($1, 'sales', $2, $3)
            ON CONFLICT (user_id, module) DO UPDATE
            SET module_role = EXCLUDED.module_role, is_module_admin = EXCLUDED.is_module_admin, updated_at = NOW()`,
-          [resUser[0].id, salesRole, isModuleAdmin]
+          [resUser[0].id, normalizedSalesRole, isModuleAdmin]
         );
       }
     } catch (dbErr) {
@@ -177,7 +178,7 @@ export async function PATCH(req: NextRequest) {
     }
 
     const email = username.toLowerCase();
-    const ROLE_ADMIN = ["Admin", "sales_admin_manager", "Super Admin", "superadmin"];
+    const ROLE_ADMIN = ["Admin", "sales_admin_manager"];
 
     // Update AWS RDS PostgreSQL
     if (body.name !== undefined) {

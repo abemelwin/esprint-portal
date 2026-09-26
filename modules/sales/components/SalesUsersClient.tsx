@@ -3,7 +3,6 @@
 import { useState, useEffect, useMemo, Fragment } from "react";
 
 const ROLES = [
-  { value: "superadmin",             label: "Super Admin" },
   { value: "Admin",                  label: "Admin" },
   { value: "sales_admin_manager",    label: "Sales Admin Manager" },
   { value: "sales_admin_supervisor", label: "Sales Admin Supervisor" },
@@ -16,9 +15,9 @@ const ROLES = [
 ];
 
 function getRoleLabel(roleVal: string): string {
+  if (roleVal === "superadmin" || roleVal === "Super Admin" || roleVal === "admin") return "Admin";
   const match = ROLES.find((r) => r.value === roleVal);
   if (match) return match.label;
-  if (roleVal === "admin") return "Admin";
   return roleVal || "Account Executive";
 }
 
