@@ -1656,11 +1656,11 @@ export function QuoteBuilderClient({
               {openingLine && <p className="mt-0 mb-[3mm] text-[8.5pt] text-[#555] leading-[1.55]">{openingLine}</p>}
 
               {/* Machine Title + Condition Badge */}
-              <div className="text-[13pt] font-bold text-[#c0392b] text-center uppercase tracking-[0.5px] mb-[2.5mm] border-b border-[#f0f0f0] pb-[2mm]">
+              <div className="text-[11pt] font-bold text-[#c0392b] text-center uppercase tracking-[0.5px] mb-[2mm] border-b border-[#f0f0f0] pb-[1.5mm]">
                 {selectedMachine ? selectedMachine.model : "NO MACHINE SELECTED"}
                 {selectedMachine && unitCondition && (
                   <span
-                    className={`block text-[9pt] font-bold tracking-[1px] mt-[1.5mm] ${
+                    className={`block text-[8pt] font-bold tracking-[1px] mt-[1mm] ${
                       unitCondition === "Brand New" ? "text-[#27ae60]" : "text-[#c0392b]"
                     }`}
                   >
@@ -1669,27 +1669,29 @@ export function QuoteBuilderClient({
                 )}
               </div>
 
-              {/* Product Image + Specifications — 2-col layout when image exists (matches orig) */}
+              {/* Hero: image + features */}
               {selectedMachine && selectedMachine.features && selectedMachine.features.length > 0 && (() => {
                 const pictureLink = selectedMachine.product_info_links?.find(
                   (l) => l.document_type === "picture" || l.document_type === "image"
                 );
                 const imgUrl = pictureLink?.url ?? null;
                 return (
-                  <div className={`mb-[3mm] ${imgUrl ? "grid grid-cols-[auto_1fr] gap-[3mm]" : ""}`}>
+                  <div className="flex gap-[5mm] items-start mb-[2mm]">
                     {imgUrl && (
-                      <div className="w-[38mm] shrink-0">
+                      <div className="w-[70mm] shrink-0 text-center">
                         <img
                           src={imgUrl}
                           alt={selectedMachine.model}
-                          className="w-full object-contain rounded-[2px] border border-[#eee]"
+                          className="max-w-[70mm] max-h-[62mm] object-contain mx-auto"
                           onError={(e) => { (e.target as HTMLImageElement).style.display = "none"; }}
                         />
                       </div>
                     )}
-                    <div className="bg-[#fafafa] p-[3mm_4mm] border border-[#eee] rounded-[2px]">
-                      <div className="text-[9pt] font-bold text-[#555] mb-[1.5mm] uppercase tracking-[0.3px]">Product Specifications:</div>
-                      <ul className="list-disc pl-[5mm] m-0 space-y-[0.8mm] text-[8.5pt] text-[#444] leading-[1.4]">
+                    <div className="flex-1">
+                      <div className="text-[8pt] font-bold text-[#333] mb-[1mm] uppercase">
+                        Product Specifications:
+                      </div>
+                      <ul className="list-disc pl-[14px] m-0 space-y-0 text-[8pt] text-[#444] leading-[1.55]">
                         {selectedMachine.features.map((f, i) => (
                           <li key={i}>{typeof f === "string" ? f : (f as any).description}</li>
                         ))}
@@ -1702,8 +1704,9 @@ export function QuoteBuilderClient({
               {/* PRICING TABLE */}
               {contractPrice > 0 && (
                 <div className="mb-[3mm]">
-                  <div className="text-[8.5pt] font-bold text-[#c0392b] uppercase my-[3mm_1.5mm] flex items-center gap-1">
-                    Pricing<span className="flex-1 h-[1px] bg-[#f0f0f0]"></span>
+                  <div className="text-[8pt] font-bold text-[#c0392b] uppercase mt-[2mm] mb-0 tracking-[0.4px]">
+                    Pricing
+                    <span className="block w-full h-[1px] bg-[#c0392b] mt-[1mm] mb-[1.5mm]"></span>
                   </div>
                   <table className="w-full border-collapse mb-[1mm] text-[7.5pt]">
                     <thead>
