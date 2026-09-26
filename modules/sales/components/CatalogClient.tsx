@@ -94,6 +94,32 @@ export function CatalogClient({ canManageFiles = false }: { canManageFiles?: boo
     } finally { setSaving(false); }
   }
 
+  async function handleUploadFile(machineId: string, docType: string, file: File) {
+    setSaving(true);
+    try {
+      const fd = new FormData();
+      fd.append("file", file);
+      fd.append("document_type", docType);
+      fd.append("display_name", file.name);
+
+      const res = await fetch(`/api/sales/product-info/${machineId}/upload`, {
+        method: "POST",
+        body: fd,
+      });
+      if (res.ok) {
+        await refreshMachines();
+      } else {
+        const d = await res.json();
+        alert(d.error || "Upload failed");
+      }
+    } catch (err) {
+      console.error(err);
+      alert("Failed to upload file");
+    } finally {
+      setSaving(false);
+    }
+  }
+
   async function handleDeleteLink(machineId: string, linkId: string) {
     if (!confirm("Remove this link?")) return;
     await fetch(`/api/sales/product-info/${machineId}/${linkId}`, { method: "DELETE" });
@@ -248,10 +274,24 @@ export function CatalogClient({ canManageFiles = false }: { canManageFiles?: boo
                     </div>
                   </div>
                 ) : (
-                  <button onClick={() => { setAddingCat(cat.key); setNewName(""); setNewUrl(""); }}
-                    style={{ marginTop: "auto", alignSelf: "flex-start", padding: "4px 10px", background: "#fff", border: "1px solid #c0392b", color: "#c0392b", borderRadius: 4, fontSize: "0.82rem", fontWeight: 700, cursor: "pointer" }}>
-                    + Add Link
-                  </button>
+                  <div style={{ marginTop: "auto", display: "flex", gap: 8 }}>
+                    <button onClick={() => { setAddingCat(cat.key); setNewName(""); setNewUrl(""); }}
+                      style={{ padding: "4px 10px", background: "#fff", border: "1px solid #c0392b", color: "#c0392b", borderRadius: 4, fontSize: "0.82rem", fontWeight: 700, cursor: "pointer" }}>
+                      + Add Link
+                    </button>
+                    <label style={{ padding: "4px 10px", background: "#c0392b", color: "#fff", borderRadius: 4, fontSize: "0.82rem", fontWeight: 700, cursor: "pointer", display: "inline-flex", alignItems: "center" }}>
+                      ⬆ Upload File
+                      <input
+                        type="file"
+                        style={{ display: "none" }}
+                        onChange={(e) => {
+                          const f = e.target.files?.[0];
+                          if (f) handleUploadFile(selectedMachine.id, cat.key, f);
+                          e.target.value = "";
+                        }}
+                      />
+                    </label>
+                  </div>
                 )
               )}
             </div>
