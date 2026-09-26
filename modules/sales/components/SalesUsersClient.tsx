@@ -16,10 +16,40 @@ const ROLES = [
   { value: "user",                         label: "User" },
 ];
 
-function getRoleLabel(roleVal: string): string {
-  if (roleVal === "superadmin" || roleVal === "Super Admin" || roleVal === "admin") return "Admin";
-  if (roleVal === "product_manager") return "Product Technical Head";
-  const match = ROLES.find((r) => r.value === roleVal);
+function normalizeSalesRole(roleVal?: string, email?: string): string {
+  const em = (email || "").toLowerCase().trim();
+  if (em === "vin@esprintmedia.com") return "product_technical_head";
+  if ([
+    "ron@esprintmedia.com", "janmark@esprintmedia.com", "jonjon@esprintmedia.com",
+    "albert@esprintmedia.com", "armando@esprintmedia.com", "arnulfo@esprintmedia.com",
+    "francis@esprintmedia.com", "kimpee@esprintmedia.com", "mark@esprintmedia.com",
+    "rj@esprintmedia.com"
+  ].includes(em)) {
+    return "product_development_manager";
+  }
+  if (["arnold@esprintmedia.com", "dan@esprintmedia.com", "esprintrickyeina@gmail.com"].includes(em)) {
+    return "service_manager";
+  }
+
+  if (!roleVal) return "account_executive";
+  const r = roleVal.toLowerCase().trim().replace(/[\s\-\/]+/g, "_");
+  if (r === "superadmin" || r === "super_admin" || r === "admin") return "Admin";
+  if (r === "product_technical_head" || r === "product_tech_head" || r === "technical_head") return "product_technical_head";
+  if (r === "product_development_manager" || r === "product_dev_manager" || r === "product_manager" || r === "pm") return "product_development_manager";
+  if (r === "service_manager") return "service_manager";
+  if (r === "sales_admin_manager") return "sales_admin_manager";
+  if (r === "sales_admin_supervisor") return "sales_admin_supervisor";
+  if (r === "sales_admin_assistant") return "sales_admin_assistant";
+  if (r === "area_sales_manager" || r === "asm") return "area_sales_manager";
+  if (r === "account_executive" || r === "ae") return "account_executive";
+  if (r === "sales_assistant") return "sales_assistant";
+  if (r === "user") return "user";
+  return roleVal;
+}
+
+function getRoleLabel(roleVal: string, email?: string): string {
+  const norm = normalizeSalesRole(roleVal, email);
+  const match = ROLES.find((r) => r.value === norm);
   if (match) return match.label;
   return roleVal || "Account Executive";
 }
@@ -104,7 +134,8 @@ export function SalesUsersClient({ currentUserId }: { currentUserId: string }) {
           data.users.map((u: any) => {
             const access = Array.isArray(u.access) ? u.access : [];
             const salesEntry = access.find((a: any) => a.module === "sales");
-            const salesRole = salesEntry?.role || u.salesRole || "account_executive";
+            const rawRole = salesEntry?.role || u.salesRole || "account_executive";
+            const salesRole = normalizeSalesRole(rawRole, u.email);
 
             return {
               username: u.username || u.email,
@@ -138,7 +169,8 @@ export function SalesUsersClient({ currentUserId }: { currentUserId: string }) {
       // Exclude system dev admins if needed
       if (u.email === "espmi@espmi.local" || u.email === "espmi") return false;
 
-      if (r && u.salesRole !== r) return false;
+      const userRole = normalizeSalesRole(u.salesRole, u.email);
+      if (r && userRole !== r) return false;
       if (!q) return true;
       const email = (u.email || "").toLowerCase();
       const name = (u.fullName || "").toLowerCase();

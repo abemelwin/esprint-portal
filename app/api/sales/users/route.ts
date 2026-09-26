@@ -30,6 +30,37 @@ async function requireSalesAdmin() {
   return { ok: true as const, user };
 }
 
+function normalizeSalesRole(roleVal?: string, email?: string): string {
+  const em = (email || "").toLowerCase().trim();
+  if (em === "vin@esprintmedia.com") return "product_technical_head";
+  if ([
+    "ron@esprintmedia.com", "janmark@esprintmedia.com", "jonjon@esprintmedia.com",
+    "albert@esprintmedia.com", "armando@esprintmedia.com", "arnulfo@esprintmedia.com",
+    "francis@esprintmedia.com", "kimpee@esprintmedia.com", "mark@esprintmedia.com",
+    "rj@esprintmedia.com"
+  ].includes(em)) {
+    return "product_development_manager";
+  }
+  if (["arnold@esprintmedia.com", "dan@esprintmedia.com", "esprintrickyeina@gmail.com"].includes(em)) {
+    return "service_manager";
+  }
+
+  if (!roleVal) return "account_executive";
+  const r = roleVal.toLowerCase().trim().replace(/[\s\-\/]+/g, "_");
+  if (r === "superadmin" || r === "super_admin" || r === "admin") return "Admin";
+  if (r === "product_technical_head" || r === "product_tech_head" || r === "technical_head") return "product_technical_head";
+  if (r === "product_development_manager" || r === "product_dev_manager" || r === "product_manager" || r === "pm") return "product_development_manager";
+  if (r === "service_manager") return "service_manager";
+  if (r === "sales_admin_manager") return "sales_admin_manager";
+  if (r === "sales_admin_supervisor") return "sales_admin_supervisor";
+  if (r === "sales_admin_assistant") return "sales_admin_assistant";
+  if (r === "area_sales_manager" || r === "asm") return "area_sales_manager";
+  if (r === "account_executive" || r === "ae") return "account_executive";
+  if (r === "sales_assistant") return "sales_assistant";
+  if (r === "user") return "user";
+  return roleVal;
+}
+
 async function getFallbackSalesUsers() {
   try {
     const rows = await query<{
@@ -50,23 +81,26 @@ async function getFallbackSalesUsers() {
     );
 
     if (rows && rows.length > 0) {
-      return rows.map((r) => ({
-        username: r.email,
-        email: r.email,
-        fullName: r.full_name || r.email.split("@")[0],
-        portalRole: r.portal_role as "super_admin" | "user",
-        salesRole: r.module_role,
-        enabled: r.is_active,
-        access: [
-          {
-            module: "sales",
-            role: r.module_role,
-            isModuleAdmin: r.is_module_admin,
-            branches: [],
-            aes: [],
-          },
-        ],
-      }));
+      return rows.map((r) => {
+        const normRole = normalizeSalesRole(r.module_role, r.email);
+        return {
+          username: r.email,
+          email: r.email,
+          fullName: r.full_name || r.email.split("@")[0],
+          portalRole: r.portal_role as "super_admin" | "user",
+          salesRole: normRole,
+          enabled: r.is_active,
+          access: [
+            {
+              module: "sales",
+              role: normRole,
+              isModuleAdmin: r.is_module_admin,
+              branches: [],
+              aes: [],
+            },
+          ],
+        };
+      });
     }
   } catch (err) {
     console.error("RDS fallback sales users load error:", err);
@@ -87,6 +121,18 @@ export async function GET() {
 
   if (!allUsers || allUsers.length === 0) {
     allUsers = await getFallbackSalesUsers();
+  } else {
+    allUsers = allUsers.map((u) => {
+      const access: ModuleAccess[] = Array.isArray(u.access) ? u.access : [];
+      const salesEntry = access.find((a) => a.module === "sales");
+      const normRole = normalizeSalesRole(salesEntry?.role || u.salesRole, u.email);
+
+      return {
+        ...u,
+        salesRole: normRole,
+        access: access.map((a) => (a.module === "sales" ? { ...a, role: normRole } : a)),
+      };
+    });
   }
 
   return NextResponse.json({ ok: true, users: allUsers });
