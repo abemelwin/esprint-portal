@@ -1,0 +1,2842 @@
+{
+  "branches": [
+    {
+      "id": "b1",
+      "name": "BAC",
+      "note": "Negros Occidental"
+    },
+    {
+      "id": "b2",
+      "name": "BUK",
+      "note": "Bukidnon"
+    },
+    {
+      "id": "b3",
+      "name": "BUT",
+      "note": "Agusan del Norte"
+    },
+    {
+      "id": "b4",
+      "name": "CAB",
+      "note": "Nueva Ecija"
+    },
+    {
+      "id": "b5",
+      "name": "CAMSUR",
+      "note": "Camarines Sur"
+    },
+    {
+      "id": "b6",
+      "name": "CAV",
+      "note": "Cavite"
+    },
+    {
+      "id": "b7",
+      "name": "CDO",
+      "note": "Misamis Oriental"
+    },
+    {
+      "id": "b8",
+      "name": "CEB",
+      "note": "Cebu"
+    },
+    {
+      "id": "b9",
+      "name": "DAV",
+      "note": "Davao del Sur"
+    },
+    {
+      "id": "b10",
+      "name": "GENSAN",
+      "note": "South Cotabato"
+    },
+    {
+      "id": "b11",
+      "name": "ILO",
+      "note": "Iloilo"
+    },
+    {
+      "id": "b12",
+      "name": "ISA",
+      "note": "Isabela"
+    },
+    {
+      "id": "b13",
+      "name": "MAK",
+      "note": "Metro Manila"
+    },
+    {
+      "id": "b14",
+      "name": "PAG",
+      "note": "Zamboanga del Sur"
+    },
+    {
+      "id": "b15",
+      "name": "PAL",
+      "note": "Palawan"
+    },
+    {
+      "id": "b16",
+      "name": "PANG",
+      "note": "Pangasinan"
+    },
+    {
+      "id": "b17",
+      "name": "RIZ",
+      "note": "Rizal"
+    },
+    {
+      "id": "b18",
+      "name": "TAC",
+      "note": "Leyte"
+    },
+    {
+      "id": "b19",
+      "name": "TAG",
+      "note": "Davao del Norte"
+    },
+    {
+      "id": "b20",
+      "name": "ZAM",
+      "note": "Zamboanga del Sur"
+    }
+  ],
+  "staff": [
+    {
+      "id": "f7fa6c31-dc9d-4e0d-97c0-b021842a7fd9",
+      "name": "Cristian Mike Recentes",
+      "role": "senior",
+      "home_branch_id": "b13",
+      "hotline": false
+    },
+    {
+      "id": "7991f0a7-f58c-4c93-87f0-f9c0528f5352",
+      "name": "Cristian Mike Mejia Recentes",
+      "role": "senior",
+      "home_branch_id": "b13",
+      "hotline": false
+    },
+    {
+      "id": "dc645b6d-8c85-4ca3-8f8e-d470d2219a06",
+      "name": "Adrian Andrei Munsayac",
+      "role": "junior",
+      "home_branch_id": "b13",
+      "hotline": false
+    },
+    {
+      "id": "41614981-a510-4f95-8aa2-39f71aef0135",
+      "name": "Martin Genabe Jr",
+      "role": "manager",
+      "home_branch_id": "b9",
+      "hotline": false
+    },
+    {
+      "id": "78c9ca24-c00e-402c-959f-1be87fa15ca4",
+      "name": "Cyron James Reyes",
+      "role": "junior",
+      "home_branch_id": "b13",
+      "hotline": false
+    },
+    {
+      "id": "7e3a2197-bbea-4b31-81cb-db73de2a8367",
+      "name": "Mernhad Vic Cerujano",
+      "role": "junior",
+      "home_branch_id": "b13",
+      "hotline": false
+    },
+    {
+      "id": "3292614d-cb70-4761-a1c5-4d8ebfd835c7",
+      "name": "Jonh Rowel Vergel de Dios",
+      "role": "junior",
+      "home_branch_id": "b13",
+      "hotline": false
+    },
+    {
+      "id": "3f382a79-254e-49cf-9b13-7b4ee1b2dc8e",
+      "name": "Angelie Tamondong",
+      "role": "junior",
+      "home_branch_id": "b1",
+      "hotline": false
+    },
+    {
+      "id": "b932b2cb-e01f-49d4-bfdf-f99624b69f9b",
+      "name": "Mark Ranssel Atipon",
+      "role": "junior",
+      "home_branch_id": "b13",
+      "hotline": false
+    },
+    {
+      "id": "c131cdf8-34fc-4e5b-a2cd-91024edd46c5",
+      "name": "Ramilito Dave Phua",
+      "role": "junior",
+      "home_branch_id": "b13",
+      "hotline": false
+    },
+    {
+      "id": "d299ef87-87a5-428e-b475-4161e69164e6",
+      "name": "Airon de Ocampo",
+      "role": "junior",
+      "home_branch_id": "b13",
+      "hotline": false
+    },
+    {
+      "id": "f7a9a7a1-4b57-41b3-a920-8a190f7c3d56",
+      "name": "Jhon Mark Borreros",
+      "role": "senior",
+      "home_branch_id": "b13",
+      "hotline": false
+    },
+    {
+      "id": "c94c7176-c60f-43e3-becb-a47116461622",
+      "name": "George Constantine Abalde",
+      "role": "junior",
+      "home_branch_id": "b9",
+      "hotline": false
+    },
+    {
+      "id": "68415c03-90a1-4c16-b032-9ecfc55c7930",
+      "name": "Emmanuel Salamanes",
+      "role": "junior",
+      "home_branch_id": "b13",
+      "hotline": false
+    },
+    {
+      "id": "dc77b78e-fd0a-4805-b617-807cf6347f9b",
+      "name": "Dyve Cajss",
+      "role": "junior",
+      "home_branch_id": "b9",
+      "hotline": false
+    },
+    {
+      "id": "a517c565-adc1-4166-a77a-c122270e6208",
+      "name": "Christephen Tan Jr",
+      "role": "junior",
+      "home_branch_id": "b13",
+      "hotline": false
+    },
+    {
+      "id": "1fda93fb-9e41-41ef-b1ba-68c6435fdde1",
+      "name": "Earl Jhonel Pallaya",
+      "role": "senior",
+      "home_branch_id": "b9",
+      "hotline": false
+    },
+    {
+      "id": "49e000d7-eb97-4469-ad1e-458b905e433b",
+      "name": "Jefrey Diagbel",
+      "role": "senior",
+      "home_branch_id": "b13",
+      "hotline": false
+    },
+    {
+      "id": "62d2e0b5-7a5a-4eef-af5a-c3399c010ebf",
+      "name": "Mark Kevin Rioja",
+      "role": "senior",
+      "home_branch_id": "b13",
+      "hotline": false
+    },
+    {
+      "id": "54e3c512-9a0c-4b2c-b567-66f328bff2c6",
+      "name": "Sydon Paulo Almeida",
+      "role": "senior",
+      "home_branch_id": "b13",
+      "hotline": false
+    },
+    {
+      "id": "4de5a7f0-a17c-43e7-885b-d8fe65fb1152",
+      "name": "Rio Balberde",
+      "role": "junior",
+      "home_branch_id": "b13",
+      "hotline": false
+    },
+    {
+      "id": "de33c6c3-7eea-4ed3-912d-6cb7635d2d5b",
+      "name": "Juan Carlos Roma",
+      "role": "senior",
+      "home_branch_id": "b13",
+      "hotline": false
+    },
+    {
+      "id": "cf47c8df-a4ba-481e-886f-23e47c36b200",
+      "name": "Jezreel Rejas",
+      "role": "junior",
+      "home_branch_id": "b13",
+      "hotline": false
+    },
+    {
+      "id": "d2fb8dcd-09b5-4040-b6ae-1111b942397a",
+      "name": "Jerick Montillana",
+      "role": "senior",
+      "home_branch_id": "b13",
+      "hotline": false
+    },
+    {
+      "id": "413edb41-22a9-40c3-aefc-08be47fb8e48",
+      "name": "Peter Velarde",
+      "role": "senior",
+      "home_branch_id": "b13",
+      "hotline": false
+    },
+    {
+      "id": "83d1acbf-ea66-49b7-baf0-11f54aa9fe03",
+      "name": "Mark Ricjohn Caraan",
+      "role": "junior",
+      "home_branch_id": "b13",
+      "hotline": false
+    },
+    {
+      "id": "ad1b8d7b-9292-4750-a1b4-781e771a844b",
+      "name": "Jhonny Saluta",
+      "role": "trainee",
+      "home_branch_id": "b13",
+      "hotline": false
+    },
+    {
+      "id": "71d6752f-693b-4ab8-8aca-ba437a540be9",
+      "name": "Ronie Talabucon",
+      "role": "junior",
+      "home_branch_id": "b13",
+      "hotline": false
+    },
+    {
+      "id": "464bbcd2-21e8-467d-81ae-ead6d2b771bc",
+      "name": "Sherwin Andaluz",
+      "role": "senior",
+      "home_branch_id": "b13",
+      "hotline": false
+    },
+    {
+      "id": "2a9b8955-3934-40d0-9fda-f0d824606377",
+      "name": "Al Khabir Tarajid Ibrahim",
+      "role": "junior",
+      "home_branch_id": "b13",
+      "hotline": false
+    },
+    {
+      "id": "0517f69f-248a-495e-9272-c3e3375d9c73",
+      "name": "Michael B. Almoite",
+      "role": "manager",
+      "home_branch_id": "b15",
+      "hotline": false
+    },
+    {
+      "id": "b1a614b5-a3ae-41fa-9d25-5f80594929ae",
+      "name": "Gerardo banda Jr",
+      "role": "junior",
+      "home_branch_id": "b13",
+      "hotline": false
+    },
+    {
+      "id": "7589a5ab-b1e5-4fe9-b5a6-5a7d383937e8",
+      "name": "Michael Principe",
+      "role": "bsm",
+      "home_branch_id": "b1",
+      "hotline": false
+    },
+    {
+      "id": "d6378145-785e-4f4e-8274-5471a79d4729",
+      "name": "Martin Genabe",
+      "role": "bsm",
+      "home_branch_id": "b9",
+      "hotline": false
+    },
+    {
+      "id": "f83814a2-de96-4b4a-a166-debd1c4ca1ef",
+      "name": "Jeremy Natcher",
+      "role": "junior",
+      "home_branch_id": "b13",
+      "hotline": false
+    },
+    {
+      "id": "68c205bd-7451-4c55-b4f3-ad69b81d8157",
+      "name": "Habel Basal",
+      "role": "senior",
+      "home_branch_id": "b10",
+      "hotline": false
+    },
+    {
+      "id": "a16a4569-90e7-429a-8520-7d6199645bbd",
+      "name": "Marvin Jay Templa",
+      "role": "junior",
+      "home_branch_id": "b1",
+      "hotline": false
+    },
+    {
+      "id": "9c0c6bf0-397d-4d07-b1c6-f9ab68788ce6",
+      "name": "Jay Macabiog",
+      "role": "senior",
+      "home_branch_id": "b13",
+      "hotline": false
+    },
+    {
+      "id": "0bee6a22-1e5b-4331-8a6d-9f6e11f914d6",
+      "name": "June Philip Garcia",
+      "role": "senior",
+      "home_branch_id": "b13",
+      "hotline": false
+    },
+    {
+      "id": "a65807b3-8c27-4bbb-b733-97cc7f977dc8",
+      "name": "Michael Almoite",
+      "role": "bsm",
+      "home_branch_id": "b15",
+      "hotline": false
+    },
+    {
+      "id": "ed5bfe5f-442f-4afb-bb2c-c71f9fce727f",
+      "name": "Paul Anthony Dabatian",
+      "role": "senior",
+      "home_branch_id": "b2",
+      "hotline": false
+    },
+    {
+      "id": "5f6127da-2acb-444c-b1ca-7ff930f4a214",
+      "name": "Manuel Villanueva",
+      "role": "junior",
+      "home_branch_id": "b13",
+      "hotline": false
+    },
+    {
+      "id": "43b5c829-c704-44f7-841c-cee5e8fbe8e6",
+      "name": "Limwel De Chavez",
+      "role": "manager",
+      "home_branch_id": "b16",
+      "hotline": false
+    },
+    {
+      "id": "8ac8ca93-99af-4624-a236-2cd4009e376a",
+      "name": "Kenneth Cacho",
+      "role": "senior",
+      "home_branch_id": "b13",
+      "hotline": false
+    },
+    {
+      "id": "7ed842ec-0217-458b-b473-d26260ed03cd",
+      "name": "Dennis Natan",
+      "role": "senior",
+      "home_branch_id": "b13",
+      "hotline": true
+    },
+    {
+      "id": "1b20a666-7a15-44e4-8aaa-993c84aa2938",
+      "name": "Arnold Rioja",
+      "role": "manager",
+      "home_branch_id": "b13",
+      "hotline": false
+    },
+    {
+      "id": "7f01546a-56a1-46d8-8905-3714751df580",
+      "name": "Danilo Carangan",
+      "role": "manager",
+      "home_branch_id": "b13",
+      "hotline": false
+    },
+    {
+      "id": "3de3c983-a915-4635-8137-926a20c73c03",
+      "name": "Ricky Eina",
+      "role": "manager",
+      "home_branch_id": "b13",
+      "hotline": false
+    },
+    {
+      "id": "5a1463a8-ae2a-4301-ad57-131ba49e910b",
+      "name": "Don Alexander Yumang",
+      "role": "senior",
+      "home_branch_id": "b13",
+      "hotline": true
+    },
+    {
+      "id": "df826019-f0d9-48a1-9b25-a745ca4242ee",
+      "name": "John Trent Sioco",
+      "role": "senior",
+      "home_branch_id": "b13",
+      "hotline": true
+    },
+    {
+      "id": "84c6e8f7-787c-43fa-8dc7-6f75228e6768",
+      "name": "Ralph Diaz",
+      "role": "senior",
+      "home_branch_id": "b13",
+      "hotline": false
+    },
+    {
+      "id": "7028af53-bb70-4f55-844c-9a45f15a3a5c",
+      "name": "Arianne Espinosa",
+      "role": "junior",
+      "home_branch_id": "b1",
+      "hotline": false
+    },
+    {
+      "id": "49e8f1af-447c-468b-bfd1-d8956de5f47f",
+      "name": "Venus Liloan",
+      "role": "junior",
+      "home_branch_id": "b1",
+      "hotline": false
+    },
+    {
+      "id": "53fedab8-f9f2-4406-9cfa-ca8203e42cb9",
+      "name": "Almuhaimen Pakong",
+      "role": "senior",
+      "home_branch_id": "b9",
+      "hotline": false
+    },
+    {
+      "id": "5cc2533c-bf90-42d9-adef-63dc8a13c5ee",
+      "name": "Mohaimin Masanting",
+      "role": "junior",
+      "home_branch_id": "b9",
+      "hotline": false
+    },
+    {
+      "id": "7c0cfe7c-0ea6-412f-bf33-f372df5c96e9",
+      "name": "Jesus Tandoc Jr",
+      "role": "junior",
+      "home_branch_id": "b19",
+      "hotline": false
+    },
+    {
+      "id": "9dadfe1b-c796-4c75-884c-983256d9552a",
+      "name": "Christian Dave Taypin",
+      "role": "senior",
+      "home_branch_id": "b9",
+      "hotline": false
+    },
+    {
+      "id": "4374c2b3-121e-43aa-b280-4392df21d533",
+      "name": "Francis Dominic P Manibad",
+      "role": "trainee",
+      "home_branch_id": "b9",
+      "hotline": false
+    },
+    {
+      "id": "36c0497e-6312-469c-85e8-b4acd4b96952",
+      "name": "Mariel Ariego",
+      "role": "senior",
+      "home_branch_id": "b10",
+      "hotline": false
+    },
+    {
+      "id": "eaa0b3ba-72f7-4463-8148-ae21e1870569",
+      "name": "Bryan Jeric Cabiling",
+      "role": "junior",
+      "home_branch_id": "b13",
+      "hotline": false
+    },
+    {
+      "id": "40e6293a-9be5-4e55-b28d-4f2ff6bbcf88",
+      "name": "Jessriel Calvo",
+      "role": "bsm",
+      "home_branch_id": "b8",
+      "hotline": false
+    },
+    {
+      "id": "270c4dcb-1ab4-4f06-8319-c62772b4455a",
+      "name": "Jovanie Buya",
+      "role": "junior",
+      "home_branch_id": "b10",
+      "hotline": false
+    },
+    {
+      "id": "884fb230-95a5-4b53-b629-d94f1c03bde3",
+      "name": "Park Johncel Cosino",
+      "role": "junior",
+      "home_branch_id": "b13",
+      "hotline": false
+    },
+    {
+      "id": "ca6c0dc9-8c34-4577-8479-3e07f5495a3e",
+      "name": "Michael Pulgo",
+      "role": "senior",
+      "home_branch_id": "b8",
+      "hotline": false
+    },
+    {
+      "id": "8c7b2a12-4e4d-483d-8c36-f84795568e9b",
+      "name": "Mark  Obnimaga",
+      "role": "senior",
+      "home_branch_id": "b9",
+      "hotline": false
+    },
+    {
+      "id": "e573fd5a-4635-41a5-8de0-c55ee2f80132",
+      "name": "John Darel Coliflores",
+      "role": "bsm",
+      "home_branch_id": "b18",
+      "hotline": false
+    },
+    {
+      "id": "5bb15949-372d-4324-98a4-90644899bdce",
+      "name": "Gerald Sacuan",
+      "role": "bsm",
+      "home_branch_id": "b7",
+      "hotline": false
+    },
+    {
+      "id": "568609fe-c88f-40cc-a1a1-414b883fe8d2",
+      "name": "Kevin Mendez",
+      "role": "senior",
+      "home_branch_id": "b14",
+      "hotline": false
+    },
+    {
+      "id": "d59f5f20-86e1-4bd2-ab4a-38a5c580b55d",
+      "name": "Eileen So Kua",
+      "role": "manager",
+      "home_branch_id": "b13",
+      "hotline": true
+    },
+    {
+      "id": "785abdec-6a26-40c5-a9b7-dfce7531027a",
+      "name": "Rigel Cacho",
+      "role": "senior",
+      "home_branch_id": "b13",
+      "hotline": false
+    },
+    {
+      "id": "81069983-2505-46a4-9cb9-062c6126247a",
+      "name": "Jella Maglalang",
+      "role": "senior",
+      "home_branch_id": "b13",
+      "hotline": false
+    },
+    {
+      "id": "daaa95cd-d852-4418-b876-139990e9a0a3",
+      "name": "Nicholson Sia",
+      "role": "senior",
+      "home_branch_id": "b20",
+      "hotline": false
+    },
+    {
+      "id": "38d09271-f547-4cee-9a87-0c6199722a3d",
+      "name": "Michael Tagupa",
+      "role": "senior",
+      "home_branch_id": "b3",
+      "hotline": false
+    },
+    {
+      "id": "c0c7e4c7-ea89-4784-b19d-0090571164cd",
+      "name": "Jerick Lotino",
+      "role": "senior",
+      "home_branch_id": "b13",
+      "hotline": false
+    },
+    {
+      "id": "6e014034-ac21-43a0-8392-fde1d8ef8ac6",
+      "name": "Christian Encinas",
+      "role": "junior",
+      "home_branch_id": "b13",
+      "hotline": false
+    },
+    {
+      "id": "c1f20d36-f0e6-4d9a-a8ec-1c38597a1653",
+      "name": "Jan Philix Vicente",
+      "role": "junior",
+      "home_branch_id": "b13",
+      "hotline": false
+    },
+    {
+      "id": "1ce23415-125c-40a6-8c67-c1790eb04948",
+      "name": "CHARLIE CABANTING",
+      "role": "trainee",
+      "home_branch_id": "b12",
+      "hotline": false
+    },
+    {
+      "id": "d2432574-f538-4842-937c-0beec2af921e",
+      "name": "Jayson Garcia",
+      "role": "trainee",
+      "home_branch_id": "b16",
+      "hotline": false
+    },
+    {
+      "id": "ed5574ba-9d82-4d42-893a-93a4b947d448",
+      "name": "Mark Joseph Tariga",
+      "role": "senior",
+      "home_branch_id": "b13",
+      "hotline": false
+    },
+    {
+      "id": "9860062a-d49b-4e69-9011-1be9b498f47a",
+      "name": "Ariel Javierto",
+      "role": "senior",
+      "home_branch_id": "b8",
+      "hotline": false
+    }
+  ],
+  "jobs": [
+    {
+      "id": "a5b8e7b3-35cf-48ff-9636-21cdf6aca59c",
+      "date": "2026-09-21",
+      "jt_no": "5976",
+      "staff_id": "7e3a2197-bbea-4b31-81cb-db73de2a8367",
+      "branch_id": "b13",
+      "customer": "JAMMSON HOUSEHOLD APPLIANCES TRADING",
+      "location": "Quezon City",
+      "type": "onsite",
+      "type_other": "",
+      "status": "success",
+      "status_note": "",
+      "created_at": "2026-09-19T08:46:37.458509+00:00",
+      "machine": "CREONS SI",
+      "serial_no": "GR20255802",
+      "jt_url": "https://11128201.app.netsuite.com/app/common/search/searchresults.nl?searchtype=Case&Case_CASENUMBERtype=IS&Case_CASENUMBER=5976&detail=Case_CASENUMBER&detailname=5976"
+    },
+    {
+      "id": "809956d0-14ce-44b0-acbf-42a1ca85a1fa",
+      "date": "2026-09-21",
+      "jt_no": "7510",
+      "staff_id": "dc645b6d-8c85-4ca3-8f8e-d470d2219a06",
+      "branch_id": "b13",
+      "customer": "SOFTSELL MARKETING PROMOTIONS AND EVENTS SERVICES INC.",
+      "location": "Antipolo City",
+      "type": "onsite",
+      "type_other": "",
+      "status": "success",
+      "status_note": "",
+      "created_at": "2026-09-21T06:12:16.804146+00:00",
+      "machine": "MYJET KM512 14PL 4 HEADS",
+      "serial_no": "GR20220617",
+      "jt_url": "https://11128201.app.netsuite.com/app/common/search/searchresults.nl?searchtype=Case&Case_CASENUMBERtype=IS&Case_CASENUMBER=7510&detail=Case_CASENUMBER&detailname=7510"
+    },
+    {
+      "id": "0566fe4d-80d7-4029-8d1d-7bf99685d5c1",
+      "date": "2026-09-21",
+      "jt_no": "7479",
+      "staff_id": "54e3c512-9a0c-4b2c-b567-66f328bff2c6",
+      "branch_id": "b13",
+      "customer": "MJ DELGADO ENTERPRISE",
+      "location": "MANILA",
+      "type": "onsite",
+      "type_other": "",
+      "status": "success",
+      "status_note": "",
+      "created_at": "2026-09-19T08:56:28.592428+00:00",
+      "machine": "GRANDO DTF 4HEADS",
+      "serial_no": "GD600-AK0029-UV",
+      "jt_url": "https://11128201.app.netsuite.com/app/common/search/searchresults.nl?searchtype=Case&Case_CASENUMBERtype=IS&Case_CASENUMBER=7479&detail=Case_CASENUMBER&detailname=7479"
+    },
+    {
+      "id": "fe5f40b4-df74-4c35-a45a-49f47833987d",
+      "date": "2026-09-21",
+      "jt_no": "7539",
+      "staff_id": "884fb230-95a5-4b53-b629-d94f1c03bde3",
+      "branch_id": "b13",
+      "customer": "MS. MARIA REMELIE GARCIA",
+      "location": "Candelaria Quezon Province",
+      "type": "onsite",
+      "type_other": "",
+      "status": "success",
+      "status_note": "",
+      "created_at": "2026-09-21T06:05:01.056597+00:00",
+      "machine": "Mutoh RJ900X",
+      "serial_no": "HB4W000751",
+      "jt_url": "https://11128201.app.netsuite.com/app/common/search/searchresults.nl?searchtype=Case&Case_CASENUMBERtype=IS&Case_CASENUMBER=7539&detail=Case_CASENUMBER&detailname=7539"
+    },
+    {
+      "id": "40148363-227a-4386-b9f0-be3ad99ab7a6",
+      "date": "2026-09-21",
+      "jt_no": "7160",
+      "staff_id": "4de5a7f0-a17c-43e7-885b-d8fe65fb1152",
+      "branch_id": "b13",
+      "customer": "ERP ACCOUNTING & GENERAL SERVICES",
+      "location": "Lucena City",
+      "type": "onsite",
+      "type_other": "",
+      "status": "success",
+      "status_note": "",
+      "created_at": "2026-09-19T08:42:16.878224+00:00",
+      "machine": "EPSON SC F6430H FYFP",
+      "serial_no": "XBN2000260",
+      "jt_url": "https://11128201.app.netsuite.com/app/common/search/searchresults.nl?searchtype=Case&Case_CASENUMBERtype=IS&Case_CASENUMBER=7160&detail=Case_CASENUMBER&detailname=7160"
+    },
+    {
+      "id": "fff0afdb-7a02-4840-b883-6cac79f941bf",
+      "date": "2026-09-21",
+      "jt_no": "7516",
+      "staff_id": "f7fa6c31-dc9d-4e0d-97c0-b021842a7fd9",
+      "branch_id": "b13",
+      "customer": "WISEINK ADVERTISING SERVICES",
+      "location": "580 TIONGSON RIVERA ST. BALIUAG CITY BULACAN",
+      "type": "onsite",
+      "type_other": "",
+      "status": "success",
+      "status_note": "",
+      "created_at": "2026-09-21T06:26:15.391258+00:00",
+      "machine": "CREONS DX5 PRINTER (6FT)",
+      "serial_no": "N9Y1NE1C1403",
+      "jt_url": "https://11128201.app.netsuite.com/app/common/search/searchresults.nl?searchtype=Case&Case_CASENUMBERtype=IS&Case_CASENUMBER=7516&detail=Case_CASENUMBER&detailname=7516"
+    },
+    {
+      "id": "f8d710af-e7a3-4437-8349-16298f92b8c7",
+      "date": "2026-09-21",
+      "jt_no": "7242",
+      "staff_id": "f7fa6c31-dc9d-4e0d-97c0-b021842a7fd9",
+      "branch_id": "b13",
+      "customer": "TJZJ DECALS GRAPHIC ARTS SERVICES",
+      "location": "Caloocan City",
+      "type": "onsite",
+      "type_other": "",
+      "status": "success",
+      "status_note": "",
+      "created_at": "2026-09-21T06:07:12.407355+00:00",
+      "machine": "CREONS PLUS DX5",
+      "serial_no": "N9Y1NF170607",
+      "jt_url": "https://11128201.app.netsuite.com/app/common/search/searchresults.nl?searchtype=Case&Case_CASENUMBERtype=IS&Case_CASENUMBER=7242&detail=Case_CASENUMBER&detailname=7242"
+    },
+    {
+      "id": "1789b49b-683d-4e08-b22b-2399af3c07af",
+      "date": "2026-09-21",
+      "jt_no": "7403",
+      "staff_id": "c131cdf8-34fc-4e5b-a2cd-91024edd46c5",
+      "branch_id": "b13",
+      "customer": "THE LORD'S PRINTSHOPPE",
+      "location": "Quezon City",
+      "type": "onsite",
+      "type_other": "",
+      "status": "success",
+      "status_note": "",
+      "created_at": "2026-09-21T06:22:02.382392+00:00",
+      "machine": "MUTOH XPJ1341SR-PRO ECO SOL",
+      "serial_no": "KD5U000258",
+      "jt_url": "https://11128201.app.netsuite.com/app/common/search/searchresults.nl?searchtype=Case&Case_CASENUMBERtype=IS&Case_CASENUMBER=7403&detail=Case_CASENUMBER&detailname=7403"
+    },
+    {
+      "id": "93356c9f-ce9c-4bf4-afb5-3b614e6f893d",
+      "date": "2026-09-21",
+      "jt_no": "7549",
+      "staff_id": "9c0c6bf0-397d-4d07-b1c6-f9ab68788ce6",
+      "branch_id": "b13",
+      "customer": "CUTLEYRAY SPORTSWEAR SHOP",
+      "location": "Novaliches Quezon City",
+      "type": "onsite",
+      "type_other": "",
+      "status": "success",
+      "status_note": "",
+      "created_at": "2026-09-21T06:45:44.791479+00:00",
+      "machine": "CREONS iPLUS i3200 PRINTER (6FT) - 4 HEAD",
+      "serial_no": "NQKONKAA0520",
+      "jt_url": "https://11128201.app.netsuite.com/app/common/search/searchresults.nl?searchtype=Case&Case_CASENUMBERtype=IS&Case_CASENUMBER=7549&detail=Case_CASENUMBER&detailname=7549"
+    },
+    {
+      "id": "bd126942-07db-4735-ac4a-4dccf6dc0966",
+      "date": "2026-09-21",
+      "jt_no": "5976",
+      "staff_id": "eaa0b3ba-72f7-4463-8148-ae21e1870569",
+      "branch_id": "b13",
+      "customer": "JAMMSON HOUSEHOLD APPLIANCES TRADING",
+      "location": "Quezon City",
+      "type": "onsite",
+      "type_other": "",
+      "status": "success",
+      "status_note": "",
+      "created_at": "2026-09-21T06:24:18.434147+00:00",
+      "machine": "CREONS SI",
+      "serial_no": "GR20255802",
+      "jt_url": "https://11128201.app.netsuite.com/app/common/search/searchresults.nl?searchtype=Case&Case_CASENUMBERtype=IS&Case_CASENUMBER=5976&detail=Case_CASENUMBER&detailname=5976"
+    },
+    {
+      "id": "e301d50c-68c4-4574-9bf3-5ae942c30ed4",
+      "date": "2026-09-21",
+      "jt_no": "7410",
+      "staff_id": "d299ef87-87a5-428e-b475-4161e69164e6",
+      "branch_id": "b13",
+      "customer": "ERP ACCOUNTING & GENERAL SERVICES",
+      "location": "LUCENA CITY",
+      "type": "onsite",
+      "type_other": "",
+      "status": "success",
+      "status_note": "",
+      "created_at": "2026-09-19T08:36:49.970958+00:00",
+      "machine": "MYJETKM512",
+      "serial_no": "GR20250409",
+      "jt_url": "https://11128201.app.netsuite.com/app/common/search/searchresults.nl?searchtype=Case&Case_CASENUMBERtype=IS&Case_CASENUMBER=7410&detail=Case_CASENUMBER&detailname=7410"
+    },
+    {
+      "id": "4d733b68-42d0-42c3-a527-74d7ef17e855",
+      "date": "2026-09-21",
+      "jt_no": "7381",
+      "staff_id": "cf47c8df-a4ba-481e-886f-23e47c36b200",
+      "branch_id": "b13",
+      "customer": "IGLESIA NI CRISTO",
+      "location": "Quezon City",
+      "type": "onsite",
+      "type_other": "",
+      "status": "success",
+      "status_note": "",
+      "created_at": "2026-09-21T06:28:08.494697+00:00",
+      "machine": "Creons Dx7",
+      "serial_no": "2012018064",
+      "jt_url": "https://11128201.app.netsuite.com/app/common/search/searchresults.nl?searchtype=Case&Case_CASENUMBERtype=IS&Case_CASENUMBER=7381&detail=Case_CASENUMBER&detailname=7381"
+    },
+    {
+      "id": "5bd4a694-181a-49d3-a53c-0856df4f579d",
+      "date": "2026-09-21",
+      "jt_no": "7463",
+      "staff_id": "62d2e0b5-7a5a-4eef-af5a-c3399c010ebf",
+      "branch_id": "b13",
+      "customer": "SQUARE ONE PRINTING SERVICES",
+      "location": "Taytay Rizal",
+      "type": "onsite",
+      "type_other": "",
+      "status": "success",
+      "status_note": "",
+      "created_at": "2026-09-21T06:30:21.067337+00:00",
+      "machine": "",
+      "serial_no": "2408020031",
+      "jt_url": "https://11128201.app.netsuite.com/app/common/search/searchresults.nl?searchtype=Case&Case_CASENUMBERtype=IS&Case_CASENUMBER=7463&detail=Case_CASENUMBER&detailname=7463"
+    },
+    {
+      "id": "14bc6447-714a-4974-ba73-f7b3dd695a40",
+      "date": "2026-09-21",
+      "jt_no": "7588",
+      "staff_id": "7ed842ec-0217-458b-b473-d26260ed03cd",
+      "branch_id": "b13",
+      "customer": "TRI-PHIL INTERNATIONAL INC",
+      "location": "INC BLK1 LOT 6 RMT INDUSTRIAL COMPLEX TUNASAN MUNTINLUPA",
+      "type": "onsite",
+      "type_other": "",
+      "status": "success",
+      "status_note": "",
+      "created_at": "2026-09-21T06:34:17.437567+00:00",
+      "machine": "DOCAN HM1600M UV PRINTER",
+      "serial_no": "HM1600M-BKA-25W43AC",
+      "jt_url": "https://11128201.app.netsuite.com/app/common/search/searchresults.nl?searchtype=Case&Case_CASENUMBERtype=IS&Case_CASENUMBER=7588&detail=Case_CASENUMBER&detailname=7588"
+    },
+    {
+      "id": "5eb53d87-4a68-4507-a022-39f48f70e96d",
+      "date": "2026-09-21",
+      "jt_no": "7420",
+      "staff_id": "68415c03-90a1-4c16-b032-9ecfc55c7930",
+      "branch_id": "b13",
+      "customer": "INKS&BEYOND PRINTING SERVICES",
+      "location": "BACOOR CAVITE",
+      "type": "onsite",
+      "type_other": "",
+      "status": "success",
+      "status_note": "",
+      "created_at": "2026-09-19T08:59:48.850296+00:00",
+      "machine": "CREONS A3 UV DTF HYBRID",
+      "serial_no": "25B09720H1E1WV",
+      "jt_url": "https://11128201.app.netsuite.com/app/common/search/searchresults.nl?searchtype=Case&Case_CASENUMBERtype=IS&Case_CASENUMBER=7428&detail=Case_CASENUMBER&detailname=7428"
+    },
+    {
+      "id": "fbb6ab2f-bef0-4268-a718-b1143a7a035c",
+      "date": "2026-09-21",
+      "jt_no": "7488",
+      "staff_id": "5f6127da-2acb-444c-b1ca-7ff930f4a214",
+      "branch_id": "b13",
+      "customer": "JUSTMAK ENTERPRISES",
+      "location": "12 N Domingo St, Quezon City METRO MANILA",
+      "type": "onsite",
+      "type_other": "",
+      "status": "success",
+      "status_note": "",
+      "created_at": "2026-09-21T06:41:00.055274+00:00",
+      "machine": "CREONS iPLUS i3200 PRINTER (6FT)",
+      "serial_no": "NKKONG980422",
+      "jt_url": "https://11128201.app.netsuite.com/app/common/search/searchresults.nl?searchtype=Case&Case_CASENUMBERtype=IS&Case_CASENUMBER=7488&detail=Case_CASENUMBER&detailname=7488"
+    },
+    {
+      "id": "58254fbf-3dbd-4893-9d7d-06855479518a",
+      "date": "2026-09-21",
+      "jt_no": "7495",
+      "staff_id": "b932b2cb-e01f-49d4-bfdf-f99624b69f9b",
+      "branch_id": "b13",
+      "customer": "NEW DANFORT SPORTWEAR",
+      "location": "MUNTINLUPA CITY",
+      "type": "onsite",
+      "type_other": "",
+      "status": "success",
+      "status_note": "",
+      "created_at": "2026-09-19T08:51:19.231537+00:00",
+      "machine": "HAPPY JAPAN",
+      "serial_no": "R11500006",
+      "jt_url": "https://11128201.app.netsuite.com/app/common/search/searchresults.nl?searchtype=Case&Case_CASENUMBERtype=IS&Case_CASENUMBER=7495&detail=Case_CASENUMBER&detailname=7495"
+    },
+    {
+      "id": "a89789d8-6b16-4231-bf8d-fcd2fb6ae0f8",
+      "date": "2026-09-01",
+      "jt_no": "6582",
+      "staff_id": "d299ef87-87a5-428e-b475-4161e69164e6",
+      "branch_id": "b13",
+      "customer": "dasdadad",
+      "location": "dadadad",
+      "type": "hotline",
+      "type_other": "",
+      "status": "ongoing",
+      "status_note": "dasdadasdasda",
+      "created_at": "2026-09-22T03:34:22.444332+00:00",
+      "machine": "",
+      "serial_no": "",
+      "jt_url": "https://11128201.app.netsuite.com/app/common/search/searchresults.nl?searchtype=Case&Case_CASENUMBERtype=IS&Case_CASENUMBER=6582&detail=Case_CASENUMBER&detailname=6582"
+    },
+    {
+      "id": "969ac5c8-cb53-477f-80e5-c22905655ab6",
+      "date": "2026-09-22",
+      "jt_no": "7541",
+      "staff_id": "a517c565-adc1-4166-a77a-c122270e6208",
+      "branch_id": "b13",
+      "customer": "JU-ICHI PRINTING SERVICES",
+      "location": "Cainta Rizal",
+      "type": "onsite",
+      "type_other": "",
+      "status": "success",
+      "status_note": "",
+      "created_at": "2026-09-22T01:14:11.733932+00:00",
+      "machine": "Mutoh RJ900x",
+      "serial_no": "HB4W000757",
+      "jt_url": "https://11128201.app.netsuite.com/app/common/search/searchresults.nl?searchtype=Case&Case_CASENUMBERtype=IS&Case_CASENUMBER=7541&detail=Case_CASENUMBER&detailname=7541"
+    },
+    {
+      "id": "1f0fe2ce-6494-4001-ac80-e2ffb75ef91a",
+      "date": "2026-09-22",
+      "jt_no": "7469",
+      "staff_id": "9c0c6bf0-397d-4d07-b1c6-f9ab68788ce6",
+      "branch_id": "b13",
+      "customer": "MR. TRISTAN JOHN CASTILLO",
+      "location": "B6 L8 STO THOMAS 6 BRGY. 167 ILANO",
+      "type": "onsite",
+      "type_other": "",
+      "status": "success",
+      "status_note": "",
+      "created_at": "2026-09-22T05:35:12.286039+00:00",
+      "machine": "CREONS iPLUS i3200 PRINTER (6FT)",
+      "serial_no": "G6K0NJ1H0504",
+      "jt_url": "https://11128201.app.netsuite.com/app/common/search/searchresults.nl?searchtype=Case&Case_CASENUMBERtype=IS&Case_CASENUMBER=7469&detail=Case_CASENUMBER&detailname=7469"
+    },
+    {
+      "id": "8783948d-e4c9-4794-bd31-eaf15d37b8b8",
+      "date": "2026-09-22",
+      "jt_no": "7388",
+      "staff_id": "68415c03-90a1-4c16-b032-9ecfc55c7930",
+      "branch_id": "b13",
+      "customer": "CRAFITEE PRINTING SERVICES",
+      "location": "36 CANLAPAN ST., STO. ROSARIO MALOLOS BULACAN",
+      "type": "onsite",
+      "type_other": "",
+      "status": "success",
+      "status_note": "",
+      "created_at": "2026-09-22T01:10:31.189332+00:00",
+      "machine": "CREONS A3 UV DTF HYBRID",
+      "serial_no": "26B09H0240WV",
+      "jt_url": "https://11128201.app.netsuite.com/app/common/search/searchresults.nl?searchtype=Case&Case_CASENUMBERtype=IS&Case_CASENUMBER=7388&detail=Case_CASENUMBER&detailname=7388"
+    },
+    {
+      "id": "e4040d23-6ab8-4e0c-98b5-8c9f111bba26",
+      "date": "2026-09-22",
+      "jt_no": "6196",
+      "staff_id": "eaa0b3ba-72f7-4463-8148-ae21e1870569",
+      "branch_id": "b13",
+      "customer": "ADSTELLAR ADVERTISING SERVICES",
+      "location": "49 ALICANTE, CAINTA, RIZAL",
+      "type": "onsite",
+      "type_other": "",
+      "status": "success",
+      "status_note": "",
+      "created_at": "2026-09-22T05:12:51.13508+00:00",
+      "machine": "CREONS IPLUS I3200 SINGLE HEAD ECO SOL",
+      "serial_no": "G6KONJAJ0506",
+      "jt_url": "https://11128201.app.netsuite.com/app/common/search/searchresults.nl?searchtype=Case&Case_CASENUMBERtype=IS&Case_CASENUMBER=6196&detail=Case_CASENUMBER&detailname=6196"
+    },
+    {
+      "id": "0407a16a-30ed-45ee-a7e9-c9eb18183c3f",
+      "date": "2026-09-22",
+      "jt_no": "7522",
+      "staff_id": "f7a9a7a1-4b57-41b3-a920-8a190f7c3d56",
+      "branch_id": "b13",
+      "customer": "ERCL BUSINESS SOLUTIONS CO",
+      "location": "MARULAS VALENZUELA",
+      "type": "onsite",
+      "type_other": "",
+      "status": "success",
+      "status_note": "",
+      "created_at": "2026-09-22T01:26:22.907218+00:00",
+      "machine": "GRANDO DTF i3200 4 HEAD",
+      "serial_no": "GD604B10199",
+      "jt_url": "https://11128201.app.netsuite.com/app/common/search/searchresults.nl?searchtype=Case&Case_CASENUMBERtype=IS&Case_CASENUMBER=7522&detail=Case_CASENUMBER&detailname=7522"
+    },
+    {
+      "id": "be566204-2a06-4b6f-8caf-b455a1cdd65e",
+      "date": "2026-09-22",
+      "jt_no": "7617",
+      "staff_id": "c131cdf8-34fc-4e5b-a2cd-91024edd46c5",
+      "branch_id": "b13",
+      "customer": "HAVENZEN TRADING CO.",
+      "location": "QUEZON CITY",
+      "type": "onsite",
+      "type_other": "",
+      "status": "success",
+      "status_note": "",
+      "created_at": "2026-09-22T05:37:01.392027+00:00",
+      "machine": "MUTOH XPERJET XPJ-1341SR-P",
+      "serial_no": "KDSU000324",
+      "jt_url": "https://11128201.app.netsuite.com/app/common/search/searchresults.nl?searchtype=Case&Case_CASENUMBERtype=IS&Case_CASENUMBER=7617&detail=Case_CASENUMBER&detailname=7617"
+    },
+    {
+      "id": "eb98d150-f92f-43b4-8def-37c35378bd6e",
+      "date": "2026-09-22",
+      "jt_no": "7670",
+      "staff_id": "81069983-2505-46a4-9cb9-062c6126247a",
+      "branch_id": "b13",
+      "customer": "ANTBOX TRADING",
+      "location": "Las Piñas City",
+      "type": "onsite",
+      "type_other": "",
+      "status": "success",
+      "status_note": "",
+      "created_at": "2026-09-22T05:31:38.633257+00:00",
+      "machine": "Zoje ZJ-M3-S500-SF-X-LK2-V2",
+      "serial_no": "642A0001",
+      "jt_url": "https://11128201.app.netsuite.com/app/common/search/searchresults.nl?searchtype=Case&Case_CASENUMBERtype=IS&Case_CASENUMBER=7670&detail=Case_CASENUMBER&detailname=7670"
+    },
+    {
+      "id": "922dd49a-2359-4155-a10e-6f2f6b19656c",
+      "date": "2026-09-22",
+      "jt_no": "7585",
+      "staff_id": "413edb41-22a9-40c3-aefc-08be47fb8e48",
+      "branch_id": "b13",
+      "customer": "MR. WILMAR CUADRA",
+      "location": "PUROK 4 BRGY SANTIAGO KALYE 11 GENERAL TRIAS GENERAL TRIAS CAVITE",
+      "type": "onsite",
+      "type_other": "",
+      "status": "cancel",
+      "status_note": "cancelled by client",
+      "created_at": "2026-09-22T01:12:29.593681+00:00",
+      "machine": "MUTOH VALUEJET RJ-900X-U1 PRINTER",
+      "serial_no": "HB4W000383",
+      "jt_url": "https://11128201.app.netsuite.com/app/common/search/searchresults.nl?searchtype=Case&Case_CASENUMBERtype=IS&Case_CASENUMBER=7585&detail=Case_CASENUMBER&detailname=7585"
+    },
+    {
+      "id": "e08ffd5a-bcf7-49a8-beae-3f78af3ca7ab",
+      "date": "2026-09-23",
+      "jt_no": "",
+      "staff_id": "5a1463a8-ae2a-4301-ad57-131ba49e910b",
+      "branch_id": "b13",
+      "customer": "",
+      "location": "",
+      "type": "absent",
+      "type_other": "",
+      "status": "pending",
+      "status_note": "",
+      "created_at": "2026-09-23T02:55:00.700029+00:00",
+      "machine": "",
+      "serial_no": "",
+      "jt_url": ""
+    },
+    {
+      "id": "72cb4715-f712-4191-b3c7-b0273fa3af31",
+      "date": "2026-09-22",
+      "jt_no": "7637",
+      "staff_id": "464bbcd2-21e8-467d-81ae-ead6d2b771bc",
+      "branch_id": "b13",
+      "customer": "RUNOFF PRINTING SERVICES",
+      "location": "35 F. PIKE ST. BAGONG ILOG, BLUE BUILDING PASIG CITY METRO MANILA",
+      "type": "onsite",
+      "type_other": "",
+      "status": "success",
+      "status_note": "",
+      "created_at": "2026-09-22T08:08:49.720793+00:00",
+      "machine": "HOMER",
+      "serial_no": "#563",
+      "jt_url": "https://11128201.app.netsuite.com/app/common/search/searchresults.nl?searchtype=Case&Case_CASENUMBERtype=IS&Case_CASENUMBER=7637&detail=Case_CASENUMBER&detailname=7637"
+    },
+    {
+      "id": "7daca7fc-05a9-4514-93b8-1bb7b7bea7b1",
+      "date": "2026-09-23",
+      "jt_no": "",
+      "staff_id": "62d2e0b5-7a5a-4eef-af5a-c3399c010ebf",
+      "branch_id": "b13",
+      "customer": "",
+      "location": "",
+      "type": "leave",
+      "type_other": "",
+      "status": "pending",
+      "status_note": "",
+      "created_at": "2026-09-23T02:55:24.642194+00:00",
+      "machine": "",
+      "serial_no": "",
+      "jt_url": ""
+    },
+    {
+      "id": "8995646c-d91f-4353-bdb7-0de59bccc31d",
+      "date": "2026-09-23",
+      "jt_no": "7711",
+      "staff_id": "f7a9a7a1-4b57-41b3-a920-8a190f7c3d56",
+      "branch_id": "b13",
+      "customer": "4M PRINTING SIGNS SERVICES",
+      "location": "Odeon Mall, Manila City",
+      "type": "onsite",
+      "type_other": "",
+      "status": "cancel",
+      "status_note": "fd",
+      "created_at": "2026-09-23T05:49:01.995694+00:00",
+      "machine": "Grando DTF 4H #3",
+      "serial_no": "GD60420237458",
+      "jt_url": "https://11128201.app.netsuite.com/app/common/search/searchresults.nl?searchtype=Case&Case_CASENUMBERtype=IS&Case_CASENUMBER=7711&detail=Case_CASENUMBER&detailname=7711"
+    },
+    {
+      "id": "b4fd48e1-e18a-42b4-8b79-c999c8992e35",
+      "date": "2026-09-23",
+      "jt_no": "6728",
+      "staff_id": "2a9b8955-3934-40d0-9fda-f0d824606377",
+      "branch_id": "b13",
+      "customer": "JAEHA SPORTSWEAR MANUFACTURING",
+      "location": "2A Kapt. Sendong St. Barangka, Marikina City",
+      "type": "installation",
+      "type_other": "",
+      "status": "ongoing",
+      "status_note": "Please Proceed",
+      "created_at": "2026-09-23T05:39:58.498842+00:00",
+      "machine": "GRANDO DTF 2H",
+      "serial_no": "GD-602-DB0012-i3200",
+      "jt_url": "https://11128201.app.netsuite.com/app/common/search/searchresults.nl?searchtype=Case&Case_CASENUMBERtype=IS&Case_CASENUMBER=6728&detail=Case_CASENUMBER&detailname=6728"
+    },
+    {
+      "id": "36c703ba-b8bc-48ad-af2f-914514410129",
+      "date": "2026-09-22",
+      "jt_no": "7533",
+      "staff_id": "2a9b8955-3934-40d0-9fda-f0d824606377",
+      "branch_id": "b13",
+      "customer": "P.M.G PRINTING HOUSE",
+      "location": "470 HOLGADO BUILDING BRGY. TEJERO",
+      "type": "onsite",
+      "type_other": "",
+      "status": "success",
+      "status_note": "",
+      "created_at": "2026-09-22T01:23:00.176778+00:00",
+      "machine": "GRANDO DTF i3200 PRINTER - 4 HEAD",
+      "serial_no": "GD-604-BK0I4-I3200",
+      "jt_url": "https://11128201.app.netsuite.com/app/common/search/searchresults.nl?searchtype=Case&Case_CASENUMBERtype=IS&Case_CASENUMBER=7533&detail=Case_CASENUMBER&detailname=7533"
+    },
+    {
+      "id": "0e2b0ba5-90ad-443d-aa3b-b901bdd13a0f",
+      "date": "2026-09-22",
+      "jt_no": "7573",
+      "staff_id": "f7fa6c31-dc9d-4e0d-97c0-b021842a7fd9",
+      "branch_id": "b13",
+      "customer": "WLC PRINTING SERVICE",
+      "location": "CALOOCAN CITY",
+      "type": "onsite",
+      "type_other": "",
+      "status": "success",
+      "status_note": "",
+      "created_at": "2026-09-22T05:51:08.459864+00:00",
+      "machine": "MYJET 14PL 4 HEADS",
+      "serial_no": "GR20160083",
+      "jt_url": "https://11128201.app.netsuite.com/app/common/search/searchresults.nl?searchtype=Case&Case_CASENUMBERtype=IS&Case_CASENUMBER=7573&detail=Case_CASENUMBER&detailname=7573"
+    },
+    {
+      "id": "85b17c13-5b85-494e-955a-e90503ddc0f4",
+      "date": "2026-09-23",
+      "jt_no": "7573",
+      "staff_id": "f7fa6c31-dc9d-4e0d-97c0-b021842a7fd9",
+      "branch_id": "b13",
+      "customer": "WLC PRINTING SERVICE",
+      "location": "CALOOCAN",
+      "type": "onsite",
+      "type_other": "",
+      "status": "success",
+      "status_note": "",
+      "created_at": "2026-09-23T05:15:13.450467+00:00",
+      "machine": "MYJET 14PL 4 HEADS",
+      "serial_no": "GR20160083",
+      "jt_url": "https://11128201.app.netsuite.com/app/common/search/searchresults.nl?searchtype=Case&Case_CASENUMBERtype=IS&Case_CASENUMBER=7573&detail=Case_CASENUMBER&detailname=7573"
+    },
+    {
+      "id": "496b2df2-9f69-46c3-8a8a-aa5339439394",
+      "date": "2026-09-23",
+      "jt_no": "7637",
+      "staff_id": "ed5574ba-9d82-4d42-893a-93a4b947d448",
+      "branch_id": "b13",
+      "customer": "RUNOFF PRINTING SERVICES",
+      "location": "35 F. PIKE ST. BAGONG ILOG, BLUE BUILDING PASIG CITY METRO MANILA",
+      "type": "onsite",
+      "type_other": "",
+      "status": "success",
+      "status_note": "",
+      "created_at": "2026-09-23T05:47:15.183149+00:00",
+      "machine": "HOMER SUBLIMATION KYOCERA PRINTER (6FT) - HMR-1800SP",
+      "serial_no": "#563",
+      "jt_url": "https://11128201.app.netsuite.com/app/common/search/searchresults.nl?searchtype=Case&Case_CASENUMBERtype=IS&Case_CASENUMBER=7637&detail=Case_CASENUMBER&detailname=7637"
+    },
+    {
+      "id": "854d8e2b-3a4d-4b8d-a6b4-17cfdd048c6d",
+      "date": "2026-09-23",
+      "jt_no": "",
+      "staff_id": "dc645b6d-8c85-4ca3-8f8e-d470d2219a06",
+      "branch_id": "b13",
+      "customer": "ESPMI - Printhead Recovery and Flushing",
+      "location": "Makati City",
+      "type": "others",
+      "type_other": "Printhead Recovery and Flushing",
+      "status": "success",
+      "status_note": "",
+      "created_at": "2026-09-23T02:38:34.784047+00:00",
+      "machine": "",
+      "serial_no": "",
+      "jt_url": ""
+    },
+    {
+      "id": "1196043c-5299-49ae-b911-ef8c0b2f5191",
+      "date": "2026-09-23",
+      "jt_no": "7582",
+      "staff_id": "f83814a2-de96-4b4a-a166-debd1c4ca1ef",
+      "branch_id": "b13",
+      "customer": "MR. DENNIS GAJUDO",
+      "location": "1354-O EDSA BALINTAWAK, BARANGAY UNANG SIGAW QUEZON CITY",
+      "type": "onsite",
+      "type_other": "",
+      "status": "success",
+      "status_note": "",
+      "created_at": "2026-09-23T05:51:31.319476+00:00",
+      "machine": "CREONS A3 UV DTF HYBRID",
+      "serial_no": "26B09H0263WV",
+      "jt_url": "https://11128201.app.netsuite.com/app/common/search/searchresults.nl?searchtype=Case&Case_CASENUMBERtype=IS&Case_CASENUMBER=7582&detail=Case_CASENUMBER&detailname=7582"
+    },
+    {
+      "id": "14f50f9f-0fca-417c-8c08-93a928b90a4c",
+      "date": "2026-09-23",
+      "jt_no": "7645",
+      "staff_id": "c131cdf8-34fc-4e5b-a2cd-91024edd46c5",
+      "branch_id": "b13",
+      "customer": "LMMF CLOTHING SHOP",
+      "location": "SHOP 112 B. MORCILLA ST. STA ANA, PATEROS,",
+      "type": "onsite",
+      "type_other": "",
+      "status": "success",
+      "status_note": "",
+      "created_at": "2026-09-23T06:08:33.487456+00:00",
+      "machine": "MUTOH XPERJET XPJ-1341SR-P PRINTER",
+      "serial_no": "KD5U001016",
+      "jt_url": "https://11128201.app.netsuite.com/app/common/search/searchresults.nl?searchtype=Case&Case_CASENUMBERtype=IS&Case_CASENUMBER=7645&detail=Case_CASENUMBER&detailname=7645"
+    },
+    {
+      "id": "a27090ba-2232-43c5-950c-a8c509049485",
+      "date": "2026-09-23",
+      "jt_no": "7720",
+      "staff_id": "dc645b6d-8c85-4ca3-8f8e-d470d2219a06",
+      "branch_id": "b13",
+      "customer": "PRIMARY COLOR PRINTS-MAKATI",
+      "location": "2248 MARCONI ST. SAN ISIDRO MAKATI CITY METRO",
+      "type": "onsite",
+      "type_other": "",
+      "status": "success",
+      "status_note": "",
+      "created_at": "2026-09-23T05:55:56.780935+00:00",
+      "machine": "MYJET PLUS KONICA MINOLTA 512i PRINTER - 10.5FT",
+      "serial_no": "GR20230759",
+      "jt_url": "https://11128201.app.netsuite.com/app/common/search/searchresults.nl?searchtype=Case&Case_CASENUMBERtype=IS&Case_CASENUMBER=7720&detail=Case_CASENUMBER&detailname=7720"
+    },
+    {
+      "id": "492c1e7f-7a68-4ae4-97be-9f9bea43f068",
+      "date": "2026-09-23",
+      "jt_no": "7577",
+      "staff_id": "3292614d-cb70-4761-a1c5-4d8ebfd835c7",
+      "branch_id": "b13",
+      "customer": "CLAY JARS PRINT SHOP",
+      "location": "Concepcion 1 Marikina City",
+      "type": "onsite",
+      "type_other": "",
+      "status": "cancel",
+      "status_note": "sdsf",
+      "created_at": "2026-09-23T05:54:32.938783+00:00",
+      "machine": "GRAPHTEC CUTTER PLOTTER - CE8000-130",
+      "serial_no": "M509110611",
+      "jt_url": "https://11128201.app.netsuite.com/app/common/search/searchresults.nl?searchtype=Case&Case_CASENUMBERtype=IS&Case_CASENUMBER=7577&detail=Case_CASENUMBER&detailname=7577"
+    }
+  ],
+  "app_users": [
+    {
+      "id": "4f249391-7801-4c3e-aa08-78518b2a87b1",
+      "auth_id": "b406d5ba-fb36-40c0-a681-c8a8d2469d72",
+      "name": "John Trent Sioco",
+      "email": "esprint_johntrentsioco@yahoo.com",
+      "role": "senior_fse",
+      "branch_ids": [
+        "b1",
+        "b2",
+        "b3",
+        "b4",
+        "b5",
+        "b6",
+        "b7",
+        "b8",
+        "b9",
+        "b10",
+        "b11",
+        "b12",
+        "b13",
+        "b14",
+        "b15",
+        "b16",
+        "b17",
+        "b18",
+        "b19",
+        "b20"
+      ],
+      "is_active": true,
+      "is_approved": true,
+      "can_edit": false,
+      "main_branch_id": null,
+      "view_branch_ids": [
+        "b1",
+        "b2",
+        "b3",
+        "b4",
+        "b5",
+        "b6",
+        "b7",
+        "b8",
+        "b9",
+        "b10",
+        "b11",
+        "b12",
+        "b13",
+        "b14",
+        "b15",
+        "b16",
+        "b17",
+        "b18",
+        "b19",
+        "b20"
+      ]
+    },
+    {
+      "id": "6d0f7ceb-1b5c-4a1d-8ea3-a9a3eb0ef491",
+      "auth_id": "acc2d45f-fa82-481d-9a2d-c8740ac7bd6e",
+      "name": "Kevin Mendez",
+      "email": "espii.kevinn@gmail.com",
+      "role": "branch",
+      "branch_ids": [
+        "b14"
+      ],
+      "is_active": true,
+      "is_approved": true,
+      "can_edit": true,
+      "main_branch_id": null,
+      "view_branch_ids": []
+    },
+    {
+      "id": "a970d49d-e02f-4a63-b823-86020e537e5d",
+      "auth_id": "9463a70a-8125-4757-a0b3-b9f4524fb74d",
+      "name": "Danilo Carangan",
+      "email": "dan@esprintmedia.com",
+      "role": "admin",
+      "branch_ids": [],
+      "is_active": true,
+      "is_approved": true,
+      "can_edit": true,
+      "main_branch_id": null,
+      "view_branch_ids": []
+    },
+    {
+      "id": "7cf69bc5-64d2-408b-aeec-bf4162a90803",
+      "auth_id": "429c21d9-5c06-4ad8-8bbb-d29477fef875",
+      "name": "Eileen So Kua",
+      "email": "eileensokua@esprintmedia.com",
+      "role": "admin",
+      "branch_ids": [],
+      "is_active": true,
+      "is_approved": true,
+      "can_edit": true,
+      "main_branch_id": null,
+      "view_branch_ids": []
+    },
+    {
+      "id": "fef0f9d9-860c-4e1b-98f7-71ae8934794f",
+      "auth_id": "e91f46ea-8db0-47a9-9a9a-f1e7b8daf5cc",
+      "name": "Nicholson Sia",
+      "email": "esprint.nicholson@gmail.com",
+      "role": "branch",
+      "branch_ids": [
+        "b20"
+      ],
+      "is_active": true,
+      "is_approved": true,
+      "can_edit": true,
+      "main_branch_id": null,
+      "view_branch_ids": []
+    },
+    {
+      "id": "589e872b-f49f-453e-a616-47c152aa3f4c",
+      "auth_id": "24440067-265b-41f5-a436-b77f6fcf30a6",
+      "name": "Michael Tagupa",
+      "email": "espii.michaelt@gmail.com",
+      "role": "branch",
+      "branch_ids": [
+        "b3"
+      ],
+      "is_active": true,
+      "is_approved": true,
+      "can_edit": true,
+      "main_branch_id": null,
+      "view_branch_ids": []
+    },
+    {
+      "id": "4bde6671-c1f9-4210-94cf-8d52196c32c1",
+      "auth_id": "f3446d93-b7dc-4d16-9940-e3ed4f34de3a",
+      "name": "Paul Anthony Dabatian",
+      "email": "espii.paul@gmail.com",
+      "role": "branch",
+      "branch_ids": [
+        "b2"
+      ],
+      "is_active": true,
+      "is_approved": true,
+      "can_edit": true,
+      "main_branch_id": null,
+      "view_branch_ids": []
+    },
+    {
+      "id": "268ca137-f4b1-44be-a076-47e94f719063",
+      "auth_id": "5744c7a0-0f1a-4901-a6d6-95812c8a5f93",
+      "name": "Habel Basal",
+      "email": "espii.haber@gmail.com",
+      "role": "branch",
+      "branch_ids": [
+        "b10"
+      ],
+      "is_active": true,
+      "is_approved": true,
+      "can_edit": true,
+      "main_branch_id": null,
+      "view_branch_ids": []
+    },
+    {
+      "id": "78ca890e-31a0-4a4d-8944-abf7f461b584",
+      "auth_id": "6bf0ed8c-73fb-4ca7-9a94-4011585c2611",
+      "name": "Michael B. Almoite",
+      "email": "escgi.michael@gmail.com",
+      "role": "service_manager",
+      "branch_ids": [
+        "b15"
+      ],
+      "is_active": true,
+      "is_approved": true,
+      "can_edit": true,
+      "main_branch_id": "b15",
+      "view_branch_ids": []
+    },
+    {
+      "id": "3bd37003-31b6-4a2b-9ef8-3cb5ca07d2bc",
+      "auth_id": "83343a9e-10b1-4760-b87f-efb70fa62456",
+      "name": "Emmanuel Salamanes",
+      "email": "espmi.emmanuel@gmail.com",
+      "role": "junior_fse",
+      "branch_ids": [
+        "b13"
+      ],
+      "is_active": true,
+      "is_approved": true,
+      "can_edit": false,
+      "main_branch_id": null,
+      "view_branch_ids": [
+        "b13"
+      ]
+    },
+    {
+      "id": "f6428a57-e5a6-4159-97a1-74cce4ec79cd",
+      "auth_id": "b86a5a4e-f723-418d-8a37-adee04afbe45",
+      "name": "Dennis Natan",
+      "email": "esprint.natan@gmail.com",
+      "role": "senior_fse",
+      "branch_ids": [
+        "b1",
+        "b2",
+        "b3",
+        "b4",
+        "b5",
+        "b6",
+        "b7",
+        "b8",
+        "b9",
+        "b10",
+        "b11",
+        "b12",
+        "b13",
+        "b14",
+        "b15",
+        "b16",
+        "b17",
+        "b18",
+        "b19",
+        "b20"
+      ],
+      "is_active": true,
+      "is_approved": true,
+      "can_edit": false,
+      "main_branch_id": null,
+      "view_branch_ids": [
+        "b1",
+        "b2",
+        "b3",
+        "b4",
+        "b5",
+        "b6",
+        "b7",
+        "b8",
+        "b9",
+        "b10",
+        "b11",
+        "b12",
+        "b13",
+        "b14",
+        "b15",
+        "b16",
+        "b17",
+        "b18",
+        "b19",
+        "b20"
+      ]
+    },
+    {
+      "id": "47a24b8e-44cb-4351-90f1-5e62a7c63c6d",
+      "auth_id": "b788d6e3-4b57-482d-bf3f-27d1062c715b",
+      "name": "Gerardo banda Jr",
+      "email": "espmi.gerardo@gmail.com",
+      "role": "junior_fse",
+      "branch_ids": [
+        "b13"
+      ],
+      "is_active": true,
+      "is_approved": true,
+      "can_edit": false,
+      "main_branch_id": null,
+      "view_branch_ids": []
+    },
+    {
+      "id": "8b94f178-611b-4c97-a908-299bbab9958f",
+      "auth_id": "577c5d37-1729-434f-ac78-c5d103996dd3",
+      "name": "Venus Liloan",
+      "email": "espmi.mavenus@gmail.com",
+      "role": "service_coordinator",
+      "branch_ids": [
+        "b1",
+        "b2",
+        "b3",
+        "b4",
+        "b5",
+        "b6",
+        "b7",
+        "b8",
+        "b9",
+        "b10",
+        "b11",
+        "b12",
+        "b13",
+        "b14",
+        "b15",
+        "b16",
+        "b17",
+        "b18",
+        "b19",
+        "b20"
+      ],
+      "is_active": true,
+      "is_approved": true,
+      "can_edit": false,
+      "main_branch_id": null,
+      "view_branch_ids": [
+        "b1",
+        "b2",
+        "b3",
+        "b4",
+        "b5",
+        "b6",
+        "b7",
+        "b8",
+        "b9",
+        "b10",
+        "b11",
+        "b12",
+        "b13",
+        "b14",
+        "b15",
+        "b16",
+        "b17",
+        "b18",
+        "b19",
+        "b20"
+      ]
+    },
+    {
+      "id": "440c3571-8377-431e-a9b3-21d7bc70d399",
+      "auth_id": "9bff9249-a685-44e0-9273-8cb491e81b2f",
+      "name": "Angelie Tamondong",
+      "email": "espmi.angelie@gmail.com",
+      "role": "service_coordinator",
+      "branch_ids": [
+        "b1",
+        "b2",
+        "b3",
+        "b4",
+        "b5",
+        "b6",
+        "b7",
+        "b8",
+        "b9",
+        "b10",
+        "b11",
+        "b12",
+        "b13",
+        "b14",
+        "b15",
+        "b16",
+        "b17",
+        "b18",
+        "b19",
+        "b20"
+      ],
+      "is_active": true,
+      "is_approved": true,
+      "can_edit": false,
+      "main_branch_id": null,
+      "view_branch_ids": [
+        "b2",
+        "b3",
+        "b4",
+        "b5",
+        "b6",
+        "b7",
+        "b8",
+        "b9",
+        "b10",
+        "b11",
+        "b12",
+        "b13",
+        "b14",
+        "b15",
+        "b16",
+        "b17",
+        "b18",
+        "b19",
+        "b20",
+        "b1"
+      ]
+    },
+    {
+      "id": "4898eadc-6f62-4d95-8d02-e0e20c2e0eb7",
+      "auth_id": "4d650ed3-739b-4734-81ec-fa37734413da",
+      "name": "Arnold Rioja",
+      "email": "arnold@esprintmedia.com",
+      "role": "admin",
+      "branch_ids": [],
+      "is_active": true,
+      "is_approved": true,
+      "can_edit": true,
+      "main_branch_id": null,
+      "view_branch_ids": []
+    },
+    {
+      "id": "ade8a9b0-8606-48b0-a1dd-95b3600169e0",
+      "auth_id": "e58fce30-da57-4011-87be-315c6f46c075",
+      "name": "Cristian Mike Recentes",
+      "email": "esprint.cristianrecentes@gmail.com",
+      "role": "senior_fse",
+      "branch_ids": [
+        "b13"
+      ],
+      "is_active": true,
+      "is_approved": true,
+      "can_edit": false,
+      "main_branch_id": null,
+      "view_branch_ids": [
+        "b13"
+      ]
+    },
+    {
+      "id": "c77a75d5-5188-4f5c-81cd-7835ea934448",
+      "auth_id": "ef0a34db-6c91-4afc-858b-3b404890d22a",
+      "name": "Gerald Sacuan",
+      "email": "espii.geralds@gmail.com",
+      "role": "service_manager",
+      "branch_ids": [
+        "b7",
+        "b2",
+        "b3",
+        "b14",
+        "b20"
+      ],
+      "is_active": true,
+      "is_approved": true,
+      "can_edit": true,
+      "main_branch_id": "b7",
+      "view_branch_ids": [
+        "b2",
+        "b3",
+        "b14",
+        "b20"
+      ]
+    },
+    {
+      "id": "b2cd7a9a-2e65-4297-a137-7c3f1dec7fea",
+      "auth_id": "806561cf-73b1-4764-8425-15238996948f",
+      "name": "Jessriel Calvo",
+      "email": "esprint.jessrielcalvo@gmail.com",
+      "role": "service_manager",
+      "branch_ids": [
+        "b8",
+        "b1",
+        "b11",
+        "b18"
+      ],
+      "is_active": true,
+      "is_approved": true,
+      "can_edit": true,
+      "main_branch_id": "b8",
+      "view_branch_ids": [
+        "b1",
+        "b11",
+        "b18"
+      ]
+    },
+    {
+      "id": "06fd29df-a7b6-458d-b1e1-c553898163a9",
+      "auth_id": "ff7f1ecb-2679-4286-8d59-ddc633b59dc4",
+      "name": "Don Alexander Yumang",
+      "email": "esprint_donalexander@yahoo.com",
+      "role": "senior_fse",
+      "branch_ids": [
+        "b1",
+        "b2",
+        "b3",
+        "b4",
+        "b5",
+        "b6",
+        "b7",
+        "b8",
+        "b9",
+        "b10",
+        "b11",
+        "b12",
+        "b13",
+        "b14",
+        "b15",
+        "b16",
+        "b17",
+        "b18",
+        "b19",
+        "b20"
+      ],
+      "is_active": true,
+      "is_approved": true,
+      "can_edit": false,
+      "main_branch_id": null,
+      "view_branch_ids": [
+        "b1",
+        "b2",
+        "b3",
+        "b4",
+        "b5",
+        "b6",
+        "b7",
+        "b8",
+        "b9",
+        "b10",
+        "b11",
+        "b12",
+        "b13",
+        "b14",
+        "b15",
+        "b16",
+        "b17",
+        "b18",
+        "b19",
+        "b20"
+      ]
+    },
+    {
+      "id": "be5dbea1-ac79-49ce-bd14-9309d074f364",
+      "auth_id": "7102c5e7-736b-4b83-9122-3d70a9f03aba",
+      "name": "June Philip Garcia",
+      "email": "esprint.philipgarcia@gmail.com",
+      "role": "service_coordinator",
+      "branch_ids": [
+        "b1",
+        "b2",
+        "b3",
+        "b4",
+        "b5",
+        "b6",
+        "b7",
+        "b8",
+        "b9",
+        "b10",
+        "b11",
+        "b12",
+        "b13",
+        "b14",
+        "b15",
+        "b16",
+        "b17",
+        "b18",
+        "b19",
+        "b20"
+      ],
+      "is_active": true,
+      "is_approved": true,
+      "can_edit": false,
+      "main_branch_id": null,
+      "view_branch_ids": [
+        "b1",
+        "b2",
+        "b3",
+        "b4",
+        "b5",
+        "b6",
+        "b7",
+        "b8",
+        "b9",
+        "b10",
+        "b11",
+        "b12",
+        "b13",
+        "b14",
+        "b15",
+        "b16",
+        "b17",
+        "b18",
+        "b19",
+        "b20"
+      ]
+    },
+    {
+      "id": "71aecae4-ef4c-4772-8dcd-4daea46cc80f",
+      "auth_id": "8975c5f0-262a-487a-aac6-1a17f8c09903",
+      "name": "Limwel De Chavez",
+      "email": "espmi.limwel@gmail.com",
+      "role": "service_manager",
+      "branch_ids": [
+        "b4",
+        "b12",
+        "b16",
+        "b5",
+        "b1",
+        "b2",
+        "b3",
+        "b6",
+        "b7",
+        "b8",
+        "b9",
+        "b10",
+        "b11",
+        "b13",
+        "b14",
+        "b15",
+        "b17",
+        "b18",
+        "b19",
+        "b20"
+      ],
+      "is_active": true,
+      "is_approved": true,
+      "can_edit": true,
+      "main_branch_id": "b4",
+      "view_branch_ids": []
+    },
+    {
+      "id": "98a1a3d1-50fa-4d52-8fe6-878304c37a34",
+      "auth_id": "c0eea013-89b7-484a-a194-c5d78a700fe8",
+      "name": "John Darel Coliflores",
+      "email": "esprint.darelcoliflores@gmail.com",
+      "role": "service_manager",
+      "branch_ids": [
+        "b18"
+      ],
+      "is_active": true,
+      "is_approved": true,
+      "can_edit": true,
+      "main_branch_id": "b18",
+      "view_branch_ids": []
+    },
+    {
+      "id": "f8722779-2bb1-4efa-8a54-2295952bb8be",
+      "auth_id": "3f842c75-d5ef-4718-ad3a-426d65f97a3e",
+      "name": "Ricky Eina",
+      "email": "esprint.rickyeina@gmail.com",
+      "role": "service_manager",
+      "branch_ids": [
+        "b13",
+        "b5",
+        "b6",
+        "b12",
+        "b15",
+        "b16",
+        "b17",
+        "b1",
+        "b2",
+        "b3",
+        "b7",
+        "b8",
+        "b9",
+        "b10",
+        "b11",
+        "b14",
+        "b18",
+        "b19",
+        "b20",
+        "b4"
+      ],
+      "is_active": true,
+      "is_approved": true,
+      "can_edit": true,
+      "main_branch_id": "b13",
+      "view_branch_ids": [
+        "b4"
+      ]
+    },
+    {
+      "id": "e960cf70-2d84-486d-bd31-b173b7cd8451",
+      "auth_id": "1e06c19b-b341-463b-96a9-5d1947c278e3",
+      "name": "Michael John Oliver Principe",
+      "email": "esprint_principe@yahoo.com",
+      "role": "service_manager",
+      "branch_ids": [
+        "b1",
+        "b11"
+      ],
+      "is_active": true,
+      "is_approved": true,
+      "can_edit": true,
+      "main_branch_id": "b1",
+      "view_branch_ids": []
+    },
+    {
+      "id": "4b677058-2706-46e6-91ef-c5d258627493",
+      "auth_id": "f674526b-ee54-4522-be48-9ccfbb6473fd",
+      "name": "Jeremy Natcher",
+      "email": "espmi.jeremy@gmail.com",
+      "role": "junior_fse",
+      "branch_ids": [
+        "b13"
+      ],
+      "is_active": true,
+      "is_approved": true,
+      "can_edit": false,
+      "main_branch_id": null,
+      "view_branch_ids": []
+    },
+    {
+      "id": "dd4804e8-bcfd-4f0b-8ccc-1f0796fb546e",
+      "auth_id": "641f0eab-d88f-4efc-bcb0-890ad2572749",
+      "name": "Adrian Andrei Munsayac",
+      "email": "espmi.adrianandrei@gmail.com",
+      "role": "junior_fse",
+      "branch_ids": [
+        "b13"
+      ],
+      "is_active": true,
+      "is_approved": true,
+      "can_edit": false,
+      "main_branch_id": null,
+      "view_branch_ids": []
+    },
+    {
+      "id": "829bd91e-8e54-44e6-a064-cd028e213626",
+      "auth_id": "b1639f52-9cd2-41fd-956d-d622ccad8dc5",
+      "name": "Marvin Jay Templa",
+      "email": "marvinjayt@esprint.com",
+      "role": "senior_fse",
+      "branch_ids": [
+        "b13"
+      ],
+      "is_active": true,
+      "is_approved": true,
+      "can_edit": false,
+      "main_branch_id": null,
+      "view_branch_ids": []
+    },
+    {
+      "id": "3d9ca389-4d7b-4c80-832f-66dc221efa49",
+      "auth_id": "42bc3db5-9637-4788-bcd6-fc47c722c606",
+      "name": "Jay Macabiog",
+      "email": "espmi.jay@gmail.com",
+      "role": "senior_fse",
+      "branch_ids": [
+        "b13"
+      ],
+      "is_active": true,
+      "is_approved": true,
+      "can_edit": false,
+      "main_branch_id": null,
+      "view_branch_ids": []
+    },
+    {
+      "id": "02927e28-d429-449b-8c3f-90d5641ff87c",
+      "auth_id": "ca5c6311-7f81-447d-9b07-2052a644a1a4",
+      "name": "Manuel Villanueva",
+      "email": "espmi.manuelv@gmail.com",
+      "role": "junior_fse",
+      "branch_ids": [
+        "b13"
+      ],
+      "is_active": true,
+      "is_approved": true,
+      "can_edit": false,
+      "main_branch_id": null,
+      "view_branch_ids": []
+    },
+    {
+      "id": "6bc4ce0e-595d-4a5b-9acf-328ef51f845d",
+      "auth_id": "ce1defcf-d19d-4c4c-b5a9-17f5752664e7",
+      "name": "Martin Genabe Jr",
+      "email": "espii.junjun@gmail.com",
+      "role": "service_manager",
+      "branch_ids": [
+        "b9",
+        "b10",
+        "b19"
+      ],
+      "is_active": true,
+      "is_approved": true,
+      "can_edit": true,
+      "main_branch_id": "b9",
+      "view_branch_ids": []
+    },
+    {
+      "id": "be4e0584-dca9-40a8-be90-d4b0ebed9578",
+      "auth_id": "0e10b11d-700a-4b99-ab68-4b1b2a982f57",
+      "name": "Kenneth Cacho",
+      "email": "espmi.kenneth@gmail.com",
+      "role": "senior_fse",
+      "branch_ids": [
+        "b13"
+      ],
+      "is_active": true,
+      "is_approved": true,
+      "can_edit": false,
+      "main_branch_id": null,
+      "view_branch_ids": []
+    },
+    {
+      "id": "9977c437-7d05-4472-9d4e-ba0d2f288d7c",
+      "auth_id": "a0ba1b0b-99a1-4d77-9288-319c0a31babd",
+      "name": "Cyron James Reyes",
+      "email": "espmi.cyronjames@gmail.com",
+      "role": "junior_fse",
+      "branch_ids": [
+        "b13"
+      ],
+      "is_active": true,
+      "is_approved": true,
+      "can_edit": false,
+      "main_branch_id": null,
+      "view_branch_ids": []
+    },
+    {
+      "id": "bb44ddb1-63ca-44d7-8e66-0aa18fb3bcc6",
+      "auth_id": "109d978c-53a4-4772-b8e4-f851558ecf86",
+      "name": "Ralph Diaz",
+      "email": "espmi.ralphdominic@gmail.com",
+      "role": "senior_fse",
+      "branch_ids": [
+        "b13"
+      ],
+      "is_active": true,
+      "is_approved": true,
+      "can_edit": false,
+      "main_branch_id": null,
+      "view_branch_ids": []
+    },
+    {
+      "id": "610abe18-76bd-4723-aeb2-a838f836a160",
+      "auth_id": "b1339e2e-4fbb-49f3-abad-7a8b32a2e7bd",
+      "name": "Mernhad Vic Cerujano",
+      "email": "espmi.mernhad@gmail.com",
+      "role": "junior_fse",
+      "branch_ids": [
+        "b13"
+      ],
+      "is_active": true,
+      "is_approved": true,
+      "can_edit": false,
+      "main_branch_id": null,
+      "view_branch_ids": []
+    },
+    {
+      "id": "8393793a-3323-48cf-9af3-273e6e01232d",
+      "auth_id": "dbdd68cf-b418-45fa-9b54-235098a62520",
+      "name": "Jonh Rowel Vergel de Dios",
+      "email": "espmi.jonhrowel@gmail.com",
+      "role": "junior_fse",
+      "branch_ids": [
+        "b13"
+      ],
+      "is_active": true,
+      "is_approved": true,
+      "can_edit": false,
+      "main_branch_id": null,
+      "view_branch_ids": []
+    },
+    {
+      "id": "41057135-06f6-4d59-9443-2552ae2265d9",
+      "auth_id": "2851bb07-e7ae-466c-8f49-7eadbf31e14f",
+      "name": "Arianne Espinosa",
+      "email": "espmi.ariane@gmail.com",
+      "role": "service_coordinator",
+      "branch_ids": [
+        "b1",
+        "b2",
+        "b3",
+        "b4",
+        "b5",
+        "b6",
+        "b7",
+        "b8",
+        "b9",
+        "b10",
+        "b11",
+        "b12",
+        "b13",
+        "b14",
+        "b15",
+        "b16",
+        "b17",
+        "b18",
+        "b19",
+        "b20"
+      ],
+      "is_active": true,
+      "is_approved": true,
+      "can_edit": false,
+      "main_branch_id": null,
+      "view_branch_ids": [
+        "b1",
+        "b2",
+        "b3",
+        "b4",
+        "b5",
+        "b6",
+        "b7",
+        "b8",
+        "b9",
+        "b10",
+        "b11",
+        "b12",
+        "b13",
+        "b14",
+        "b15",
+        "b16",
+        "b17",
+        "b18",
+        "b19",
+        "b20"
+      ]
+    },
+    {
+      "id": "bd9aa1d3-12c4-4a3b-98de-d52f479714e0",
+      "auth_id": "63e93159-bb34-4692-a69e-c510ed73df12",
+      "name": "Mark Ranssel Atipon",
+      "email": "espmi.markranssel@gmail.com",
+      "role": "junior_fse",
+      "branch_ids": [
+        "b13"
+      ],
+      "is_active": true,
+      "is_approved": true,
+      "can_edit": false,
+      "main_branch_id": null,
+      "view_branch_ids": []
+    },
+    {
+      "id": "1c81a27f-4530-40e9-8621-5638a9f7d321",
+      "auth_id": "cfc05f56-70b9-4500-8e76-e9e6d0be35fb",
+      "name": "Ramilito Dave Phua",
+      "email": "esprint.ramilitodavephua@gmail.com",
+      "role": "junior_fse",
+      "branch_ids": [
+        "b13"
+      ],
+      "is_active": true,
+      "is_approved": true,
+      "can_edit": false,
+      "main_branch_id": null,
+      "view_branch_ids": []
+    },
+    {
+      "id": "f8a9f7c1-112f-421f-9bfa-e7236425dd92",
+      "auth_id": "8ef080fd-d663-4d4a-926d-189d486c528b",
+      "name": "Airon de Ocampo",
+      "email": "espmi.airon@gmail.com",
+      "role": "junior_fse",
+      "branch_ids": [
+        "b13"
+      ],
+      "is_active": true,
+      "is_approved": true,
+      "can_edit": false,
+      "main_branch_id": null,
+      "view_branch_ids": []
+    },
+    {
+      "id": "0482e8e5-f28f-4318-834f-cefa4368fbbc",
+      "auth_id": "f4e6069f-b041-4884-a106-eb5c72e409f3",
+      "name": "Jhon Mark Borreros",
+      "email": "esprint.jhonmarkborreros@gmail.com",
+      "role": "senior_fse",
+      "branch_ids": [
+        "b13"
+      ],
+      "is_active": true,
+      "is_approved": true,
+      "can_edit": false,
+      "main_branch_id": null,
+      "view_branch_ids": []
+    },
+    {
+      "id": "07f750a6-2e7e-419c-97cc-48e9a63289ac",
+      "auth_id": "7214ee45-fd89-4b15-8b4c-595d373996a0",
+      "name": "Almuhaimen Pakong",
+      "email": "al@esprint.com",
+      "role": "senior_fse",
+      "branch_ids": [
+        "b9"
+      ],
+      "is_active": true,
+      "is_approved": true,
+      "can_edit": false,
+      "main_branch_id": null,
+      "view_branch_ids": []
+    },
+    {
+      "id": "6db33479-1bc9-41e1-a2a0-d5f0f314bfd3",
+      "auth_id": "e9300ab1-a927-4a6a-b7a6-8f4ba022adc2",
+      "name": "Mohaimin Masanting",
+      "email": "espii.mohaimin@gmail.com",
+      "role": "junior_fse",
+      "branch_ids": [
+        "b9"
+      ],
+      "is_active": true,
+      "is_approved": true,
+      "can_edit": false,
+      "main_branch_id": null,
+      "view_branch_ids": []
+    },
+    {
+      "id": "88117f96-bbb9-47bd-80ef-1d0eb6f9116b",
+      "auth_id": "9f981d18-cca6-47f6-ad2b-6857eb01105a",
+      "name": "George Constantine Abalde",
+      "email": "apsi.george@gmail.com",
+      "role": "junior_fse",
+      "branch_ids": [
+        "b9"
+      ],
+      "is_active": true,
+      "is_approved": true,
+      "can_edit": false,
+      "main_branch_id": null,
+      "view_branch_ids": []
+    },
+    {
+      "id": "83351725-68e0-4384-8585-c19c711f7d24",
+      "auth_id": "3f829415-bcd9-4e69-b09a-e377fa0aace4",
+      "name": "Jesus Tandoc Jr",
+      "email": "espii.jesustandoc@gmail.com",
+      "role": "junior_fse",
+      "branch_ids": [
+        "b19"
+      ],
+      "is_active": true,
+      "is_approved": true,
+      "can_edit": false,
+      "main_branch_id": null,
+      "view_branch_ids": []
+    },
+    {
+      "id": "16b940ac-686a-4925-ada4-a459c54e692f",
+      "auth_id": "3fce8214-1c06-4c37-b3f8-d26ec1623ab5",
+      "name": "Christian Dave Taypin",
+      "email": "espii.christiandave@gmail.com",
+      "role": "senior_fse",
+      "branch_ids": [
+        "b9"
+      ],
+      "is_active": true,
+      "is_approved": true,
+      "can_edit": false,
+      "main_branch_id": null,
+      "view_branch_ids": []
+    },
+    {
+      "id": "edc252a7-877c-4e50-9e66-e45a2177a7e0",
+      "auth_id": "1d9f9000-6442-4f53-91a8-80b439c032d6",
+      "name": "Francis Dominic P Manibad",
+      "email": "fmanibad@esprint.com",
+      "role": "trainee",
+      "branch_ids": [
+        "b9"
+      ],
+      "is_active": true,
+      "is_approved": true,
+      "can_edit": false,
+      "main_branch_id": null,
+      "view_branch_ids": []
+    },
+    {
+      "id": "0e8cc544-5dbf-498a-9a9d-0b703320c747",
+      "auth_id": "7e9373ba-1230-4eb7-b81b-6a34b7d232c8",
+      "name": "Mariel Ariego",
+      "email": "esprint.marielariego@gmail.com",
+      "role": "senior_fse",
+      "branch_ids": [
+        "b10"
+      ],
+      "is_active": true,
+      "is_approved": true,
+      "can_edit": false,
+      "main_branch_id": null,
+      "view_branch_ids": []
+    },
+    {
+      "id": "9d126fb6-5971-49fb-8237-564840c40b1f",
+      "auth_id": "2ad2cacb-6919-49da-b01c-a4b01c679ec3",
+      "name": "Dyve Cajss",
+      "email": "espii.dyvecajes@gmail.com",
+      "role": "junior_fse",
+      "branch_ids": [
+        "b9"
+      ],
+      "is_active": true,
+      "is_approved": true,
+      "can_edit": false,
+      "main_branch_id": null,
+      "view_branch_ids": []
+    },
+    {
+      "id": "50e5f14e-9070-464d-b295-f294824761fe",
+      "auth_id": "e5063766-4543-440c-b048-2340d011ce39",
+      "name": "Bryan Jeric Cabiling",
+      "email": "espmi.bryanjeric@gmail.com",
+      "role": "junior_fse",
+      "branch_ids": [
+        "b13"
+      ],
+      "is_active": true,
+      "is_approved": true,
+      "can_edit": false,
+      "main_branch_id": null,
+      "view_branch_ids": []
+    },
+    {
+      "id": "9d17d813-00ae-4dae-9e1a-8911c45490df",
+      "auth_id": "232dc79c-4cb6-4164-ad26-914ae8ac5026",
+      "name": "Christephen Tan Jr",
+      "email": "espmi.christephentan@gmail.com",
+      "role": "junior_fse",
+      "branch_ids": [
+        "b13"
+      ],
+      "is_active": true,
+      "is_approved": true,
+      "can_edit": false,
+      "main_branch_id": null,
+      "view_branch_ids": []
+    },
+    {
+      "id": "703d5f88-5323-468a-8a7e-fd9d39f6919f",
+      "auth_id": "e67f1f59-e3c0-46cc-948f-a87edb4c4040",
+      "name": "Earl Jhonel Pallaya",
+      "email": "esprint.earlpallaya@gmail.com",
+      "role": "senior_fse",
+      "branch_ids": [
+        "b9"
+      ],
+      "is_active": true,
+      "is_approved": true,
+      "can_edit": false,
+      "main_branch_id": null,
+      "view_branch_ids": []
+    },
+    {
+      "id": "ce2b4dc1-0a2a-4473-88b4-d7789017a1cd",
+      "auth_id": "96c987ae-3fc6-40a5-b16a-b01d3db6da79",
+      "name": "Jefrey Diagbel",
+      "email": "esprint.diagbel@gmail.com",
+      "role": "senior_fse",
+      "branch_ids": [
+        "b13"
+      ],
+      "is_active": true,
+      "is_approved": true,
+      "can_edit": false,
+      "main_branch_id": null,
+      "view_branch_ids": []
+    },
+    {
+      "id": "89166f7f-b134-4c3f-b84b-d2a462befbdd",
+      "auth_id": "ba6ebbdd-6a55-417f-ad87-7afffda8a452",
+      "name": "Jerick Montillana",
+      "email": "esprint.jerickmontillana@gmail.com",
+      "role": "senior_fse",
+      "branch_ids": [
+        "b13"
+      ],
+      "is_active": true,
+      "is_approved": true,
+      "can_edit": true,
+      "main_branch_id": null,
+      "view_branch_ids": []
+    },
+    {
+      "id": "6d7e025c-61ac-4e09-ae09-da41f6e78197",
+      "auth_id": "4c05babf-bd6e-4d46-8b51-729113f529f8",
+      "name": "Jovanie Buya",
+      "email": "espii.jovanie@gmail.com",
+      "role": "junior_fse",
+      "branch_ids": [
+        "b10"
+      ],
+      "is_active": true,
+      "is_approved": true,
+      "can_edit": false,
+      "main_branch_id": null,
+      "view_branch_ids": []
+    },
+    {
+      "id": "01288b0e-3fd8-4b73-b92f-3a2d6aeb98e4",
+      "auth_id": "84a36580-fec9-4d6d-b321-c76f072164e1",
+      "name": "Mark Kevin Rioja",
+      "email": "espmi.kevin@gmail.com",
+      "role": "senior_fse",
+      "branch_ids": [
+        "b13"
+      ],
+      "is_active": true,
+      "is_approved": true,
+      "can_edit": false,
+      "main_branch_id": null,
+      "view_branch_ids": []
+    },
+    {
+      "id": "12d4b065-a1d1-4a1a-9e16-562c42aa8077",
+      "auth_id": "c0ca138a-6cb3-4916-9873-98563d828b94",
+      "name": "Sydon Paulo Almeida",
+      "email": "esprint.ssyydon@gmail.com",
+      "role": "senior_fse",
+      "branch_ids": [
+        "b13"
+      ],
+      "is_active": true,
+      "is_approved": true,
+      "can_edit": false,
+      "main_branch_id": null,
+      "view_branch_ids": []
+    },
+    {
+      "id": "64e7163b-3407-405d-94d2-34f43124b278",
+      "auth_id": "4d16d045-27f3-4c3d-bf5f-9f1fad9e67de",
+      "name": "Rio Balberde",
+      "email": "espmi.rior@gmail.com",
+      "role": "junior_fse",
+      "branch_ids": [
+        "b13"
+      ],
+      "is_active": true,
+      "is_approved": true,
+      "can_edit": false,
+      "main_branch_id": null,
+      "view_branch_ids": []
+    },
+    {
+      "id": "14400c8d-1567-4c64-81c4-ef06c3282c3e",
+      "auth_id": "b3a605b7-9df3-4547-8d4c-4edc64bf858f",
+      "name": "Park Johncel Cosino",
+      "email": "espmi.park@gmail.com",
+      "role": "junior_fse",
+      "branch_ids": [
+        "b13"
+      ],
+      "is_active": true,
+      "is_approved": true,
+      "can_edit": false,
+      "main_branch_id": null,
+      "view_branch_ids": []
+    },
+    {
+      "id": "e4f1461f-910b-407b-8eb5-2cea441db57f",
+      "auth_id": "10f774ef-0d68-4587-83bb-315636cd6d54",
+      "name": "Michael Pulgo",
+      "email": "esprintmichaelpulgo@gmail.com",
+      "role": "senior_fse",
+      "branch_ids": [
+        "b8"
+      ],
+      "is_active": true,
+      "is_approved": true,
+      "can_edit": false,
+      "main_branch_id": null,
+      "view_branch_ids": []
+    },
+    {
+      "id": "e6025758-adb3-414f-91a9-0f8f2fadb703",
+      "auth_id": "c7442504-1e52-41c6-a723-e183dc5d8df0",
+      "name": "Mark  Obnimaga",
+      "email": "espii.markobnimaga@gmail.com",
+      "role": "senior_fse",
+      "branch_ids": [
+        "b9"
+      ],
+      "is_active": true,
+      "is_approved": true,
+      "can_edit": false,
+      "main_branch_id": null,
+      "view_branch_ids": []
+    },
+    {
+      "id": "deb6e916-51e3-4af0-ad46-609d619fb513",
+      "auth_id": "459ac6ce-9855-4658-8b6e-a48509e34741",
+      "name": "Juan Carlos Roma",
+      "email": "esprint.juancarlos@gmail.com",
+      "role": "senior_fse",
+      "branch_ids": [
+        "b13"
+      ],
+      "is_active": true,
+      "is_approved": true,
+      "can_edit": false,
+      "main_branch_id": null,
+      "view_branch_ids": []
+    },
+    {
+      "id": "460347e0-7233-4357-9f6f-8ea4d678cc15",
+      "auth_id": "6c47fa8d-641d-4229-ab65-d91cd49eae1d",
+      "name": "Jezreel Rejas",
+      "email": "espmi.jezreel@gmail.com",
+      "role": "junior_fse",
+      "branch_ids": [
+        "b13"
+      ],
+      "is_active": true,
+      "is_approved": true,
+      "can_edit": false,
+      "main_branch_id": null,
+      "view_branch_ids": []
+    },
+    {
+      "id": "345226f6-45f5-4816-af25-49b3c5ccdfa7",
+      "auth_id": "f59b76c0-3f05-45a7-994d-eb7c3bb234d6",
+      "name": "Rigel Cacho",
+      "email": "espmi.rigel@gmail.com",
+      "role": "senior_fse",
+      "branch_ids": [
+        "b13"
+      ],
+      "is_active": true,
+      "is_approved": true,
+      "can_edit": false,
+      "main_branch_id": null,
+      "view_branch_ids": []
+    },
+    {
+      "id": "fe52ccb4-653d-4407-9f98-7e6661312f7c",
+      "auth_id": "3bd1e5ee-d023-4ed4-b8d6-b706647ef4c9",
+      "name": "Jella Maglalang",
+      "email": "espmi.jella@gmail.com",
+      "role": "senior_fse",
+      "branch_ids": [
+        "b13"
+      ],
+      "is_active": true,
+      "is_approved": true,
+      "can_edit": false,
+      "main_branch_id": null,
+      "view_branch_ids": []
+    },
+    {
+      "id": "6dd3054c-a679-4135-9777-3e21b27138cb",
+      "auth_id": "c7aaec55-f6f8-4a26-9cb9-f036b9ca7d85",
+      "name": "Peter Velarde",
+      "email": "esprint.petervelarde@gmail.com",
+      "role": "senior_fse",
+      "branch_ids": [
+        "b13"
+      ],
+      "is_active": true,
+      "is_approved": true,
+      "can_edit": false,
+      "main_branch_id": null,
+      "view_branch_ids": []
+    },
+    {
+      "id": "e6958fe2-51d4-4e38-b3c6-e0f98c2341f3",
+      "auth_id": "7da54deb-0ef4-41d0-b850-8e73e8f841f0",
+      "name": "Jerick Lotino",
+      "email": "espmi.jericklotino@gmail.com",
+      "role": "senior_fse",
+      "branch_ids": [
+        "b13"
+      ],
+      "is_active": true,
+      "is_approved": true,
+      "can_edit": false,
+      "main_branch_id": null,
+      "view_branch_ids": []
+    },
+    {
+      "id": "3357a144-0cd0-4a9a-a685-4e22b64ec036",
+      "auth_id": "352ce849-97a3-4027-be92-01940e39e93f",
+      "name": "Mark Ricjohn Caraan",
+      "email": "markricjohn@esprint.com",
+      "role": "junior_fse",
+      "branch_ids": [
+        "b13"
+      ],
+      "is_active": true,
+      "is_approved": true,
+      "can_edit": false,
+      "main_branch_id": null,
+      "view_branch_ids": []
+    },
+    {
+      "id": "e072972b-0d1e-47f8-a69a-9fa33e282eb4",
+      "auth_id": "ac38dfef-51db-4895-ab56-3468f82c3cef",
+      "name": "Christian Encinas",
+      "email": "espmi.christianencinas@gmail.com",
+      "role": "junior_fse",
+      "branch_ids": [
+        "b13"
+      ],
+      "is_active": true,
+      "is_approved": true,
+      "can_edit": false,
+      "main_branch_id": null,
+      "view_branch_ids": []
+    },
+    {
+      "id": "af62ac1b-1341-4889-bd4f-9b4bce511064",
+      "auth_id": "22580b0e-141b-4be9-ba4d-4707067f8b99",
+      "name": "Jan Philix Vicente",
+      "email": "espmi.janphilixvicente@gmail.com",
+      "role": "junior_fse",
+      "branch_ids": [
+        "b13"
+      ],
+      "is_active": true,
+      "is_approved": true,
+      "can_edit": false,
+      "main_branch_id": null,
+      "view_branch_ids": []
+    },
+    {
+      "id": "a529fa97-8546-492d-89c4-ef744274db3c",
+      "auth_id": "2479bf14-aa20-41ad-abae-66a18cf1aaad",
+      "name": "CHARLIE CABANTING",
+      "email": "escgi.charlie@gmail.com",
+      "role": "trainee",
+      "branch_ids": [
+        "b12"
+      ],
+      "is_active": true,
+      "is_approved": true,
+      "can_edit": false,
+      "main_branch_id": null,
+      "view_branch_ids": []
+    },
+    {
+      "id": "f0e89399-90a9-4ce8-bc01-886fb40b4347",
+      "auth_id": "5aa99ff3-b7e8-4f3f-9246-1c19c884f4ce",
+      "name": "Jhonny Saluta",
+      "email": "jhonny@esprint.com",
+      "role": "trainee",
+      "branch_ids": [
+        "b13"
+      ],
+      "is_active": true,
+      "is_approved": true,
+      "can_edit": false,
+      "main_branch_id": null,
+      "view_branch_ids": []
+    },
+    {
+      "id": "3ef26963-f35e-4d66-9abc-9c44fe09a26b",
+      "auth_id": "fd8347c8-6f39-4b07-9883-693fb2e6cb4c",
+      "name": "Ronie Talabucon",
+      "email": "espmi.ronie@gmail.com",
+      "role": "junior_fse",
+      "branch_ids": [
+        "b13"
+      ],
+      "is_active": true,
+      "is_approved": true,
+      "can_edit": false,
+      "main_branch_id": null,
+      "view_branch_ids": []
+    },
+    {
+      "id": "3ae40671-7cc0-442f-9271-46b8213c6ff1",
+      "auth_id": "22015689-1d91-4fa8-8ca0-add8b88f14d8",
+      "name": "Jayson Garcia",
+      "email": "escgi.jaysongarcia@gmail.com",
+      "role": "trainee",
+      "branch_ids": [
+        "b16"
+      ],
+      "is_active": true,
+      "is_approved": true,
+      "can_edit": false,
+      "main_branch_id": null,
+      "view_branch_ids": []
+    },
+    {
+      "id": "966facf7-0902-42d2-a625-e1aa65c1e07f",
+      "auth_id": "2da538c5-848b-4e0b-9aa8-2385879574ae",
+      "name": "Sherwin Andaluz",
+      "email": "espmi.sherwinandaluz@gmail.com",
+      "role": "senior_fse",
+      "branch_ids": [
+        "b13"
+      ],
+      "is_active": true,
+      "is_approved": true,
+      "can_edit": false,
+      "main_branch_id": null,
+      "view_branch_ids": []
+    },
+    {
+      "id": "ee7b00fa-bdd3-4c15-8c55-91c75dfe28c3",
+      "auth_id": "d8cd3517-181d-4c1e-9e7d-f8bc05191abc",
+      "name": "Al Khabir Tarajid Ibrahim",
+      "email": "espmi.alkhabir@gmail.com",
+      "role": "junior_fse",
+      "branch_ids": [
+        "b13"
+      ],
+      "is_active": true,
+      "is_approved": true,
+      "can_edit": false,
+      "main_branch_id": null,
+      "view_branch_ids": []
+    },
+    {
+      "id": "7980cc68-a584-4b62-aa16-ffd882dc4db9",
+      "auth_id": "06b52ee4-847e-4dd1-86c7-21a870a2a741",
+      "name": "Mark Joseph Tariga",
+      "email": "espmi.marktariga@gmail.com",
+      "role": "senior_fse",
+      "branch_ids": [
+        "b13"
+      ],
+      "is_active": true,
+      "is_approved": true,
+      "can_edit": false,
+      "main_branch_id": null,
+      "view_branch_ids": []
+    },
+    {
+      "id": "15a781a2-d3ab-4ba3-989e-a4f17c2d9428",
+      "auth_id": "0b4b828e-a96c-4e87-91ce-761d090b0a7f",
+      "name": "Ariel Javierto",
+      "email": "apsi.arieljavierto@gmail.com",
+      "role": "senior_fse",
+      "branch_ids": [
+        "b8"
+      ],
+      "is_active": true,
+      "is_approved": true,
+      "can_edit": true,
+      "main_branch_id": null,
+      "view_branch_ids": []
+    }
+  ]
+}
