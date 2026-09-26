@@ -19,7 +19,7 @@ import { getSignedUrl } from "@aws-sdk/s3-request-presigner";
 
 const REGION = process.env.S3_REGION ?? process.env.COGNITO_REGION ?? "ap-southeast-1";
 const BUCKET = process.env.S3_BUCKET ?? "esprint-portal-attachments";
-const FOLDER = "Clients";
+const FOLDER = "Checks/Clients";
 
 let client: S3Client | null = null;
 function getS3(): S3Client {

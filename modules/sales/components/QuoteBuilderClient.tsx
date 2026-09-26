@@ -1618,10 +1618,10 @@ export function QuoteBuilderClient({
       </aside>
 
       {/* ─── RIGHT LIVE DOCUMENT PREVIEW (Exact mirror of QuotePreviewPanel.vue) ─── */}
-      <section className="flex-1 h-full overflow-y-auto bg-[#e5e7eb] p-4 flex justify-center items-start">
+      <section className="flex-1 h-full overflow-y-auto bg-[#e5e7eb] px-2 py-3 flex justify-center items-start">
         <div
           id="quote-paper"
-          className="w-full max-w-[210mm] min-h-[297mm] bg-white shadow-[0_4px_24px_rgba(0,0,0,0.12),0_1px_4px_rgba(0,0,0,0.08)] rounded-[2px] pb-[6mm] flex flex-col justify-between select-text"
+          className="w-full max-w-[820px] min-h-[297mm] bg-white shadow-[0_4px_24px_rgba(0,0,0,0.12),0_1px_4px_rgba(0,0,0,0.08)] rounded-[2px] pb-[6mm] flex flex-col justify-between select-text"
         >
           <div>
             {/* Top Letterhead with red bottom bar */}
@@ -1657,7 +1657,7 @@ export function QuoteBuilderClient({
 
               {/* Machine Title + Condition Badge */}
               <div className="text-[11pt] font-bold text-[#c0392b] text-center uppercase tracking-[0.5px] mb-[2mm] border-b border-[#f0f0f0] pb-[1.5mm]">
-                {selectedMachine ? `${selectedMachine.brand} ${selectedMachine.model}` : "NO MACHINE SELECTED"}
+                {selectedMachine ? selectedMachine.model : "NO MACHINE SELECTED"}
                 {selectedMachine && unitCondition && (
                   <span
                     className={`block text-[8pt] font-bold tracking-[1px] mt-[1mm] ${
@@ -1669,23 +1669,44 @@ export function QuoteBuilderClient({
                 )}
               </div>
 
-              {/* Specifications / Features if available */}
-              {selectedMachine && selectedMachine.features && selectedMachine.features.length > 0 && (
-                <div className="mb-[3mm] bg-[#fafafa] p-[2mm_3mm] border border-[#eee] rounded-[2px]">
-                  <div className="text-[8pt] font-bold text-[#555] mb-[1mm]">Product Specifications:</div>
-                  <ul className="list-disc pl-[4mm] m-0 space-y-0.5 text-[7.5pt] text-[#444]">
-                    {selectedMachine.features.map((f, i) => (
-                      <li key={i}>{typeof f === "string" ? f : (f as any).description}</li>
-                    ))}
-                  </ul>
-                </div>
-              )}
+              {/* Hero: image + features */}
+              {selectedMachine && selectedMachine.features && selectedMachine.features.length > 0 && (() => {
+                const pictureLink = selectedMachine.product_info_links?.find(
+                  (l) => l.document_type === "picture" || l.document_type === "image"
+                );
+                const imgUrl = pictureLink?.url ?? null;
+                return (
+                  <div className="flex gap-[5mm] items-start mb-[2mm]">
+                    {imgUrl && (
+                      <div className="w-[70mm] shrink-0 text-center">
+                        <img
+                          src={imgUrl}
+                          alt={selectedMachine.model}
+                          className="max-w-[70mm] max-h-[62mm] object-contain mx-auto"
+                          onError={(e) => { (e.target as HTMLImageElement).style.display = "none"; }}
+                        />
+                      </div>
+                    )}
+                    <div className="flex-1">
+                      <div className="text-[8pt] font-bold text-[#333] mb-[1mm] uppercase">
+                        Product Specifications:
+                      </div>
+                      <ul className="list-disc pl-[14px] m-0 space-y-0 text-[8pt] text-[#444] leading-[1.55]">
+                        {selectedMachine.features.map((f, i) => (
+                          <li key={i}>{typeof f === "string" ? f : (f as any).description}</li>
+                        ))}
+                      </ul>
+                    </div>
+                  </div>
+                );
+              })()}
 
               {/* PRICING TABLE */}
               {contractPrice > 0 && (
                 <div className="mb-[3mm]">
-                  <div className="text-[8.5pt] font-bold text-[#c0392b] uppercase my-[3mm_1.5mm] flex items-center gap-1">
-                    Pricing<span className="flex-1 h-[1px] bg-[#f0f0f0]"></span>
+                  <div className="text-[8pt] font-bold text-[#c0392b] uppercase mt-[2mm] mb-0 tracking-[0.4px]">
+                    Pricing
+                    <span className="block w-full h-[1px] bg-[#c0392b] mt-[1mm] mb-[1.5mm]"></span>
                   </div>
                   <table className="w-full border-collapse mb-[1mm] text-[7.5pt]">
                     <thead>
