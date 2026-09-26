@@ -1797,7 +1797,7 @@ export function QuoteBuilderClient({
               )}
 
               {/* COLLECTION ARRANGEMENTS */}
-              {(availability || collectionPayment || collectionDownpayment || collectionAmortization) && (
+              {(collectionPayment || collectionDownpayment || collectionAmortization) && (
                 <div className="mb-[2mm]">
                   <div className="text-[8pt] font-bold text-[#c0392b] uppercase mt-[2mm] mb-0 tracking-[0.4px]">
                     Collection Arrangements
