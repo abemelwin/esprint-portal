@@ -49,38 +49,40 @@ export function AdminClient() {
     {
       id: "r2",
       key: "sales_admin",
-      label: "Sales Admin / ASM / AE",
+      label: "Sales Admin",
       perms: { edit: false, reserve: true, deliver: false, unreserve: false, manageUsers: false, viewClient: false },
     },
     {
       id: "r3",
-      key: "super_admin",
-      label: "Super Admin",
+      key: "asm",
+      label: "Area Sales Manager (ASM)",
+      perms: { edit: false, reserve: true, deliver: false, unreserve: false, manageUsers: false, viewClient: false },
+    },
+    {
+      id: "r4",
+      key: "team_leader",
+      label: "Team Leader",
+      perms: { edit: false, reserve: true, deliver: false, unreserve: false, manageUsers: false, viewClient: false },
+    },
+    {
+      id: "r5",
+      key: "account_exec",
+      label: "Account Executive",
+      perms: { edit: false, reserve: true, deliver: false, unreserve: false, manageUsers: false, viewClient: false },
+    },
+    {
+      id: "r6",
+      key: "Admin",
+      label: "Admin",
       perms: { edit: true, reserve: true, deliver: true, unreserve: true, manageUsers: true, viewClient: true },
     },
   ]);
 
-  // Demo / Initial Users Roster
-  const [users, setUsers] = useState<MachineUserDef[]>([
-    {
-      id: "u1",
-      email: "florendojohnlloyd@gmail.com",
-      displayName: "John Lloyd Florendo",
-      roleKey: "super_admin",
-      roleLabel: "Super Admin",
-      aeCode: "JLF",
-      approvedAes: ["JLF", "JLS", "MELWIN"],
-    },
-    {
-      id: "u2",
-      email: "abemelwin01@gmail.com",
-      displayName: "Melwin Dave Abe",
-      roleKey: "inventory_accounting",
-      roleLabel: "Inventory / Accounting Admin",
-      aeCode: null,
-      approvedAes: [],
-    },
-  ]);
+  // Live Users Roster
+  const [users, setUsers] = useState<MachineUserDef[]>([]);
+  const [usersLoading, setUsersLoading] = useState(false);
+  const [userSaving, setUserSaving] = useState(false);
+  const [userMsg, setUserMsg] = useState("");
 
   // State for adding/editing roles
   const [editingRole, setEditingRole] = useState<MachineRoleDef | null | "new">(null);
@@ -91,7 +93,8 @@ export function AdminClient() {
   const [editingUser, setEditingUser] = useState<MachineUserDef | null | "new">(null);
   const [userEmailInput, setUserEmailInput] = useState("");
   const [userNameInput, setUserNameInput] = useState("");
-  const [userRoleInput, setUserRoleInput] = useState("sales_admin");
+  const [userPasswordInput, setUserPasswordInput] = useState("");
+  const [userRoleInput, setUserRoleInput] = useState("account_exec");
   const [userAeInput, setUserAeInput] = useState("");
   const [userApprovedAesInput, setUserApprovedAesInput] = useState("");
   const [userSearch, setUserSearch] = useState("");
@@ -106,6 +109,34 @@ export function AdminClient() {
   const [reorderBrand, setReorderBrand] = useState("");
   const [reorderModel, setReorderModel] = useState("");
   const [reorderQty, setReorderQty] = useState(1);
+
+  async function loadUsers() {
+    setUsersLoading(true);
+    try {
+      const res = await fetch("/api/machines/users");
+      const data = await res.json();
+      if (data.users) {
+        setUsers(
+          data.users.map((u: any) => {
+            const role = roles.find((r) => r.key === u.roleKey) || { key: u.roleKey, label: u.roleKey };
+            return {
+              id: u.username || u.email,
+              email: u.email,
+              displayName: u.fullName || u.displayName || u.email.split("@")[0],
+              roleKey: u.roleKey || "account_exec",
+              roleLabel: role.label,
+              aeCode: u.aeCode || null,
+              approvedAes: u.approvedAes || [],
+            };
+          })
+        );
+      }
+    } catch (err) {
+      console.error("Failed to load machine users:", err);
+    } finally {
+      setUsersLoading(false);
+    }
+  }
 
   async function loadLookups() {
     setLoading(true);
@@ -122,6 +153,7 @@ export function AdminClient() {
 
   useEffect(() => {
     loadLookups();
+    loadUsers();
   }, []);
 
   // Handle Role Save
@@ -161,56 +193,93 @@ export function AdminClient() {
     setEditingRole(r);
   }
 
-  // Handle User Save
-  function handleSaveUser() {
-    if (!userEmailInput.trim() || !userNameInput.trim()) return;
-    const selectedRole = roles.find((r) => r.key === userRoleInput) || roles[0];
+  // Handle User Save with Backend Sync
+  async function handleSaveUser() {
+    if (!userEmailInput.trim()) return;
+    setUserSaving(true);
+    setUserMsg("");
+
     const approvedList = userApprovedAesInput
       .split(",")
       .map((s) => s.trim().toUpperCase())
       .filter(Boolean);
 
-    if (editingUser === "new") {
-      const newU: MachineUserDef = {
-        id: "u_" + Date.now(),
-        email: userEmailInput.trim().toLowerCase(),
-        displayName: userNameInput.trim(),
-        roleKey: selectedRole.key,
-        roleLabel: selectedRole.label,
-        aeCode: userAeInput ? userAeInput.trim().toUpperCase() : null,
-        approvedAes: approvedList,
-      };
-      setUsers([...users, newU]);
-    } else if (editingUser) {
-      setUsers(
-        users.map((u) =>
-          u.id === editingUser.id
-            ? {
-                ...u,
-                email: userEmailInput.trim().toLowerCase(),
-                displayName: userNameInput.trim(),
-                roleKey: selectedRole.key,
-                roleLabel: selectedRole.label,
-                aeCode: userAeInput ? userAeInput.trim().toUpperCase() : null,
-                approvedAes: approvedList,
-              }
-            : u
-        )
-      );
+    try {
+      if (editingUser === "new") {
+        const res = await fetch("/api/machines/users", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            email: userEmailInput.trim().toLowerCase(),
+            fullName: userNameInput.trim() || userEmailInput.trim(),
+            password: userPasswordInput || "Esprint2026!",
+            roleKey: userRoleInput,
+            aeCode: userAeInput ? userAeInput.trim().toUpperCase() : null,
+            approvedAes: approvedList,
+          }),
+        });
+        if (!res.ok) {
+          const d = await res.json().catch(() => ({}));
+          alert(d.error || "Failed to create user.");
+          return;
+        }
+      } else if (editingUser) {
+        const res = await fetch("/api/machines/users", {
+          method: "PATCH",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            username: editingUser.email,
+            displayName: userNameInput.trim(),
+            roleKey: userRoleInput,
+            aeCode: userAeInput ? userAeInput.trim().toUpperCase() : null,
+            approvedAes: approvedList,
+          }),
+        });
+        if (!res.ok) {
+          const d = await res.json().catch(() => ({}));
+          alert(d.error || "Failed to update user.");
+          return;
+        }
+      }
+
+      await loadUsers();
+      setEditingUser(null);
+    } catch (err: any) {
+      alert("Network error: " + err.message);
+    } finally {
+      setUserSaving(false);
     }
-    setEditingUser(null);
+  }
+
+  async function handleDeleteUser(u: MachineUserDef) {
+    if (!confirm(`Remove Machine Monitoring access for "${u.displayName || u.email}"?`)) return;
+    try {
+      const res = await fetch(`/api/machines/users?username=${encodeURIComponent(u.email)}`, {
+        method: "DELETE",
+      });
+      if (res.ok) {
+        await loadUsers();
+      } else {
+        const d = await res.json().catch(() => ({}));
+        alert(d.error || "Failed to remove user.");
+      }
+    } catch (err: any) {
+      alert("Network error: " + err.message);
+    }
   }
 
   function handleStartEditUser(u: MachineUserDef | "new") {
     if (u === "new") {
       setUserEmailInput("");
       setUserNameInput("");
-      setUserRoleInput(roles[0]?.key || "sales_admin");
+      setUserPasswordInput("");
+      setUserRoleInput("account_exec");
       setUserAeInput("");
       setUserApprovedAesInput("");
     } else {
       setUserEmailInput(u.email);
       setUserNameInput(u.displayName);
+      setUserPasswordInput("");
       setUserRoleInput(u.roleKey);
       setUserAeInput(u.aeCode || "");
       setUserApprovedAesInput((u.approvedAes || []).join(", "));
@@ -551,13 +620,22 @@ export function AdminClient() {
                       </div>
                     </td>
                     <td className="py-3 px-4 text-right">
-                      <button
-                        type="button"
-                        onClick={() => handleStartEditUser(u)}
-                        className="px-2.5 py-1 text-xs font-semibold text-slate-700 hover:bg-slate-100 rounded-md border border-slate-200 cursor-pointer"
-                      >
-                        ✎ Edit
-                      </button>
+                      <div className="flex items-center justify-end gap-1.5">
+                        <button
+                          type="button"
+                          onClick={() => handleStartEditUser(u)}
+                          className="px-2.5 py-1 text-xs font-semibold text-slate-700 hover:bg-slate-100 rounded-md border border-slate-200 cursor-pointer"
+                        >
+                          ✎ Edit
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => handleDeleteUser(u)}
+                          className="px-2.5 py-1 text-xs font-semibold text-red-600 hover:bg-red-50 rounded-md border border-red-200 cursor-pointer"
+                        >
+                          Delete
+                        </button>
+                      </div>
                     </td>
                   </tr>
                 ))}
@@ -578,9 +656,10 @@ export function AdminClient() {
                   <input
                     type="email"
                     value={userEmailInput}
+                    disabled={editingUser !== "new"}
                     onChange={(e) => setUserEmailInput(e.target.value)}
                     placeholder="user@esprint.ph"
-                    className="w-full px-3 py-2 text-xs border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:outline-none"
+                    className="w-full px-3 py-2 text-xs border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:outline-none disabled:bg-slate-100"
                   />
                 </div>
 
@@ -595,12 +674,25 @@ export function AdminClient() {
                   />
                 </div>
 
+                {editingUser === "new" && (
+                  <div>
+                    <label className="block text-xs font-bold text-slate-700 mb-1">Password (min 6 characters)</label>
+                    <input
+                      type="password"
+                      value={userPasswordInput}
+                      onChange={(e) => setUserPasswordInput(e.target.value)}
+                      placeholder="Enter initial password"
+                      className="w-full px-3 py-2 text-xs border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:outline-none"
+                    />
+                  </div>
+                )}
+
                 <div>
                   <label className="block text-xs font-bold text-slate-700 mb-1">Machine Monitoring Role</label>
                   <select
                     value={userRoleInput}
                     onChange={(e) => setUserRoleInput(e.target.value)}
-                    className="w-full px-3 py-2 text-xs border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:outline-none"
+                    className="w-full px-3 py-2 text-xs border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:outline-none bg-white"
                   >
                     {roles.map((r) => (
                       <option key={r.key} value={r.key}>
@@ -644,9 +736,10 @@ export function AdminClient() {
                 <button
                   type="button"
                   onClick={handleSaveUser}
-                  className="px-4 py-2 text-xs font-bold text-white bg-blue-600 hover:bg-blue-700 rounded-lg cursor-pointer"
+                  disabled={userSaving}
+                  className="px-4 py-2 text-xs font-bold text-white bg-blue-600 hover:bg-blue-700 disabled:opacity-60 rounded-lg cursor-pointer"
                 >
-                  Save User Account
+                  {userSaving ? "Saving..." : "Save User Account"}
                 </button>
               </div>
             </div>
