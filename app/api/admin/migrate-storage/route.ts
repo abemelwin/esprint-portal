@@ -44,9 +44,10 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
   const step = url.searchParams.get("step") || "reorganize-sales";
+  const limit = parseInt(url.searchParams.get("limit") || "100", 10);
 
   if (step === "reorganize-sales" || step === "organize") {
-    return reorganizeSalesFiles();
+    return reorganizeSalesFiles(limit);
   }
   if (step === "public-sales") {
     return makeSalesFilesPublic();
@@ -89,7 +90,7 @@ async function makeSalesFilesPublic() {
 }
 
 // ── Reorganize S3 folders from UUIDs to Machine Names & rewrite RDS URLs ───────
-async function reorganizeSalesFiles() {
+async function reorganizeSalesFiles(limit = 100) {
   const machines = await query<{ id: string; brand: string; model: string; sub_model: string | null }>(
     `SELECT id, brand, model, sub_model FROM ${S}.machines`
   );
@@ -163,10 +164,13 @@ async function reorganizeSalesFiles() {
     moveTasks.push({ oldKey, newKey, targetFolder, fileName });
   }
 
-  // Process in batches of 20 concurrent operations
-  const BATCH_SIZE = 20;
-  for (let i = 0; i < moveTasks.length; i += BATCH_SIZE) {
-    const batch = moveTasks.slice(i, i + BATCH_SIZE);
+  // Slice by limit for this run
+  const tasksToRun = moveTasks.slice(0, limit);
+
+  // Process in batches of 25 concurrent operations
+  const BATCH_SIZE = 25;
+  for (let i = 0; i < tasksToRun.length; i += BATCH_SIZE) {
+    const batch = tasksToRun.slice(i, i + BATCH_SIZE);
     await Promise.all(
       batch.map(async (task) => {
         try {
