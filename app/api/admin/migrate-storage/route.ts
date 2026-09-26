@@ -45,9 +45,52 @@ export async function POST(req: NextRequest) {
   }
   const step = url.searchParams.get("step");
 
-  if (step === "checks") return migrateChecksFolder();
-  if (step === "sales")  return migrateSalesFiles();
-  return NextResponse.json({ error: "Pass ?step=checks or ?step=sales" }, { status: 400 });
+  if (step === "checks")     return migrateChecksFolder();
+  if (step === "sales")      return migrateSalesFiles();
+  if (step === "public-sales") return makeSalesFilesPublic();
+  return NextResponse.json({ error: "Pass ?step=checks, sales, or public-sales" }, { status: 400 });
+}
+
+// ── Step 3: make Sales/ProductFiles/* publicly readable (bucket policy) ───────
+// Product catalogs/brochures/images are non-sensitive and must be directly
+// viewable in the browser (matches orig Supabase public bucket behaviour).
+// This grants public read ONLY to the Sales/ProductFiles/ prefix — the
+// Checks/Clients/ folder stays private (served via presigned URLs).
+async function makeSalesFilesPublic() {
+  const { PutBucketPolicyCommand, GetBucketPolicyCommand } = await import("@aws-sdk/client-s3");
+
+  // Read existing policy (if any) to merge
+  let existing: any = { Version: "2012-10-17", Statement: [] };
+  try {
+    const cur = await s3get().send(new GetBucketPolicyCommand({ Bucket: BUCKET }));
+    if (cur.Policy) existing = JSON.parse(cur.Policy);
+  } catch { /* no policy yet */ }
+
+  // Remove any prior sales-public statement, then add fresh
+  existing.Statement = (existing.Statement ?? []).filter(
+    (s: any) => s.Sid !== "PublicReadSalesProductFiles"
+  );
+  existing.Statement.push({
+    Sid: "PublicReadSalesProductFiles",
+    Effect: "Allow",
+    Principal: "*",
+    Action: "s3:GetObject",
+    Resource: `arn:aws:s3:::${BUCKET}/Sales/ProductFiles/*`,
+  });
+
+  try {
+    await s3get().send(new PutBucketPolicyCommand({
+      Bucket: BUCKET,
+      Policy: JSON.stringify(existing),
+    }));
+    return NextResponse.json({ ok: true, step: "public-sales", message: "Sales/ProductFiles/* is now publicly readable" });
+  } catch (err: any) {
+    return NextResponse.json({
+      ok: false,
+      error: err.message,
+      hint: "The bucket may have 'Block Public Access' enabled. Disable 'Block public access via bucket policies' in S3 console first, then retry.",
+    }, { status: 500 });
+  }
 }
 
 // ── Step 1: rename Clients/ → Checks/Clients/ ─────────────────────────────────

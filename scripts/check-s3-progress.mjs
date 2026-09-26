@@ -1,0 +1,17 @@
+import pg from 'pg';
+import fs from 'node:fs';
+import path from 'node:path';
+import { fileURLToPath } from 'node:url';
+const __dirname = path.dirname(fileURLToPath(import.meta.url));
+const env = Object.fromEntries(fs.readFileSync(path.resolve(__dirname,'../.env.local'),'utf8').split('\n').filter(l=>l.includes('=')&&!l.trim().startsWith('#')).map(l=>{const i=l.indexOf('=');return[l.slice(0,i).trim(),l.slice(i+1).trim()]}));
+const c = new pg.Client({connectionString:env.DATABASE_URL,ssl:{rejectUnauthorized:false}});
+await c.connect();
+const total = await c.query("SELECT count(*) FROM sales_portal.product_info_links");
+const onS3  = await c.query("SELECT count(*) FROM sales_portal.product_info_links WHERE url LIKE '%.s3.%amazonaws.com%'");
+const onSb  = await c.query("SELECT count(*) FROM sales_portal.product_info_links WHERE url LIKE '%supabase.co/storage%'");
+const ext   = await c.query("SELECT count(*) FROM sales_portal.product_info_links WHERE url NOT LIKE '%.s3.%amazonaws.com%' AND url NOT LIKE '%supabase.co/storage%'");
+console.log(`Total links:        ${total.rows[0].count}`);
+console.log(`Migrated to S3:     ${onS3.rows[0].count}`);
+console.log(`Still on Supabase:  ${onSb.rows[0].count}  (need migration)`);
+console.log(`External (no-op):   ${ext.rows[0].count}`);
+await c.end();
