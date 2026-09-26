@@ -89,10 +89,10 @@ export function QuoteBuilderClient({
   const [downPayment, setDownPayment] = useState<number>(0);
   const [months, setMonths] = useState<number>(12);
   const [vatInclusive, setVatInclusive] = useState(false);
-  const [collectionPayment, setCollectionPayment] = useState("Upon confirmation and before delivery");
-  const [collectionDownpayment, setCollectionDownpayment] = useState("Upon confirmation and before delivery");
-  const [collectionAmortization, setCollectionAmortization] = useState("After installation of machine");
-  const [availability, setAvailability] = useState("ON STOCK");
+  const [collectionPayment, setCollectionPayment] = useState("");
+  const [collectionDownpayment, setCollectionDownpayment] = useState("");
+  const [collectionAmortization, setCollectionAmortization] = useState("");
+  const [availability, setAvailability] = useState("");
 
   // Trade-Ins (Always 3 fixed rows in original)
   const [tradeIns, setTradeIns] = useState<TradeInItem[]>([
@@ -132,16 +132,16 @@ export function QuoteBuilderClient({
   // Warranty
   const [warrantyCompany, setWarrantyCompany] = useState("ES Print Media Inc.");
   const [warrantySupplier, setWarrantySupplier] = useState("ESPMI");
-  const [warrantyMachineDuration, setWarrantyMachineDuration] = useState("Twelve (12)");
+  const [warrantyMachineDuration, setWarrantyMachineDuration] = useState("");
   const [warrantyPrintheadDuration, setWarrantyPrintheadDuration] = useState("");
   const [warrantyPrintheadType, setWarrantyPrintheadType] = useState<string | null>(null);
-  const [serviceFee, setServiceFee] = useState<number | null>(500);
+  const [serviceFee, setServiceFee] = useState<number | null>(null);
 
   // Signatories
-  const [aeName, setAeName] = useState(currentUserName || "ACCOUNT EXECUTIVE");
+  const [aeName, setAeName] = useState(currentUserName || "");
   const [clientConforme, setClientConforme] = useState("");
-  const [notedByName, setNotedByName] = useState("Ness Deomano");
-  const [notedByRole, setNotedByRole] = useState("Area Sales Manager");
+  const [notedByName, setNotedByName] = useState("");
+  const [notedByRole, setNotedByRole] = useState("");
 
   // Load catalog on mount
   useEffect(() => {
@@ -191,6 +191,11 @@ export function QuoteBuilderClient({
       setExclusionItems([]);
       setAddonItems([]);
       setConsumablePrices([]);
+      setAvailability("");
+      setWarrantyMachineDuration("");
+      setWarrantyPrintheadDuration("");
+      setWarrantyPrintheadType(null);
+      setServiceFee(null);
       return;
     }
 
@@ -250,7 +255,7 @@ export function QuoteBuilderClient({
       setWarrantyPrintheadType(null);
     }
     setServiceFee(selectedMachine.service_fee ?? 500);
-    setAvailability(selectedMachine.availability || "ON STOCK");
+    setAvailability(selectedMachine.availability || "");
   }, [selectedMachine]);
 
   // Trade in sum
@@ -1109,9 +1114,10 @@ export function QuoteBuilderClient({
                 </label>
                 <input
                   type="text"
+                  placeholder="Upon confirmation and before delivery"
                   value={collectionPayment}
                   onChange={(e) => setCollectionPayment(e.target.value)}
-                  className="w-full px-[7px] py-[5px] border border-[#ddd] rounded-[4px] text-[12px] bg-[#fafafa]"
+                  className="w-full px-[7px] py-[5px] border border-[#ddd] rounded-[4px] text-[12px] bg-[#fafafa] focus:bg-white focus:border-[#c0392b] focus:outline-none"
                 />
               </div>
 
@@ -1121,9 +1127,10 @@ export function QuoteBuilderClient({
                 </label>
                 <input
                   type="text"
+                  placeholder="Upon confirmation and before delivery"
                   value={collectionDownpayment}
                   onChange={(e) => setCollectionDownpayment(e.target.value)}
-                  className="w-full px-[7px] py-[5px] border border-[#ddd] rounded-[4px] text-[12px] bg-[#fafafa]"
+                  className="w-full px-[7px] py-[5px] border border-[#ddd] rounded-[4px] text-[12px] bg-[#fafafa] focus:bg-white focus:border-[#c0392b] focus:outline-none"
                 />
               </div>
 
@@ -1133,9 +1140,10 @@ export function QuoteBuilderClient({
                 </label>
                 <input
                   type="text"
+                  placeholder="After installation of machine"
                   value={collectionAmortization}
                   onChange={(e) => setCollectionAmortization(e.target.value)}
-                  className="w-full px-[7px] py-[5px] border border-[#ddd] rounded-[4px] text-[12px] bg-[#fafafa]"
+                  className="w-full px-[7px] py-[5px] border border-[#ddd] rounded-[4px] text-[12px] bg-[#fafafa] focus:bg-white focus:border-[#c0392b] focus:outline-none"
                 />
               </div>
 
@@ -1146,9 +1154,10 @@ export function QuoteBuilderClient({
                 </label>
                 <input
                   type="text"
+                  placeholder="ON STOCK"
                   value={availability}
                   onChange={(e) => setAvailability(e.target.value)}
-                  className="w-full px-[7px] py-[5px] border border-[#ddd] rounded-[4px] text-[12px] bg-[#fafafa]"
+                  className="w-full px-[7px] py-[5px] border border-[#ddd] rounded-[4px] text-[12px] bg-[#fafafa] focus:bg-white focus:border-[#c0392b] focus:outline-none"
                 />
               </div>
 
