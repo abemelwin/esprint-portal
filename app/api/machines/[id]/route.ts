@@ -65,6 +65,7 @@ export async function PUT(
       delivery_date,
       dispatch_date,
       notes,
+      history_note,  // optional extra note written to machine_history (e.g. for Demo/Recertified)
     } = body;
 
     const rows = await query<Machine>(
@@ -115,6 +116,14 @@ export async function PUT(
       `INSERT INTO machine_monitoring.machine_history (machine_id, event, actor) VALUES ($1, $2, $3)`,
       [params.id, `Details updated (Status: ${status})`, user.fullName]
     );
+
+    // Write optional history note (e.g. from Demo / Recertified status change)
+    if (history_note?.trim()) {
+      await query(
+        `INSERT INTO machine_monitoring.machine_history (machine_id, event, actor) VALUES ($1, $2, $3)`,
+        [params.id, history_note.trim(), user.fullName]
+      );
+    }
 
     return NextResponse.json({ machine: rows[0] });
   } catch (err) {

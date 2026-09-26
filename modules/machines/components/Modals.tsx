@@ -88,6 +88,7 @@ export function MachineFormModal({
     initialData ? fromMachine(initialData) : emptyMachine()
   );
   const [qty,     setQty]     = useState(1);
+  const [historyNote, setHistoryNote] = useState("");
   const [err,     setErr]     = useState("");
   const [loading, setLoading] = useState(false);
 
@@ -95,6 +96,7 @@ export function MachineFormModal({
   useEffect(() => {
     setForm(initialData ? fromMachine(initialData) : emptyMachine());
     setQty(1);
+    setHistoryNote("");
     setErr("");
   }, [initialData, isOpen]);
 
@@ -118,7 +120,7 @@ export function MachineFormModal({
         const res = await fetch(`/api/machines/${initialData.id}`, {
           method: "PUT",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ ...initialData, ...form }),
+          body: JSON.stringify({ ...initialData, ...form, history_note: historyNote || undefined }),
         });
         if (!res.ok) throw new Error((await res.json()).error ?? "Failed to update");
       } else {
@@ -246,6 +248,20 @@ export function MachineFormModal({
             placeholder="Anything worth remembering about this unit"
           />
         </Field>
+
+        {/* History note — shown for Demo / Recertified (matches orig behavior) */}
+        {(form.status === "Demo" || form.status === "Recertified") && (
+          <Field
+            label="Note for History Log"
+            hint="Optional — logged as a separate history entry for this status."
+          >
+            <Textarea
+              value={historyNote}
+              onChange={(e) => setHistoryNote(e.target.value)}
+              placeholder={`e.g. Reason for ${form.status} status, condition details…`}
+            />
+          </Field>
+        )}
 
         {err && <p className="text-[12.5px] text-[var(--danger)]">{err}</p>}
       </div>
@@ -409,19 +425,27 @@ export function DeliverModal({
     setErr("");
     setLoading(true);
     try {
-      const res = await fetch(`/api/machines/${machine.id}`, {
+      // First update client details via PUT (in case they were edited in the modal)
+      const putRes = await fetch(`/api/machines/${machine.id}`, {
         method: "PUT",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           ...machine,
-          status: "Delivered",
           brand, model,
           client_name: client, client_code: code,
           ae, branch, location,
-          delivery_date: date,
+          status: machine.status, // keep current status for the PUT
         }),
       });
-      if (!res.ok) throw new Error((await res.json()).error ?? "Failed to deliver");
+      if (!putRes.ok) throw new Error((await putRes.json()).error ?? "Failed to update details");
+
+      // Then call the dedicated /deliver endpoint (guards canDeliver, sets status=Delivered)
+      const delRes = await fetch(`/api/machines/${machine.id}/deliver`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ delivery_date: date }),
+      });
+      if (!delRes.ok) throw new Error((await delRes.json()).error ?? "Failed to deliver");
       onSuccess();
     } catch (e: unknown) {
       setErr(e instanceof Error ? e.message : "Something went wrong.");
@@ -515,7 +539,8 @@ export function HistoryModal({ isOpen, machine, onClose }: HistoryModalProps) {
   useEffect(() => {
     if (!isOpen || !machine) return;
     setLoading(true);
-    fetch(`/api/machines/${machine.id}/history`)
+    // History is returned as part of GET /api/machines/{id} — no /history sub-route exists
+    fetch(`/api/machines/${machine.id}`)
       .then((r) => r.json())
       .then((d) => setHistory(d.history ?? []))
       .catch(console.error)

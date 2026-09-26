@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useMemo } from "react";
+import { useState, useEffect, useMemo, useRef } from "react";
 import type { Machine, LookupData } from "../types";
 import { StatusPill, STATUS_ROW_CLASS, ALL_STATUSES } from "../ui/Pill";
 import { Button } from "../ui/Button";
@@ -45,6 +45,9 @@ export function MachinesClient({
   canViewAllClients?: boolean;
 }) {
   const [machines, setMachines] = useState<Machine[]>([]);
+  // ref so backup handler (inside useEffect) always sees latest machines
+  const machinesRef = useRef<Machine[]>([]);
+  const setMachinesAndRef = (m: Machine[]) => { machinesRef.current = m; setMachines(m); };
   const [lookups, setLookups] = useState<LookupData>({
     branches: [],
     aes: [],
@@ -88,7 +91,7 @@ export function MachinesClient({
       ]);
       const machData = await machRes.json();
       const lookData = await lookRes.json();
-      if (machData.machines) setMachines(machData.machines);
+      if (machData.machines) setMachinesAndRef(machData.machines);
       if (lookData.branches) setLookups(lookData);
     } catch (err) {
       console.error("Error loading machines data:", err);
@@ -102,14 +105,38 @@ export function MachinesClient({
 
     function handleOpenAdd()  { setEditingMachine(null); setIsAddOpen(true); }
     function handleExportCSV() { exportCSV(); }
+    async function handleBackup() {
+      try {
+        // Fetch TBA + reorder points for complete snapshot (machines already in state)
+        const [tbaRes, lookRes] = await Promise.all([
+          fetch("/api/machines/tba"),
+          fetch("/api/machines/lookups"),
+        ]);
+        const tbaData  = tbaRes.ok  ? await tbaRes.json()  : {};
+        const lookData = lookRes.ok ? await lookRes.json() : {};
+        const backup = {
+          exported_at:    new Date().toISOString(),
+          machines:       machinesRef.current,
+          tba_list:       tbaData.items   ?? [],
+          reorder_points: lookData.reorder_points ?? [],
+        };
+        const a = document.createElement("a");
+        a.href = URL.createObjectURL(new Blob([JSON.stringify(backup, null, 2)], { type: "application/json" }));
+        a.download = `ES_backup_${new Date().toISOString().slice(0, 10)}.json`;
+        a.click();
+      } catch (err) {
+        console.error("Backup failed:", err);
+        alert("Backup failed. Please try again.");
+      }
+    }
 
     window.addEventListener("machines:open-add",   handleOpenAdd);
     window.addEventListener("machines:export-csv", handleExportCSV);
-    window.addEventListener("machines:backup",     handleExportCSV);
+    window.addEventListener("machines:backup",     handleBackup);
     return () => {
       window.removeEventListener("machines:open-add",   handleOpenAdd);
       window.removeEventListener("machines:export-csv", handleExportCSV);
-      window.removeEventListener("machines:backup",     handleExportCSV);
+      window.removeEventListener("machines:backup",     handleBackup);
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
