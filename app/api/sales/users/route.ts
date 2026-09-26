@@ -262,37 +262,42 @@ export async function PATCH(req: NextRequest) {
         (x) => x.username === username || x.email?.toLowerCase() === email
       );
 
-      if (userObj) {
-        let access: ModuleAccess[] = Array.isArray(userObj.access) ? [...userObj.access] : [];
-        const salesIdx = access.findIndex((a) => a.module === "sales");
+      if (!userObj) {
+        return NextResponse.json({ error: `User not found: ${username}` }, { status: 404 });
+      }
 
-        if (salesIdx >= 0) {
-          if (body.salesRole !== undefined) {
-            access[salesIdx].role = body.salesRole;
-            access[salesIdx].isModuleAdmin = ROLE_ADMIN.includes(body.salesRole);
-          }
-          if (body.salesPerms !== undefined) {
-            (access[salesIdx] as any).perms = body.salesPerms;
-          }
-        } else if (body.salesRole !== undefined) {
-          access.push({
-            module: "sales",
-            role: body.salesRole,
-            isModuleAdmin: ROLE_ADMIN.includes(body.salesRole),
-            branches: [],
-            aes: [],
-          });
-        }
+      let access: ModuleAccess[] = Array.isArray(userObj.access) ? [...userObj.access] : [];
+      const salesIdx = access.findIndex((a) => a.module === "sales");
 
-        try {
-          await updateCognitoUser({
-            username: userObj.username,
-            fullName: body.name ?? userObj.fullName,
-            access,
-          });
-        } catch (err) {
-          console.warn("Cognito user update warning:", err);
+      if (salesIdx >= 0) {
+        if (body.salesRole !== undefined) {
+          access[salesIdx].role = body.salesRole;
+          access[salesIdx].isModuleAdmin = ROLE_ADMIN.includes(body.salesRole);
         }
+        if (body.salesPerms !== undefined) {
+          (access[salesIdx] as any).perms = body.salesPerms;
+        }
+      } else if (body.salesRole !== undefined) {
+        access.push({
+          module: "sales",
+          role: body.salesRole,
+          isModuleAdmin: ROLE_ADMIN.includes(body.salesRole),
+          branches: [],
+          aes: [],
+        });
+      }
+
+      try {
+        await updateCognitoUser({
+          username: userObj.username,
+          fullName: body.name ?? userObj.fullName,
+          access,
+        });
+      } catch (err) {
+        // Surface Cognito errors — don't swallow them
+        const msg = (err as Error).message ?? String(err);
+        console.error("Cognito user update error:", msg);
+        return NextResponse.json({ error: `Failed to update user access: ${msg}` }, { status: 500 });
       }
     }
 

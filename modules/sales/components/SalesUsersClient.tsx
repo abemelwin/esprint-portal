@@ -344,8 +344,8 @@ export function SalesUsersClient({ currentUserId }: { currentUserId: string }) {
         const d = await res.json().catch(() => ({}));
         alert(d.error || "Failed to save access permissions.");
       }
-    } catch {
-      alert("Network error.");
+    } catch (err: any) {
+      alert("Network error: " + (err?.message || String(err)));
     } finally {
       setSavingAccess(false);
     }
