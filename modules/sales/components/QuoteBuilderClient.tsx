@@ -1176,20 +1176,25 @@ export function QuoteBuilderClient({
               </div>
 
               {underPromo && (
-                <div className="space-y-1.5 p-2 bg-red-50/50 border border-red-200 rounded">
-                  <label className="block text-[10px] font-semibold text-[#666] uppercase">Freebies</label>
-                  {freebies.map((fb, idx) => (
-                    <div key={idx} className="flex justify-between items-center p-[3px_6px] bg-white border border-[#eee] rounded text-[12px]">
-                      <span>{fb}</span>
-                      <button
-                        type="button"
-                        onClick={() => setFreebies(freebies.filter((_, i) => i !== idx))}
-                        className="text-[#c0392b] font-bold cursor-pointer"
-                      >
-                        &times;
-                      </button>
+                <div className="space-y-1.5 p-2 bg-[#fff8f8] border border-[#f5c6cb] rounded-[4px] mt-1">
+                  <label className="block text-[10px] font-semibold text-[#666] uppercase mb-[2px]">Freebies</label>
+                  {freebies.length > 0 && (
+                    <div className="space-y-1 mb-1">
+                      {freebies.map((fb, idx) => (
+                        <div key={idx} className="flex justify-between items-center p-[3px_6px] bg-white border border-[#eee] rounded-[3px] text-[11px] text-[#333]">
+                          <span>{fb}</span>
+                          <button
+                            type="button"
+                            onClick={() => setFreebies(freebies.filter((_, i) => i !== idx))}
+                            className="text-[#c0392b] font-bold text-[14px] leading-none cursor-pointer hover:text-[#900]"
+                            aria-label={`Remove freebie ${fb}`}
+                          >
+                            &times;
+                          </button>
+                        </div>
+                      ))}
                     </div>
-                  ))}
+                  )}
                   <div className="flex gap-1.5 pt-1">
                     <input
                       type="text"
@@ -1202,7 +1207,7 @@ export function QuoteBuilderClient({
                           setFreebieInput("");
                         }
                       }}
-                      className="flex-1 px-[7px] py-[5px] border border-[#ddd] rounded text-[12px]"
+                      className="flex-1 px-[7px] py-[4px] border border-[#ddd] rounded-[4px] text-[12px] bg-white focus:outline-none focus:border-[#c0392b]"
                     />
                     <button
                       type="button"
@@ -1212,19 +1217,19 @@ export function QuoteBuilderClient({
                           setFreebieInput("");
                         }
                       }}
-                      className="p-[5px_8px] bg-white text-[#c0392b] border border-[#c0392b] rounded text-[11px] font-bold cursor-pointer"
+                      className="px-[8px] py-[4px] bg-white text-[#c0392b] border border-[#c0392b] rounded-[4px] text-[11px] font-bold cursor-pointer hover:bg-[#c0392b] hover:text-white transition-colors"
                     >
-                      + Add
+                      + Add Freebie
                     </button>
                   </div>
-                  <div>
+                  <div className="mt-2">
                     <label className="block text-[10px] font-semibold text-[#666] uppercase mb-[2px]">Promo Validity</label>
                     <input
                       type="text"
                       placeholder="e.g., Valid until Dec 31, 2026"
                       value={promoValidity}
                       onChange={(e) => setPromoValidity(e.target.value)}
-                      className="w-full px-[7px] py-[5px] border border-[#ddd] rounded text-[12px] bg-white"
+                      className="w-full px-[7px] py-[5px] border border-[#ddd] rounded-[4px] text-[12px] bg-white focus:outline-none focus:border-[#c0392b]"
                     />
                   </div>
                 </div>
@@ -1347,32 +1352,73 @@ export function QuoteBuilderClient({
                       {item.description}
                     </label>
                     {item.isCustom && (
-                      <button type="button" onClick={() => setInclusionItems(inclusionItems.filter(x => x.id !== item.id))}
-                        className="text-[#c0392b] font-bold text-[14px] leading-none cursor-pointer">&times;</button>
+                      <button
+                        type="button"
+                        onClick={() => setInclusionItems(inclusionItems.filter((x) => x.id !== item.id))}
+                        className="text-[#c0392b] font-bold text-[14px] leading-none cursor-pointer hover:text-[#900] px-1"
+                        aria-label={`Remove inclusion ${item.description}`}
+                      >
+                        &times;
+                      </button>
                     )}
                   </div>
                 ))}
               </div>
               {/* Custom inclusion input */}
               {showInclusionInput ? (
-                <div className="flex gap-1.5 mt-1">
-                  <input type="text" placeholder="Custom inclusion…" value={newInclusionText}
-                    onChange={e => setNewInclusionText(e.target.value)}
-                    onKeyDown={e => { if (e.key === "Enter" && newInclusionText.trim()) {
-                      setInclusionItems([...inclusionItems, { id: `ci-${Date.now()}`, description: newInclusionText.trim(), enabled: true, isCustom: true }]);
-                      setNewInclusionText(""); setShowInclusionInput(false);
-                    }}}
-                    className="flex-1 px-[7px] py-[4px] border border-[#ddd] rounded text-[12px]" autoFocus />
-                  <button type="button" onClick={() => { if (newInclusionText.trim()) {
-                    setInclusionItems([...inclusionItems, { id: `ci-${Date.now()}`, description: newInclusionText.trim(), enabled: true, isCustom: true }]);
-                    setNewInclusionText(""); setShowInclusionInput(false);
-                  }}} className="p-[4px_8px] bg-[#c0392b] text-white rounded text-[11px] font-bold">Add</button>
-                  <button type="button" onClick={() => setShowInclusionInput(false)} className="p-[4px_8px] border border-[#ddd] rounded text-[11px]">✕</button>
+                <div className="flex gap-1.5 mt-1.5">
+                  <input
+                    type="text"
+                    placeholder="Custom inclusion"
+                    value={newInclusionText}
+                    onChange={(e) => setNewInclusionText(e.target.value)}
+                    onKeyDown={(e) => {
+                      if (e.key === "Enter" && newInclusionText.trim()) {
+                        setInclusionItems([
+                          ...inclusionItems,
+                          { id: `ci-${Date.now()}`, description: newInclusionText.trim(), enabled: true, isCustom: true },
+                        ]);
+                        setNewInclusionText("");
+                        setShowInclusionInput(false);
+                      }
+                    }}
+                    className="flex-1 px-[7px] py-[4px] border border-[#ddd] rounded-[4px] text-[12px] bg-white focus:outline-none focus:border-[#c0392b]"
+                    autoFocus
+                  />
+                  <button
+                    type="button"
+                    onClick={() => {
+                      if (newInclusionText.trim()) {
+                        setInclusionItems([
+                          ...inclusionItems,
+                          { id: `ci-${Date.now()}`, description: newInclusionText.trim(), enabled: true, isCustom: true },
+                        ]);
+                        setNewInclusionText("");
+                        setShowInclusionInput(false);
+                      }
+                    }}
+                    className="px-[8px] py-[4px] bg-[#c0392b] text-white rounded-[4px] text-[11px] font-bold cursor-pointer hover:bg-[#a93226]"
+                  >
+                    Add
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setShowInclusionInput(false);
+                      setNewInclusionText("");
+                    }}
+                    className="px-[8px] py-[4px] bg-[#f5f5f5] text-[#666] border border-[#ddd] rounded-[4px] text-[11px] cursor-pointer hover:bg-[#e0e0e0]"
+                  >
+                    Cancel
+                  </button>
                 </div>
               ) : (
-                <button type="button" onClick={() => setShowInclusionInput(true)}
-                  className="mt-1.5 text-[11px] text-[#c0392b] border border-[#c0392b] rounded px-[8px] py-[3px] bg-white font-bold cursor-pointer hover:bg-[#fdecea]">
-                  + Add Item
+                <button
+                  type="button"
+                  onClick={() => setShowInclusionInput(true)}
+                  className="mt-1.5 px-[8px] py-[3px] bg-white text-[#c0392b] border border-[#c0392b] rounded-[4px] text-[11px] font-bold cursor-pointer hover:bg-[#c0392b] hover:text-white transition-colors"
+                >
+                  + Add Inclusion
                 </button>
               )}
             </div>
@@ -1404,32 +1450,73 @@ export function QuoteBuilderClient({
                       {item.description}
                     </label>
                     {item.isCustom && (
-                      <button type="button" onClick={() => setExclusionItems(exclusionItems.filter(x => x.id !== item.id))}
-                        className="text-[#c0392b] font-bold text-[14px] leading-none cursor-pointer">&times;</button>
+                      <button
+                        type="button"
+                        onClick={() => setExclusionItems(exclusionItems.filter((x) => x.id !== item.id))}
+                        className="text-[#c0392b] font-bold text-[14px] leading-none cursor-pointer hover:text-[#900] px-1"
+                        aria-label={`Remove exclusion ${item.description}`}
+                      >
+                        &times;
+                      </button>
                     )}
                   </div>
                 ))}
               </div>
               {/* Custom exclusion input */}
               {showExclusionInput ? (
-                <div className="flex gap-1.5 mt-1">
-                  <input type="text" placeholder="Custom exclusion…" value={newExclusionText}
-                    onChange={e => setNewExclusionText(e.target.value)}
-                    onKeyDown={e => { if (e.key === "Enter" && newExclusionText.trim()) {
-                      setExclusionItems([...exclusionItems, { id: `ce-${Date.now()}`, description: newExclusionText.trim(), enabled: true, isCustom: true }]);
-                      setNewExclusionText(""); setShowExclusionInput(false);
-                    }}}
-                    className="flex-1 px-[7px] py-[4px] border border-[#ddd] rounded text-[12px]" autoFocus />
-                  <button type="button" onClick={() => { if (newExclusionText.trim()) {
-                    setExclusionItems([...exclusionItems, { id: `ce-${Date.now()}`, description: newExclusionText.trim(), enabled: true, isCustom: true }]);
-                    setNewExclusionText(""); setShowExclusionInput(false);
-                  }}} className="p-[4px_8px] bg-[#c0392b] text-white rounded text-[11px] font-bold">Add</button>
-                  <button type="button" onClick={() => setShowExclusionInput(false)} className="p-[4px_8px] border border-[#ddd] rounded text-[11px]">✕</button>
+                <div className="flex gap-1.5 mt-1.5">
+                  <input
+                    type="text"
+                    placeholder="Custom exclusion"
+                    value={newExclusionText}
+                    onChange={(e) => setNewExclusionText(e.target.value)}
+                    onKeyDown={(e) => {
+                      if (e.key === "Enter" && newExclusionText.trim()) {
+                        setExclusionItems([
+                          ...exclusionItems,
+                          { id: `ce-${Date.now()}`, description: newExclusionText.trim(), enabled: true, isCustom: true },
+                        ]);
+                        setNewExclusionText("");
+                        setShowExclusionInput(false);
+                      }
+                    }}
+                    className="flex-1 px-[7px] py-[4px] border border-[#ddd] rounded-[4px] text-[12px] bg-white focus:outline-none focus:border-[#c0392b]"
+                    autoFocus
+                  />
+                  <button
+                    type="button"
+                    onClick={() => {
+                      if (newExclusionText.trim()) {
+                        setExclusionItems([
+                          ...exclusionItems,
+                          { id: `ce-${Date.now()}`, description: newExclusionText.trim(), enabled: true, isCustom: true },
+                        ]);
+                        setNewExclusionText("");
+                        setShowExclusionInput(false);
+                      }
+                    }}
+                    className="px-[8px] py-[4px] bg-[#c0392b] text-white rounded-[4px] text-[11px] font-bold cursor-pointer hover:bg-[#a93226]"
+                  >
+                    Add
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setShowExclusionInput(false);
+                      setNewExclusionText("");
+                    }}
+                    className="px-[8px] py-[4px] bg-[#f5f5f5] text-[#666] border border-[#ddd] rounded-[4px] text-[11px] cursor-pointer hover:bg-[#e0e0e0]"
+                  >
+                    Cancel
+                  </button>
                 </div>
               ) : (
-                <button type="button" onClick={() => setShowExclusionInput(true)}
-                  className="mt-1.5 text-[11px] text-[#c0392b] border border-[#c0392b] rounded px-[8px] py-[3px] bg-white font-bold cursor-pointer hover:bg-[#fdecea]">
-                  + Add Item
+                <button
+                  type="button"
+                  onClick={() => setShowExclusionInput(true)}
+                  className="mt-1.5 px-[8px] py-[3px] bg-white text-[#c0392b] border border-[#c0392b] rounded-[4px] text-[11px] font-bold cursor-pointer hover:bg-[#c0392b] hover:text-white transition-colors"
+                >
+                  + Add Exclusion
                 </button>
               )}
             </div>
@@ -2032,6 +2119,35 @@ export function QuoteBuilderClient({
           </footer>
         </div>
       </section>
+
+      {/* Print styles */}
+      <style>{`
+        @media print {
+          @page {
+            size: A4 portrait;
+            margin: 0;
+          }
+          body > *:not(#quote-paper) {
+            display: none !important;
+          }
+          nav, aside, header {
+            display: none !important;
+          }
+          #quote-paper {
+            width: 210mm !important;
+            min-height: 297mm !important;
+            box-shadow: none !important;
+            border-radius: 0 !important;
+            margin: 0 !important;
+            padding: 0 !important;
+          }
+          * {
+            -webkit-print-color-adjust: exact !important;
+            print-color-adjust: exact !important;
+          }
+        }
+      `}</style>
     </div>
   );
 }
+
